@@ -829,6 +829,7 @@ public final class SettingsHook {
         s.toggles(Toggles.UI_CHAT_HEADER);
         s.section(t("Чат видео", "Video chat"));
         s.toggle(Toggles.HIDE_VOD_CHAT_HEADER);
+        s.toggle(Toggles.HIDE_VOD_ROW_MENU);
     }
 
     private static void uiBannersPage(SettingsScreen s) {
@@ -854,6 +855,7 @@ public final class SettingsHook {
         s.toggle(Toggles.EMOTE_BUTTON_TYPING_ONLY);
         s.toggle(Toggles.HIDE_POINTS_PORTRAIT);
         s.toggle(Toggles.HIDE_POINTS_LANDSCAPE);
+        s.toggle(Toggles.HIDE_PORTRAIT_CHAT_INPUT);
         s.toggle(Toggles.HIDE_LANDSCAPE_CHAT_INPUT);
         s.toggle(Toggles.HIDE_ONE_CHAT_INPUT);
         s.section(t("Показать", "Show"));
@@ -884,6 +886,7 @@ public final class SettingsHook {
         s.toggle(Toggles.HIDE_FOLLOWING_CONTINUE);
         s.toggle(Toggles.HIDE_FOLLOWING_OFFLINE);
         s.toggle(Toggles.HIDE_STORIES_EMPTY);
+        s.toggle(Toggles.HIDE_LIVE_EMPTY);
         s.section(t("Превью стримов", "Stream previews"));
         s.toggle(Toggles.STREAM_UPTIME);
         s.section(t("Шапка главной: скрыть", "Home header: hide"));

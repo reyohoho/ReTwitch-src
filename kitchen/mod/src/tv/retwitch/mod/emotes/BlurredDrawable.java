@@ -41,6 +41,19 @@ final class BlurredDrawable extends Drawable {
         small = null;
     }
 
+    /**
+     * Fits the preview into {@code room} px of width, keeping its aspect: a narrow side chat clipped it at the
+     * right edge. Grows back up to the decoded size when there is room again. Before the text is laid out.
+     */
+    void fit(int room) {
+        Rect b = base.getBounds();
+        if (b.width() <= 0 || room <= 0) {
+            return;
+        }
+        int width = Math.min(b.width(), room);
+        setBounds(0, 0, width, Math.max(1, Math.round(b.height() * (width / (float) b.width()))));
+    }
+
     void attachHost(TextView textView) {
         if (base instanceof AnimatedEmoteDrawable) {
             ((AnimatedEmoteDrawable) base).attachHost(textView);
@@ -53,8 +66,12 @@ final class BlurredDrawable extends Drawable {
         try {
             Rect box = getBounds();
             if (!blurred) {
+                Rect source = base.getBounds();
                 canvas.save();
                 canvas.translate(box.left, box.top);
+                if (source.width() > 0 && source.height() > 0) {
+                    canvas.scale(box.width() / (float) source.width(), box.height() / (float) source.height());
+                }
                 base.draw(canvas);
                 canvas.restore();
                 return;

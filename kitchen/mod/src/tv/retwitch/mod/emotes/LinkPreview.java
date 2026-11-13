@@ -13,6 +13,7 @@ import android.text.style.ImageSpan;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.TextView;
 
 import java.net.URI;
 import java.util.Locale;
@@ -110,6 +111,29 @@ final class LinkPreview {
             return out;
         }
         return builder;
+    }
+
+    /**
+     * Shrinks previews wider than the row (a narrow side chat cut them off at its edge) and lets them grow back.
+     * Before the row's setText: the image's line width is read when the text is laid out.
+     */
+    static void fitWidth(Spanned text, TextView view) {
+        if (text == null || view == null) {
+            return;
+        }
+        PreviewSpan[] spans = text.getSpans(0, text.length(), PreviewSpan.class);
+        if (spans.length == 0) {
+            return;
+        }
+        int width = view.getWidth();
+        if (width == 0 && view.getParent() instanceof View) {
+            // A row not laid out yet: the chat list's width.
+            width = ((View) view.getParent()).getWidth();
+        }
+        int room = width - view.getTotalPaddingLeft() - view.getTotalPaddingRight();
+        for (PreviewSpan span : spans) {
+            span.shown.fit(room);
+        }
     }
 
     /** Same hosts the extension routes through its proxy (kappa.lol, 7TV, Discord, ...). */

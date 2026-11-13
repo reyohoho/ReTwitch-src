@@ -84,7 +84,18 @@ final class NewMessages {
         if (label == null || !counting || label.getVisibility() != View.VISIBLE || count == 0) {
             return;
         }
-        label.setText(Strings.pickf("Новых сообщений: %d", "New messages: %d", count));
+        String text = Strings.pickf("Новых сообщений: %d", "New messages: %d", count);
+        // A narrow side chat wrapped it onto a second line over the messages: there only the number.
+        int room = label.getParent() instanceof View
+                ? ((View) label.getParent()).getWidth() - label.getTotalPaddingLeft() - label.getTotalPaddingRight() : 0;
+        if (label.getLayoutParams() instanceof android.view.ViewGroup.MarginLayoutParams) {
+            android.view.ViewGroup.MarginLayoutParams margins = (android.view.ViewGroup.MarginLayoutParams) label.getLayoutParams();
+            room -= margins.leftMargin + margins.rightMargin;
+        }
+        if (room > 0 && label.getPaint().measureText(text) > room) {
+            text = "\u2193 " + count;
+        }
+        label.setText(text);
     }
 
     private static void restore(TextView label) {

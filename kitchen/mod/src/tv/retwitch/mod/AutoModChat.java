@@ -267,6 +267,7 @@ public final class AutoModChat {
             tv.retwitch.mod.emotes.EmoteChatHook.scaleRow(view);
             if (view instanceof View) {
                 DeletedMessagesHook.tintRow((View) view);
+                UiHider.bindChatRow((View) view);
                 ChatRows.onRowBound((View) view);
                 RecentMessages.onRowView((View) view);
             }

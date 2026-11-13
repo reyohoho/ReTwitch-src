@@ -61,6 +61,7 @@ final class AboutPage {
         final Context c = s.context;
         s.action(Strings.changelogTitle(), t("Версия ", "Version ") + BuildInfo.VERSION_NAME, () -> SettingsHook.showChangelog(c));
         s.toggle(Toggles.UPDATE_CHECK);
+        s.toggle(Toggles.UPDATE_NOTIFY);
         s.action(t("Проверить обновления сейчас", "Check for updates now"), null, () -> ModUpdate.checkNow(c));
         s.section(t("Основа", "Foundation"));
         credits(s, BASE);

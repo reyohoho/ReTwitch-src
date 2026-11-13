@@ -20,24 +20,24 @@ Merging the bundle into one APK,Сборка бандла в один APK,Fusion
 Taking APKs apart,Разбор APK,Décompilation des APK,AboutPage.java:49
 "Reading Twitch's JS, not in the mod","Чтение JS Twitch, в мод не входит","Lecture du JS de Twitch, absent du mod",AboutPage.java:50
 Version ,Версия ,Version ,AboutPage.java:62
-Check for updates now,Проверить обновления сейчас,Vérifier les mises à jour maintenant,AboutPage.java:64
-Foundation,Основа,Fondation,AboutPage.java:65
-Code and ideas,Код и идеи,Code et idées,AboutPage.java:67
-Libraries,Библиотеки,Bibliothèques,AboutPage.java:69
-Tools,Инструменты,Outils,AboutPage.java:71
-Thanks,Спасибо,Merci,AboutPage.java:73
-The community and testers,Сообщество и тестеры,La communauté et les testeurs,AboutPage.java:74
-Spanish translation,Перевод на испанский,Traduction en espagnol,AboutPage.java:75
-French translation,Перевод на французский,Traduction en français,AboutPage.java:76
-Helps writing the code,Помогает писать код,Aide à l'écriture du code,AboutPage.java:77
-License,Лицензия,Licence,AboutPage.java:78
+Check for updates now,Проверить обновления сейчас,Vérifier les mises à jour maintenant,AboutPage.java:65
+Foundation,Основа,Fondation,AboutPage.java:66
+Code and ideas,Код и идеи,Code et idées,AboutPage.java:68
+Libraries,Библиотеки,Bibliothèques,AboutPage.java:70
+Tools,Инструменты,Outils,AboutPage.java:72
+Thanks,Спасибо,Merci,AboutPage.java:74
+The community and testers,Сообщество и тестеры,La communauté et les testeurs,AboutPage.java:75
+Spanish translation,Перевод на испанский,Traduction en espagnol,AboutPage.java:76
+French translation,Перевод на французский,Traduction en français,AboutPage.java:77
+Helps writing the code,Помогает писать код,Aide à l'écriture du code,AboutPage.java:78
+License,Лицензия,Licence,AboutPage.java:79
 "© 2026 ReYohoho and contributors. ReTwitch is free software: you may redistribute and modify it under the terms of the GNU GPL version 3 or (at your option) any later version. It comes with no warranty of any kind.
 
 An unofficial modification, not affiliated with or endorsed by Twitch. Built with Morphe; the Morphe project has nothing to do with ReTwitch.","© 2026 ReYohoho и участники проекта. ReTwitch - свободная программа: её можно распространять и изменять на условиях GNU GPL версии 3 или (по вашему выбору) любой более поздней. Программа поставляется без каких-либо гарантий.
 
-Неофициальная модификация: не связана с Twitch и не одобрена им. Собрана с помощью Morphe; проект Morphe к ReTwitch отношения не имеет.","© 2026 ReYohoho et les contributeurs. ReTwitch est un logiciel libre : vous pouvez le redistribuer et le modifier selon les termes de la licence GNU GPL version 3 ou (à votre choix) toute version ultérieure. Il est fourni sans aucune garantie. Modification non officielle, non affiliée ni endossée par Twitch. Conçu avec Morphe ; le projet Morphe n'a aucun lien avec ReTwitch.",AboutPage.java:79
-Source code,Исходный код,Code source,AboutPage.java:87
-The mod's and Morphe's license,Лицензия мода и Morphe,La licence du mod et de Morphe,AboutPage.java:89
+Неофициальная модификация: не связана с Twitch и не одобрена им. Собрана с помощью Morphe; проект Morphe к ReTwitch отношения не имеет.","© 2026 ReYohoho et les contributeurs. ReTwitch est un logiciel libre : vous pouvez le redistribuer et le modifier selon les termes de la licence GNU GPL version 3 ou (à votre choix) toute version ultérieure. Il est fourni sans aucune garantie. Modification non officielle, non affiliée ni endossée par Twitch. Conçu avec Morphe ; le projet Morphe n'a aucun lien avec ReTwitch.",AboutPage.java:80
+Source code,Исходный код,Code source,AboutPage.java:88
+The mod's and Morphe's license,Лицензия мода и Morphe,La licence du mod et de Morphe,AboutPage.java:90
 Audio,Звук,Audio,AudioPanel.java:75
 off,выключено,désactivé,AutoRecord.java:165 Strings.java:431
 "live, recording","в эфире, пишется","live, enregistrement",AutoRecord.java:168
@@ -45,12 +45,12 @@ off,выключено,désactivé,AutoRecord.java:165 Strings.java:431
 waiting for a stream,ждёт эфира,en attente d'un stream,AutoRecord.java:171
 Channels: %d · checked every minute,Каналов: %d · проверка раз в минуту,Chaînes : %d · vérifié toutes les minutes,AutoRecord.java:175
 %s of %s,%s из %s,%s sur %s,BoostyGoal.java:148
-Copy and send,Копировать и отправить,Copier et envoyer,ChatCopySend.java:44 SettingsPreview.java:1762
+Copy and send,Копировать и отправить,Copier et envoyer,ChatCopySend.java:44 SettingsPreview.java:1787
 No chat input here: the message was only copied,Нет поля ввода чата - сообщение только скопировано,Aucun champ de saisie du chat ici : le message a uniquement été copié,ChatCopySend.java:104
-Moderation,Модерация,Modération,ChatModActions.java:138 ChatModActions.java:225 SettingsHook.java:522 SettingsPreview.java:1742
+Moderation,Модерация,Modération,ChatModActions.java:138 ChatModActions.java:225 SettingsHook.java:522 SettingsPreview.java:1767
 Message deleted,Сообщение удалено,Message supprimé,ChatModActions.java:229
 %s unbanned,%s разбанен,%s débanni,ChatModActions.java:235
-Delete message,Удалить сообщение,Supprimer le message,ChatModActions.java:244 SettingsPreview.java:1745
+Delete message,Удалить сообщение,Supprimer le message,ChatModActions.java:244 SettingsPreview.java:1770
 Lift the ban or timeout of %s,Снять бан или таймаут %s,Lever le bannissement ou l'exclusion de %s,ChatModActions.java:247
 Timeout %s,Таймаут %s,Exclure temporairement %s,ChatModActions.java:249 ChatModActions.java:260
 Ban %s,Бан %s,Bannir %s,ChatModActions.java:249 ChatModActions.java:269
@@ -61,16 +61,16 @@ Ban %s,Бан %s,Bannir %s,ChatModActions.java:249 ChatModActions.java:269
 1 week,1 неделя,1 semaine,ChatModActions.java:254
 %s timed out for %s,%s в таймауте: %s,%s a été exclu temporairement pour %s,ChatModActions.java:262
 Ban %s from the channel for good?,Забанить %s на канале навсегда?,Bannir définitivement %s de la chaîne ?,ChatModActions.java:270
-Ban,Забанить,Bannir,ChatModActions.java:271 SettingsPreview.java:1745
+Ban,Забанить,Bannir,ChatModActions.java:271 SettingsPreview.java:1770
 %s banned,%s забанен,%s banni,ChatModActions.java:272
 Didn't work: %s,Не получилось: %s,Échec de l'opération : %s,ChatModActions.java:385
-Chat,Чат,Chat,ChatOff.java:81 RecordPlayer.java:280 SettingsPreview.java:530 SettingsPreview.java:1194 Strings.java:471
+Chat,Чат,Chat,ChatOff.java:81 RecordPlayer.java:280 SettingsPreview.java:533 SettingsPreview.java:1215 Strings.java:471
 Chat is off · Show,Чат выключен · Показать,Chat désactivé · Afficher,ChatOff.java:148
 Chat text: %d%%,Текст чата: %d%%,Texte du chat : %d%%,ChatPinch.java:113
 saving the chat,дописывает чат,enregistrement du chat,ChatTape.java:75
  (12 h), (12 ч), (12 h),ChatTimestamps.java:71
-Remove from favorites,Убрать из избранного,Retirer des favoris,FavoriteChannels.java:83 RnScript.java:72
-Add to favorites,В избранное,Ajouter aux favoris,FavoriteChannels.java:84 RnScript.java:71
+Remove from favorites,Убрать из избранного,Retirer des favoris,FavoriteChannels.java:83 RnScript.java:74
+Add to favorites,В избранное,Ajouter aux favoris,FavoriteChannels.java:84 RnScript.java:73
 %s removed from favorites,%s убран из избранного,%s retiré des favoris,FavoriteChannels.java:140
 %s is a favorite. In Following after a restart,%s в избранном. В «Отслеживаемом» - после перезапуска,%s est en favori. Dans Suivis après un redémarrage,FavoriteChannels.java:141
 the channel is offline,канал не в эфире,la chaîne est hors ligne,LiveRecord.java:525
@@ -96,7 +96,9 @@ A moderator,Модератор,Un modérateur,ModLogs.java:332
  h, ч, h,ModLogs.java:377
  min, мин, min,ModLogs.java:380
  s, с, s,ModLogs.java:382 Strings.java:838
-New messages: %d,Новых сообщений: %d,Nouveaux messages : %d,NewMessages.java:87 SettingsPreview.java:811
+Mod updates,Обновления мода,,ModUpdate.java:168
+Open the app to update,"Откройте приложение, чтобы обновить",,ModUpdate.java:173
+New messages: %d,Новых сообщений: %d,Nouveaux messages : %d,NewMessages.java:87 SettingsPreview.java:814
 "ReTwitch: %s emotes are still loading, reopen the picker in a few seconds","ReTwitch: эмоуты %s ещё грузятся, откройте панель заново через пару секунд","ReTwitch : Les émotes %s sont encore en cours de chargement, réouvrez le sélecteur dans quelques secondes",PickerHook.java:607
 not found,не найдены,introuvable,PushRegistration.java:58
 Notification permission,Разрешение на уведомления,Autorisation de notification,PushRegistration.java:63 PushRegistration.java:65
@@ -116,12 +118,12 @@ A handier chat,Удобный чат,Un chat plus pratique,QuickSetup.java:142
 Player,Плеер,Lecteur,QuickSetup.java:151 Strings.java:784
 "Highest quality on Wi-Fi right away, brightness and volume by swiping the edges in full screen, swipe to full screen, a frozen stream restarts itself","Сразу максимальное качество по Wi-Fi, яркость и громкость свайпом по краям в полном экране, свайп в полный экран, перезапуск зависшего стрима","Qualité maximale en Wi-Fi dès le départ, luminosité et volume en balayant les bords en plein écran, balayage pour passer en plein écran, un stream figé redémarre tout seul",QuickSetup.java:152
 Highest quality on Wi-Fi,Максимальное качество по Wi-Fi,Qualité maximale en Wi-Fi,QuickSetup.java:157
-Stream proxy,Прокси трансляций,Proxy du stream,QuickSetup.java:167 SettingsHook.java:901
+Stream proxy,Прокси трансляций,Proxy du stream,QuickSetup.java:167 SettingsHook.java:904
 "From Russia Twitch serves only transcodes up to 720p, the source quality (1080p and up) comes through a proxy. The mod checks the ReYohoho proxies and picks one that works","Из России Twitch отдаёт только транскоды до 720p, исходное качество (1080p и выше) приходит через прокси. Мод сам проверит прокси ReYohoho и выберет работающий","Depuis la Russie, Twitch ne fournit que des transcodages jusqu'à 720p, la qualité source (1080p et plus) passe par un proxy. Le mod teste les proxys ReYohoho et en choisit un qui fonctionne",QuickSetup.java:168
 ReYohoho proxy,Прокси ReYohoho,Proxy ReYohoho,QuickSetup.java:173
 Home,Главная,Accueil,QuickSetup.java:175 SettingsHook.java:213
 "Opens right on Following, Live as a compact list, bigger channel previews","Открывается сразу на «Отслеживаемом», «В эфире» компактным списком, превью каналов крупнее","S'ouvre directement sur Suivis, Live en liste compacte, aperçus de chaînes plus grands",QuickSetup.java:176
-Open Following,Открывать «Отслеживаемое»,"Ouvrir ""Suivis""",QuickSetup.java:179 SettingsHook.java:866
+Open Following,Открывать «Отслеживаемое»,"Ouvrir ""Suivis""",QuickSetup.java:179 SettingsHook.java:868
 Large previews in Following,Крупные превью в «Отслеживаемом»,Grands aperçus dans Suivis,QuickSetup.java:182
 Downloads and recording,Скачивание и запись,Téléchargements et enregistrement,QuickSetup.java:189
 "Player buttons: download a VOD or a clip in the quality you pick, record a stream to the phone","Кнопки на плеере: скачать VOD или клип в выбранном качестве, записать трансляцию на телефон","Boutons du lecteur : télécharger une rediffusion ou un clip dans la qualité choisie, enregistrer un stream sur le téléphone",QuickSetup.java:190
@@ -240,7 +242,7 @@ no archive: continuing leaves a gap,эфир без архива: пропуск
 VOD · nothing lost,VOD · без потерь,Rediffusion · rien de perdu,RecordSettings.java:266
 archive · nothing lost,архив · без потерь,archive · rien de perdu,RecordSettings.java:266
 From now,С эфира,À partir de maintenant,RecordSettings.java:269 RecordSheet.java:161
-Continue,Продолжить,Reprendre,RecordSettings.java:269 SettingsPreview.java:1709
+Continue,Продолжить,Reprendre,RecordSettings.java:269 SettingsPreview.java:1734
 chat,чат,chat,RecordSettings.java:279
 stopped,остановлена,arrêté,RecordSettings.java:282
 gaps %d min,пропуски %d мин,trous %d min,RecordSettings.java:285
@@ -250,7 +252,7 @@ The file is gone or nothing plays it,Файл удалён или его неч�
 Watch with the chat,Смотреть с чатом,Regarder avec le chat,RecordSettings.java:324
 Watch,Смотреть,Regarder,RecordSettings.java:324
 Open in the phone's player,Открыть в плеере телефона,Ouvrir dans le lecteur du téléphone,RecordSettings.java:327
-Delete,Удалить,Supprimer,RecordSettings.java:329 RecordSettings.java:344 SettingsHook.java:980
+Delete,Удалить,Supprimer,RecordSettings.java:329 RecordSettings.java:344 SettingsHook.java:983
 Delete the recording?,Удалить запись?,Supprimer l'enregistrement ?,RecordSettings.java:340
 """%s"", %s. The file and its chat are deleted from the phone.","«%s», %s. Файл и чат удалятся с телефона.","%s, %s. Le fichier et son chat sont supprimés du téléphone.",RecordSettings.java:341
 "Android refused to delete the file: delete it in Files, in Downloads/ReTwitch","Android не дал удалить файл: удалите его в «Файлах», в Загрузки/ReTwitch","Android a refusé de supprimer le fichier : supprimez-le dans Fichiers, dans Téléchargements/ReTwitch",RecordSettings.java:346
@@ -280,11 +282,11 @@ Recording to Downloads/ReTwitch,Запись пошла: Загрузки/ReTwit
 Replies: %d,Ответов: %d,Réponses : %d,ReplyThreads.java:342
 Reply thread,Ветка ответов,Fil de réponses,ReplyThreads.java:369
 %d d,%d д,%d j,RewardStatus.java:194
-Favorites,Избранное,Favoris,RnScript.java:70 SettingsPreview.java:1634
-RTE friends,Друзья RTE,amis RTE,RnScript.java:73 Strings.java:305 Strings.java:654 Toggles.java:522
-watching,смотрит,regarder,RnScript.java:74
-Show all,Показать всех,Tout afficher,RnScript.java:75
-Show less,Свернуть,Afficher moins,RnScript.java:76
+Favorites,Избранное,Favoris,RnScript.java:72 SettingsPreview.java:1659
+RTE friends,Друзья RTE,amis RTE,RnScript.java:75 Strings.java:305 Strings.java:654 Toggles.java:532
+watching,смотрит,regarder,RnScript.java:76
+Show all,Показать всех,Tout afficher,RnScript.java:77
+Show less,Свернуть,Afficher moins,RnScript.java:78
 about and what's new,о моде и что нового,À propos et nouveautés,SettingsHook.java:179
 Quick setup,Быстрая настройка,Configuration rapide,SettingsHook.java:182
 The main things in 8 questions,Главное за 8 вопросов,L'essentiel en 8 questions,SettingsHook.java:183
@@ -405,7 +407,7 @@ Blocklists,Чёрные списки,Listes de blocage,SettingsHook.java:621
 "In a fast chat rows can jerk and overlap, better leave it off.","На быстром чате возможны рывки и наезд строк, лучше не включать.","Dans un chat rapide, les lignes peuvent décaler et se chevaucher, mieux vaut le désactiver.",SettingsHook.java:637
 Scrolling,Прокрутка,Défilement,SettingsHook.java:642
 New messages take chat back down while you read higher up,"Новые сообщения возвращают чат вниз, пока вы читаете выше",Les nouveaux messages font redescendre le chat pendant que vous lisez plus haut,SettingsHook.java:643
-Autoscroll only works near the bottom,Автопрокрутка работает только у конца,Le défilement automatique ne fonctionne que près du bas,SettingsHook.java:644 Toggles.java:899
+Autoscroll only works near the bottom,Автопрокрутка работает только у конца,Le défilement automatique ne fonctionne que près du bas,SettingsHook.java:644 Toggles.java:940
 Keep scroll position,Не сбрасывать прокрутку,Conserver la position de défilement,SettingsHook.java:645
 Chat stays put while you read higher up,"Чат не уезжает вниз, пока вы читаете выше",Le chat reste à la même position pendant que vous lisez plus haut,SettingsHook.java:645
 How to show them,Как показывать,Comment les afficher,SettingsHook.java:651
@@ -449,155 +451,157 @@ Channel page,Страница канала,Page de la chaîne,SettingsHook.java:
 Channel page type,Вид страницы канала,Type de page de la chaîne,SettingsHook.java:792
 As Twitch decides,Как решит Twitch,Comme Twitch le décide,SettingsHook.java:793
 Native,Нативная,Native,SettingsHook.java:793
-Vertical view,Вертикальный вид,Vue verticale,SettingsHook.java:814 SettingsPreview.java:485
+Vertical view,Вертикальный вид,Vue verticale,SettingsHook.java:814 SettingsPreview.java:488
 Whole header,Шапка целиком,En-tête complet,SettingsHook.java:826
 "With nothing left in the row, the header goes by itself","Если убрать всё из строки, шапка скроется сама","Lorsqu'il ne reste plus rien sur la ligne, l'en-tête disparaît de lui-même",SettingsHook.java:826
 Hide in the header,Скрыть в шапке,Masquer dans l'en-tête,SettingsHook.java:828
 Video chat,Чат видео,Chat des vidéos,SettingsHook.java:830
-Pins,Закрепы,Épingles,SettingsHook.java:836
-Streamer and mod pins,Закрепы стримера и модераторов,Épingles du streameur et des modérateurs,SettingsHook.java:839
-Hide banners,Скрыть баннеры,Masquer les bannières,SettingsHook.java:841
-Hide,Скрыть,Masquer,SettingsHook.java:851 Strings.java:1216
-Show,Показать,Afficher,SettingsHook.java:859 Strings.java:1026 Strings.java:1216
-At launch instead of Live,При запуске вместо «В эфире»,"Au lancement au lieu de ""Live""",SettingsHook.java:867
-Bottom menu: hide,Нижнее меню: скрыть,Menu du bas : masquer,SettingsHook.java:869
-Following,Отслеживаемое,Suivis,SettingsHook.java:873 SettingsPreview.java:1431
-Live channel previews,Превью каналов в эфире,Aperçus des chaînes en live,SettingsHook.java:875
-As in Twitch,Как в Twitch,Comme sur Twitch,SettingsHook.java:876 Strings.java:1117 Strings.java:1174 Strings.java:1248
-Medium,Средние,Moyen,SettingsHook.java:876
-Large,Крупные,Grand,SettingsHook.java:876 Strings.java:1093
-Stream previews,Превью стримов,Aperçus des streams,SettingsHook.java:887
-Home header: hide,Шапка главной: скрыть,En-tête de l'accueil : masquer,SettingsHook.java:889
-Live,В эфире,Live,SettingsHook.java:892 SettingsPreview.java:1431 SettingsPreview.java:1452
-Proxy,Прокси,Proxy,SettingsHook.java:900
-A proxy helps when Twitch is slow or unreachable. It doesn't remove ads: the Ads section does.,"Прокси нужен, когда Twitch медленный или недоступен. Рекламу убирает не он, а блокировка из раздела «Реклама».","Un proxy aide lorsque Twitch est lent ou inaccessible. Il ne supprime pas les publicités : la section ""Publicités"" s'en charge.",SettingsHook.java:903
-Access,Доступ,Accès,SettingsHook.java:905
-"A file with all settings, favorites included","Файл со всеми настройками, включая избранное","Un fichier avec tous les paramètres, favoris inclus",SettingsHook.java:918
-Replaces the current mod settings,Заменит текущие настройки мода,Remplace les paramètres actuels du mod,SettingsHook.java:920
-Reset,Сброс,Réinitialiser,SettingsHook.java:923 Strings.java:352 Strings.java:451
-Favorite emotes and chat offsets stay,Избранные эмоуты и смещения чата останутся,Les émotes favorites et les décalages du chat sont conservés,SettingsHook.java:924
-own files: %d,своих файлов: %d,fichiers personnels : %d,SettingsHook.java:939
-Mod language,Язык мода,Langue du mod,SettingsHook.java:953
-Twitch stays in the system language,Twitch остаётся на языке системы,Twitch reste dans la langue du système,SettingsHook.java:953
-Translate on the website,Перевести на сайте,Traduire sur le site web,SettingsHook.java:962
-"A handy editor: search, string checks, accepted strings go into the next mod version","Удобный редактор: поиск, проверка строк, принятое попадёт в следующую версию мода","Un éditeur pratique : recherche, vérifications de chaînes, les chaînes acceptées sont intégrées à la prochaine version du mod",SettingsHook.java:963
-Translations in the mod,Переводы в моде,Traductions dans le mod,SettingsHook.java:967
-%d of %d strings,%d из %d строк,%d sur %d chaînes,SettingsHook.java:969
-Your files,Ваши файлы,Vos fichiers,SettingsHook.java:974
-Strings: %d · on this phone only,Строк: %d · только на этом телефоне,Chaînes : %d · sur ce téléphone uniquement,SettingsHook.java:976
-Share the file,Поделиться файлом,Partager le fichier,SettingsHook.java:980
-Files,Файлы,Fichiers,SettingsHook.java:992
-Download a file to translate,Скачать файл для перевода,Télécharger un fichier à traduire,SettingsHook.java:993
-"English, Russian and the translation side by side, for Google Sheets or Excel","Английский, русский и перевод рядом, для Google Таблиц или Excel","Anglais, russe et traduction côte à côte, pour Google Sheets ou Excel",SettingsHook.java:994
-Load your translation,Загрузить свой перевод,Charger votre traduction,SettingsHook.java:997
-"A new language or fixes to one, works right away","Новый язык или правки к старому, работает сразу","Une nouvelle langue ou des corrections pour l'une d'elles, fonctionne immédiatement",SettingsHook.java:998
-"A loaded file works on this phone only and wins over the mod's translation. To get the translation into the mod, upload the file on the website (“Translate on the website” above) or share it with the developer: the button is at your language under “Your files”.","Загруженный файл работает только на этом телефоне и сильнее перевода в моде. Чтобы перевод попал в мод, загрузите файл на сайте («Перевести на сайте» выше) или поделитесь им с разработчиком: кнопка у вашего языка в «Ваших файлах».","Un fichier chargé fonctionne uniquement sur ce téléphone et prime sur la traduction du mod. Pour intégrer la traduction au mod, importez le fichier sur le site web (""Traduire sur le site web"" ci-dessus) ou partagez-le avec le développeur : le bouton se trouve sous votre langue dans ""Vos fichiers"".",SettingsHook.java:1000
-Logs for reports,Логи для отчётов,Journaux pour les rapports,SettingsHook.java:1010
-Checks,Проверки,Vérifications,SettingsHook.java:1033
-Firebase registration status,Статус регистрации в Firebase,État de l'inscription Firebase,SettingsHook.java:1034
-Check that crash reports get sent,Проверить отправку отчётов о падениях,Vérifier que les rapports de plantage sont envoyés,SettingsHook.java:1035
-For the brave,Для смелых,Pour les plus audacieux,SettingsHook.java:1036
-An ad,Реклама,Une publicité,SettingsPreview.java:418
-Mature content,Контент для взрослых,Contenu pour adultes,SettingsPreview.java:432
-Start watching,Начать просмотр,Commencer à regarder,SettingsPreview.java:434
-Ad 0:15,Реклама 0:15,Publicité 0:15,SettingsPreview.java:453
-Chat mode: column,Режим чата: колонка,Mode du chat : colonne,SettingsPreview.java:476
-Classic split,Классический разделенный,Séparation classique,SettingsPreview.java:485
-Subscribe,Подписаться,S'abonner,SettingsPreview.java:502 SettingsPreview.java:1205 Toggles.java:440
-Follow,Отслеживать,Suivre,SettingsPreview.java:519 Toggles.java:435
-viewer: hi chat,"зритель: привет, чат",spectateur : salut le chat,SettingsPreview.java:523
-Pinned message,Закреплённое сообщение,Message épinglé,SettingsPreview.java:528
-12.4K,"12,4 тыс.",12.4K,SettingsPreview.java:561
-(9.8K),"(9,8 тыс.)",(9.8K),SettingsPreview.java:563
-Quality   1080p60,Качество  1080p60,Qualité   1080p60,SettingsPreview.java:621
-"Video  6,200 kbps",Видео  6 200 кбит/с,Video  6 200 kbit/s,SettingsPreview.java:621
-Latency  1.4 s,"Задержка  1,4 с","Latence  1,4 s",SettingsPreview.java:622
-Buffer  2.1 s,"Буфер  2,1 с","Tampon  2,1 s",SettingsPreview.java:622
-Next video,Следующее видео,Vidéo suivante,SettingsPreview.java:647
-what a play,вот это момент,quel beau jeu !,SettingsPreview.java:652 SettingsPreview.java:716 SettingsPreview.java:1161 SettingsPreview.java:1724
-lmao,ахаха,mdr,SettingsPreview.java:652 SettingsPreview.java:1161
-hey everyone,всем привет,salut tout le monde,SettingsPreview.java:652 SettingsPreview.java:715 SettingsPreview.java:1161 SettingsPreview.java:1188 SettingsPreview.java:1223 SettingsPreview.java:1256 SettingsPreview.java:1724
-so clean,красиво,trop propre,SettingsPreview.java:653 SettingsPreview.java:1162
-he did it,он это сделал,il l'a fait,SettingsPreview.java:653 SettingsPreview.java:1162
-Poll,Опрос,Sondage,SettingsPreview.java:683
-"Yes, of course","Да, конечно","Oui, bien sûr",SettingsPreview.java:684
-Better not,Лучше не надо,Mieux vaut éviter,SettingsPreview.java:685
-giveaway today,сегодня розыгрыш,concours aujourd'hui,SettingsPreview.java:739
-follow the channel!,подпишись на канал!,suivez la chaîne !,SettingsPreview.java:746
-Announcement,Объявление,Annonce,SettingsPreview.java:751
-Stream at 8 pm,Стрим в 20:00,Stream à 20h,SettingsPreview.java:751
-Subscribed for 3 months,Подписка на 3 месяца,Abonné depuis 3 mois,SettingsPreview.java:754
-Redeemed: pick a game,Награда: выбрать игру,Échangé : choisissez un jeu,SettingsPreview.java:757
-Watch streak: 12,Серия просмотров: 12,Série de visionnage : 12,SettingsPreview.java:760
-Welcome to the chat!,Добро пожаловать в чат!,Bienvenue dans le chat !,SettingsPreview.java:763
-check out my site,заходи на мой сайт,allez voir mon site,SettingsPreview.java:767
-that viewer again,опять этот зритель,encore ce spectateur,SettingsPreview.java:771
-a rule-breaking message,сообщение нарушителя,un message enfreignant les règles,SettingsPreview.java:775
-zefir was timed out for 10 min,zefir получил таймаут на 10 мин,zefir a été exclu pendant 10 minutes,SettingsPreview.java:777
-Chat was cleared by a moderator,Чат очищен модератором,Le chat a été effacé par un modérateur,SettingsPreview.java:785
-chat's alive today,чат сегодня живой,Le chat est en forme aujourd'hui,SettingsPreview.java:810 SettingsPreview.java:833
-More messages below.,Другие сообщения - ниже.,Plus de messages ci-dessous.,SettingsPreview.java:812
-hidden,скрыто,masquer,SettingsPreview.java:846 SettingsPreview.java:1273
-mira,Кайто,mira,SettingsPreview.java:889
-waves to everyone,машет всем рукой,fait coucou à tout le monde,SettingsPreview.java:955
-first time here,я тут впервые,première fois ici,SettingsPreview.java:970
- you there?, ты тут?, t'es là ?,SettingsPreview.java:991
-Replying to @mira: hey everyone,В ответ @mira: всем привет,En réponse à @mira : salut tout le monde,SettingsPreview.java:999
-hey to you too,и тебе привет,salut à toi aussi,SettingsPreview.java:1001
-[GIF] dancing cat,[GIF] танцующий кот,[GIF] chat qui danse,SettingsPreview.java:1030
-🛡 AutoMod held a message,🛡 AutoMod задержал сообщение,🛡️ AutoMod a retenu un message,SettingsPreview.java:1038 Strings.java:217
-zefir: a borderline message,zefir: спорное сообщение,zefir : un message limite,SettingsPreview.java:1039
-nice,отлично,sympa,SettingsPreview.java:1052
-(link hidden),(ссылка скрыта),(lien masqué),SettingsPreview.java:1117
-a message a mod deleted,сообщение модератор удалил,un message supprimé par un modérateur,SettingsPreview.java:1135
-<message deleted>,<сообщение удалено>,<message supprimé>,SettingsPreview.java:1137 SettingsPreview.java:1140
-Chat Replay,Повтор чата,Rediffusion du chat,SettingsPreview.java:1184
-Gift,Подарок,Offrir,SettingsPreview.java:1208
-"Level 2, 45% to go",Уровень 2 - осталось 45%,"Niveau 2, encore 45% à faire",SettingsPreview.java:1231
-Prediction,Прогноз,Prédiction,SettingsPreview.java:1233
-Will the streamer win?,Победит ли стример?,Le streameur va-t-il gagner ?,SettingsPreview.java:1234
-Raid,Рейд,Raid,SettingsPreview.java:1236
-mira and 120 viewers,mira и ещё 120 зрителей,mira et 120 spectateurs,SettingsPreview.java:1236
-Check out zefir,Загляните к zefir,Allez voir zefir,SettingsPreview.java:1239
-A reward for watching,Награда за просмотр,Une récompense pour avoir regardé,SettingsPreview.java:1241
-Gift a sub,Подарите подписку,Offrir un sub,SettingsPreview.java:1243
-30% off,Скидка 30%,30% de réduction,SettingsPreview.java:1243
-Shared Chat,Общий чат,Chat partagé,SettingsPreview.java:1245
-With mira,С каналом mira,Avec mira,SettingsPreview.java:1245
-Pinned,Закреплено,Épinglé,SettingsPreview.java:1264
-Discord in the channel info,Дискорд в описании канала,Discord dans les informations de la chaîne,SettingsPreview.java:1265
-30 s,30 с,30 s,SettingsPreview.java:1268
-"no hints, it takes "":cat""","подсказок нет, нужно «:cat»","Aucun indice, il faut taper "":cat""",SettingsPreview.java:1306
-4.9K,"4,9 тыс.",4.9K,SettingsPreview.java:1325 SettingsPreview.java:1334
-like this ,вот так ,comme ça ,SettingsPreview.java:1358
-like this catJAM,вот так catJAM,comme ça catJAM,SettingsPreview.java:1362
-Send a message,Отправить сообщение,Envoyer un message,SettingsPreview.java:1369 SettingsPreview.java:1375
-hello,привет,bonjour,SettingsPreview.java:1388
-Message...,Сообщение...,Message...,SettingsPreview.java:1392 SettingsPreview.java:1404
-Clips,Клипы,Clips,SettingsPreview.java:1431
-Sponsored,Реклама,Sponsorisé,SettingsPreview.java:1447
-Try without ads,Попробуйте без рекламы,Essayer sans publicité,SettingsPreview.java:1455
-Categories,Категории,Catégories,SettingsPreview.java:1481 Toggles.java:557
-Continue watching,Продолжить просмотр,Regarder la suite,SettingsPreview.java:1484 Toggles.java:559
-Favorites · 3,Избранное · 3,Favoris · 3,SettingsPreview.java:1496
-RTE friends · 2,Друзья RTE · 2,Amis RTE · 2,SettingsPreview.java:1506
-watching mira · Just Chatting,смотрит mira · Just Chatting,regarde mira · Discussions,SettingsPreview.java:1509
-Stream title,Название трансляции,Titre du stream,SettingsPreview.java:1539 SettingsPreview.java:1551 SettingsPreview.java:1565
-Offline,Не в эфире,Hors ligne,SettingsPreview.java:1590
-Frequently used,Часто используемые,Souvent utilisées,SettingsPreview.java:1643
-All categories  ▾,Все категории  ▾,Toutes les catégories ▾,SettingsPreview.java:1672
-"October 12, 2026, 7:05 PM","12 октября 2026, 19:05",12 octobre 2026 à 19h05,SettingsPreview.java:1676
-1 week ago,1 нед. назад,Il y a 1 semaine,SettingsPreview.java:1677
-"Playthrough, part 3","Прохождение, часть 3",Partie 3 de l'aventure,SettingsPreview.java:1678
-Just chatting,Общение со зрителями,Discussions,SettingsPreview.java:1679
-"October 5, 2026, 8:30 PM","5 октября 2026, 20:30",5 octobre 2026 à 20h30,SettingsPreview.java:1680
-2 weeks ago,2 нед. назад,Il y a 2 semaines,SettingsPreview.java:1680
-This link goes to,Эта ссылка ведёт на,Ce lien mène vers,SettingsPreview.java:1706
-Following for 2 years,Отслеживает 2 года,Suivi depuis 2 ans,SettingsPreview.java:1720
-Reply,Ответить,Répondre,SettingsPreview.java:1734 SettingsPreview.java:1754
-Copy,Копировать,Copier,SettingsPreview.java:1734 SettingsPreview.java:1754
-Timeout,Таймаут,Exclure temporairement,SettingsPreview.java:1745
-Unban,Снять бан,Débannir,SettingsPreview.java:1746
+Pins,Закрепы,Épingles,SettingsHook.java:837
+Streamer and mod pins,Закрепы стримера и модераторов,Épingles du streameur et des modérateurs,SettingsHook.java:840
+Hide banners,Скрыть баннеры,Masquer les bannières,SettingsHook.java:842
+Hide,Скрыть,Masquer,SettingsHook.java:852 Strings.java:1216
+Show,Показать,Afficher,SettingsHook.java:861 Strings.java:1026 Strings.java:1216
+At launch instead of Live,При запуске вместо «В эфире»,"Au lancement au lieu de ""Live""",SettingsHook.java:869
+Bottom menu: hide,Нижнее меню: скрыть,Menu du bas : masquer,SettingsHook.java:871
+Following,Отслеживаемое,Suivis,SettingsHook.java:875 SettingsPreview.java:1456
+Live channel previews,Превью каналов в эфире,Aperçus des chaînes en live,SettingsHook.java:877
+As in Twitch,Как в Twitch,Comme sur Twitch,SettingsHook.java:878 Strings.java:1117 Strings.java:1174 Strings.java:1248
+Medium,Средние,Moyen,SettingsHook.java:878
+Large,Крупные,Grand,SettingsHook.java:878 Strings.java:1093
+Stream previews,Превью стримов,Aperçus des streams,SettingsHook.java:890
+Home header: hide,Шапка главной: скрыть,En-tête de l'accueil : masquer,SettingsHook.java:892
+Live,В эфире,Live,SettingsHook.java:895 SettingsPreview.java:1456 SettingsPreview.java:1477
+Proxy,Прокси,Proxy,SettingsHook.java:903
+A proxy helps when Twitch is slow or unreachable. It doesn't remove ads: the Ads section does.,"Прокси нужен, когда Twitch медленный или недоступен. Рекламу убирает не он, а блокировка из раздела «Реклама».","Un proxy aide lorsque Twitch est lent ou inaccessible. Il ne supprime pas les publicités : la section ""Publicités"" s'en charge.",SettingsHook.java:906
+Access,Доступ,Accès,SettingsHook.java:908
+"A file with all settings, favorites included","Файл со всеми настройками, включая избранное","Un fichier avec tous les paramètres, favoris inclus",SettingsHook.java:921
+Replaces the current mod settings,Заменит текущие настройки мода,Remplace les paramètres actuels du mod,SettingsHook.java:923
+Reset,Сброс,Réinitialiser,SettingsHook.java:926 Strings.java:352 Strings.java:451
+Favorite emotes and chat offsets stay,Избранные эмоуты и смещения чата останутся,Les émotes favorites et les décalages du chat sont conservés,SettingsHook.java:927
+own files: %d,своих файлов: %d,fichiers personnels : %d,SettingsHook.java:942
+Mod language,Язык мода,Langue du mod,SettingsHook.java:956
+Twitch stays in the system language,Twitch остаётся на языке системы,Twitch reste dans la langue du système,SettingsHook.java:956
+Translate on the website,Перевести на сайте,Traduire sur le site web,SettingsHook.java:965
+"A handy editor: search, string checks, accepted strings go into the next mod version","Удобный редактор: поиск, проверка строк, принятое попадёт в следующую версию мода","Un éditeur pratique : recherche, vérifications de chaînes, les chaînes acceptées sont intégrées à la prochaine version du mod",SettingsHook.java:966
+Translations in the mod,Переводы в моде,Traductions dans le mod,SettingsHook.java:970
+%d of %d strings,%d из %d строк,%d sur %d chaînes,SettingsHook.java:972
+Your files,Ваши файлы,Vos fichiers,SettingsHook.java:977
+Strings: %d · on this phone only,Строк: %d · только на этом телефоне,Chaînes : %d · sur ce téléphone uniquement,SettingsHook.java:979
+Share the file,Поделиться файлом,Partager le fichier,SettingsHook.java:983
+Files,Файлы,Fichiers,SettingsHook.java:995
+Download a file to translate,Скачать файл для перевода,Télécharger un fichier à traduire,SettingsHook.java:996
+"English, Russian and the translation side by side, for Google Sheets or Excel","Английский, русский и перевод рядом, для Google Таблиц или Excel","Anglais, russe et traduction côte à côte, pour Google Sheets ou Excel",SettingsHook.java:997
+Load your translation,Загрузить свой перевод,Charger votre traduction,SettingsHook.java:1000
+"A new language or fixes to one, works right away","Новый язык или правки к старому, работает сразу","Une nouvelle langue ou des corrections pour l'une d'elles, fonctionne immédiatement",SettingsHook.java:1001
+"A loaded file works on this phone only and wins over the mod's translation. To get the translation into the mod, upload the file on the website (“Translate on the website” above) or share it with the developer: the button is at your language under “Your files”.","Загруженный файл работает только на этом телефоне и сильнее перевода в моде. Чтобы перевод попал в мод, загрузите файл на сайте («Перевести на сайте» выше) или поделитесь им с разработчиком: кнопка у вашего языка в «Ваших файлах».","Un fichier chargé fonctionne uniquement sur ce téléphone et prime sur la traduction du mod. Pour intégrer la traduction au mod, importez le fichier sur le site web (""Traduire sur le site web"" ci-dessus) ou partagez-le avec le développeur : le bouton se trouve sous votre langue dans ""Vos fichiers"".",SettingsHook.java:1003
+Logs for reports,Логи для отчётов,Journaux pour les rapports,SettingsHook.java:1013
+Checks,Проверки,Vérifications,SettingsHook.java:1036
+Firebase registration status,Статус регистрации в Firebase,État de l'inscription Firebase,SettingsHook.java:1037
+Check that crash reports get sent,Проверить отправку отчётов о падениях,Vérifier que les rapports de plantage sont envoyés,SettingsHook.java:1038
+For the brave,Для смелых,Pour les plus audacieux,SettingsHook.java:1039
+An ad,Реклама,Une publicité,SettingsPreview.java:419
+Mature content,Контент для взрослых,Contenu pour adultes,SettingsPreview.java:433
+Start watching,Начать просмотр,Commencer à regarder,SettingsPreview.java:435
+Ad 0:15,Реклама 0:15,Publicité 0:15,SettingsPreview.java:456
+Chat mode: column,Режим чата: колонка,Mode du chat : colonne,SettingsPreview.java:479
+Classic split,Классический разделенный,Séparation classique,SettingsPreview.java:488
+Subscribe,Подписаться,S'abonner,SettingsPreview.java:505 SettingsPreview.java:1226 Toggles.java:445
+Follow,Отслеживать,Suivre,SettingsPreview.java:522 Toggles.java:440
+viewer: hi chat,"зритель: привет, чат",spectateur : salut le chat,SettingsPreview.java:526
+Pinned message,Закреплённое сообщение,Message épinglé,SettingsPreview.java:531
+12.4K,"12,4 тыс.",12.4K,SettingsPreview.java:564
+(9.8K),"(9,8 тыс.)",(9.8K),SettingsPreview.java:566
+Quality   1080p60,Качество  1080p60,Qualité   1080p60,SettingsPreview.java:624
+"Video  6,200 kbps",Видео  6 200 кбит/с,Video  6 200 kbit/s,SettingsPreview.java:624
+Latency  1.4 s,"Задержка  1,4 с","Latence  1,4 s",SettingsPreview.java:625
+Buffer  2.1 s,"Буфер  2,1 с","Tampon  2,1 s",SettingsPreview.java:625
+Next video,Следующее видео,Vidéo suivante,SettingsPreview.java:650
+what a play,вот это момент,quel beau jeu !,SettingsPreview.java:655 SettingsPreview.java:719 SettingsPreview.java:1164 SettingsPreview.java:1749
+lmao,ахаха,mdr,SettingsPreview.java:655 SettingsPreview.java:1164
+hey everyone,всем привет,salut tout le monde,SettingsPreview.java:655 SettingsPreview.java:718 SettingsPreview.java:1164 SettingsPreview.java:1189 SettingsPreview.java:1209 SettingsPreview.java:1244 SettingsPreview.java:1277 SettingsPreview.java:1749
+so clean,красиво,trop propre,SettingsPreview.java:656 SettingsPreview.java:1165
+he did it,он это сделал,il l'a fait,SettingsPreview.java:656 SettingsPreview.java:1165
+Poll,Опрос,Sondage,SettingsPreview.java:686
+"Yes, of course","Да, конечно","Oui, bien sûr",SettingsPreview.java:687
+Better not,Лучше не надо,Mieux vaut éviter,SettingsPreview.java:688
+giveaway today,сегодня розыгрыш,concours aujourd'hui,SettingsPreview.java:742
+follow the channel!,подпишись на канал!,suivez la chaîne !,SettingsPreview.java:749
+Announcement,Объявление,Annonce,SettingsPreview.java:754
+Stream at 8 pm,Стрим в 20:00,Stream à 20h,SettingsPreview.java:754
+Subscribed for 3 months,Подписка на 3 месяца,Abonné depuis 3 mois,SettingsPreview.java:757
+Redeemed: pick a game,Награда: выбрать игру,Échangé : choisissez un jeu,SettingsPreview.java:760
+Watch streak: 12,Серия просмотров: 12,Série de visionnage : 12,SettingsPreview.java:763
+Welcome to the chat!,Добро пожаловать в чат!,Bienvenue dans le chat !,SettingsPreview.java:766
+check out my site,заходи на мой сайт,allez voir mon site,SettingsPreview.java:770
+that viewer again,опять этот зритель,encore ce spectateur,SettingsPreview.java:774
+a rule-breaking message,сообщение нарушителя,un message enfreignant les règles,SettingsPreview.java:778
+zefir was timed out for 10 min,zefir получил таймаут на 10 мин,zefir a été exclu pendant 10 minutes,SettingsPreview.java:780
+Chat was cleared by a moderator,Чат очищен модератором,Le chat a été effacé par un modérateur,SettingsPreview.java:788
+chat's alive today,чат сегодня живой,Le chat est en forme aujourd'hui,SettingsPreview.java:813 SettingsPreview.java:836
+More messages below.,Другие сообщения - ниже.,Plus de messages ci-dessous.,SettingsPreview.java:815
+hidden,скрыто,masquer,SettingsPreview.java:849 SettingsPreview.java:1294
+mira,Кайто,mira,SettingsPreview.java:892
+waves to everyone,машет всем рукой,fait coucou à tout le monde,SettingsPreview.java:958
+first time here,я тут впервые,première fois ici,SettingsPreview.java:973
+ you there?, ты тут?, t'es là ?,SettingsPreview.java:994
+Replying to @mira: hey everyone,В ответ @mira: всем привет,En réponse à @mira : salut tout le monde,SettingsPreview.java:1002
+hey to you too,и тебе привет,salut à toi aussi,SettingsPreview.java:1004
+[GIF] dancing cat,[GIF] танцующий кот,[GIF] chat qui danse,SettingsPreview.java:1033
+🛡 AutoMod held a message,🛡 AutoMod задержал сообщение,🛡️ AutoMod a retenu un message,SettingsPreview.java:1041 Strings.java:217
+zefir: a borderline message,zefir: спорное сообщение,zefir : un message limite,SettingsPreview.java:1042
+nice,отлично,sympa,SettingsPreview.java:1055
+(link hidden),(ссылка скрыта),(lien masqué),SettingsPreview.java:1120
+a message a mod deleted,сообщение модератор удалил,un message supprimé par un modérateur,SettingsPreview.java:1138
+<message deleted>,<сообщение удалено>,<message supprimé>,SettingsPreview.java:1140 SettingsPreview.java:1143
+Chat Replay,Повтор чата,Rediffusion du chat,SettingsPreview.java:1186 SettingsPreview.java:1205
+gg,гг,,SettingsPreview.java:1189
+what game is this?,что за игра?,,SettingsPreview.java:1189
+Gift,Подарок,Offrir,SettingsPreview.java:1229
+"Level 2, 45% to go",Уровень 2 - осталось 45%,"Niveau 2, encore 45% à faire",SettingsPreview.java:1252
+Prediction,Прогноз,Prédiction,SettingsPreview.java:1254
+Will the streamer win?,Победит ли стример?,Le streameur va-t-il gagner ?,SettingsPreview.java:1255
+Raid,Рейд,Raid,SettingsPreview.java:1257
+mira and 120 viewers,mira и ещё 120 зрителей,mira et 120 spectateurs,SettingsPreview.java:1257
+Check out zefir,Загляните к zefir,Allez voir zefir,SettingsPreview.java:1260
+A reward for watching,Награда за просмотр,Une récompense pour avoir regardé,SettingsPreview.java:1262
+Gift a sub,Подарите подписку,Offrir un sub,SettingsPreview.java:1264
+30% off,Скидка 30%,30% de réduction,SettingsPreview.java:1264
+Shared Chat,Общий чат,Chat partagé,SettingsPreview.java:1266
+With mira,С каналом mira,Avec mira,SettingsPreview.java:1266
+Pinned,Закреплено,Épinglé,SettingsPreview.java:1285
+Discord in the channel info,Дискорд в описании канала,Discord dans les informations de la chaîne,SettingsPreview.java:1286
+30 s,30 с,30 s,SettingsPreview.java:1289
+"no hints, it takes "":cat""","подсказок нет, нужно «:cat»","Aucun indice, il faut taper "":cat""",SettingsPreview.java:1327
+4.9K,"4,9 тыс.",4.9K,SettingsPreview.java:1350 SettingsPreview.java:1359
+like this ,вот так ,comme ça ,SettingsPreview.java:1383
+like this catJAM,вот так catJAM,comme ça catJAM,SettingsPreview.java:1387
+Send a message,Отправить сообщение,Envoyer un message,SettingsPreview.java:1394 SettingsPreview.java:1400
+hello,привет,bonjour,SettingsPreview.java:1413
+Message...,Сообщение...,Message...,SettingsPreview.java:1417 SettingsPreview.java:1429
+Clips,Клипы,Clips,SettingsPreview.java:1456
+Sponsored,Реклама,Sponsorisé,SettingsPreview.java:1472
+Try without ads,Попробуйте без рекламы,Essayer sans publicité,SettingsPreview.java:1480
+Categories,Категории,Catégories,SettingsPreview.java:1506 Toggles.java:567
+Continue watching,Продолжить просмотр,Regarder la suite,SettingsPreview.java:1509 Toggles.java:569
+Favorites · 3,Избранное · 3,Favoris · 3,SettingsPreview.java:1521
+RTE friends · 2,Друзья RTE · 2,Amis RTE · 2,SettingsPreview.java:1531
+watching mira · Just Chatting,смотрит mira · Just Chatting,regarde mira · Discussions,SettingsPreview.java:1534
+Stream title,Название трансляции,Titre du stream,SettingsPreview.java:1564 SettingsPreview.java:1576 SettingsPreview.java:1590
+Offline,Не в эфире,Hors ligne,SettingsPreview.java:1615
+Frequently used,Часто используемые,Souvent utilisées,SettingsPreview.java:1668
+All categories  ▾,Все категории  ▾,Toutes les catégories ▾,SettingsPreview.java:1697
+"October 12, 2026, 7:05 PM","12 октября 2026, 19:05",12 octobre 2026 à 19h05,SettingsPreview.java:1701
+1 week ago,1 нед. назад,Il y a 1 semaine,SettingsPreview.java:1702
+"Playthrough, part 3","Прохождение, часть 3",Partie 3 de l'aventure,SettingsPreview.java:1703
+Just chatting,Общение со зрителями,Discussions,SettingsPreview.java:1704
+"October 5, 2026, 8:30 PM","5 октября 2026, 20:30",5 octobre 2026 à 20h30,SettingsPreview.java:1705
+2 weeks ago,2 нед. назад,Il y a 2 semaines,SettingsPreview.java:1705
+This link goes to,Эта ссылка ведёт на,Ce lien mène vers,SettingsPreview.java:1731
+Following for 2 years,Отслеживает 2 года,Suivi depuis 2 ans,SettingsPreview.java:1745
+Reply,Ответить,Répondre,SettingsPreview.java:1759 SettingsPreview.java:1779
+Copy,Копировать,Copier,SettingsPreview.java:1759 SettingsPreview.java:1779
+Timeout,Таймаут,Exclure temporairement,SettingsPreview.java:1770
+Unban,Снять бан,Débannir,SettingsPreview.java:1771
 BOOSTY FUNDRAISER,СБОР НА BOOSTY,COLLECTE SUR BOOSTY,SettingsScreen.java:708 SettingsScreen.java:769
 Collapse,Свернуть,Réduire,SettingsScreen.java:714
 Support,Поддержать,Soutenir,SettingsScreen.java:731
@@ -981,266 +985,284 @@ The buttons at the bottom of the player,Кнопки внизу плеера,Les
 The full screen button in the player's corner,Кнопка полного экрана в углу плеера,Le bouton plein écran dans le coin du lecteur,Toggles.java:418
 The full screen swipe on the video and Back still work without it,Свайп по видео на весь экран и выход «Назад» работают и без неё,Le balayage vers le plein écran sur la vidéo et Retour fonctionnent toujours sans lui,Toggles.java:420
 The mute button at the bottom of the player,Кнопка выключения звука внизу плеера,Le bouton de sourdine en bas du lecteur,Toggles.java:424
-Follow and Subscribe,Отслеживать и Подписаться,Suivre et S'abonner,Toggles.java:428
-Unfollow,Перестать отслеживать,Ne plus suivre,Toggles.java:430
-In the player and on the channel page,В плеере и на странице канала,Dans le lecteur et sur la page de la chaîne,Toggles.java:431
-The channel page's button while you don't follow it,"Кнопка на странице канала, пока вы его не отслеживаете",Le bouton de la page de la chaîne tant que vous ne la suivez pas,Toggles.java:436
-Under the channel's description: Follow and Subscribe,Под описанием канала кнопки «Отслеживать» и «Подписаться»,Sous la description de la chaîne : Suivre et S'abonner,Toggles.java:437
-"No Follow, Subscribe takes the full width","Без «Отслеживать», «Подписаться» на всю ширину","Pas de Suivre, S'abonner prend toute la largeur",Toggles.java:437
-The channel page's button,Кнопка на странице канала,Le bouton de la page de la chaîne,Toggles.java:441
-Under the channel's description: Subscribe,Под описанием канала кнопка «Подписаться»,Sous la description de la chaîne : S'abonner,Toggles.java:442
-No button,Кнопки нет,Pas de bouton,Toggles.java:442 Toggles.java:447
-Gift A Sub,Сделать подарок,Offrir un abonnement,Toggles.java:445
-The channel page's button once you're subscribed,"Кнопка на странице канала, если вы уже подписаны",Le bouton de la page de la chaîne une fois abonné,Toggles.java:446
-Under the channel's description: Gift A Sub,Под описанием канала кнопка «Сделать подарок»,Sous la description de la chaîne : Offrir un abonnement,Toggles.java:447
-Stream recaps,Записи эфиров,Récaps de streams,Toggles.java:451
-The latest stream recaps shelf on the channel's Home tab,Полка последних записей трансляций на главной вкладке канала,L'étagère des derniers récaps de streams dans l'onglet Accueil de la chaîne,Toggles.java:452
-Under the channel's tabs: cards of past stream recaps,Под вкладками канала - карточки записей прошлых эфиров,Sous les onglets de la chaîne : des cartes de récaps des anciens streams,Toggles.java:453
-"No shelf, the rest moves up","Полки нет, ниже идут остальные","Pas d'étagère, le reste remonte",Toggles.java:453
-Featured clips,Избранные клипы,Clips à la une,Toggles.java:456
-The featured clips shelf on the channel's Home tab,Полка избранных клипов на главной вкладке канала,L'étagère des clips à la une dans l'onglet Accueil de la chaîne,Toggles.java:457
-A Featured Clips card in the channel's colour with clips next to it,Карточка «Избранные клипы» в цвете канала и клипы рядом,Une carte Clips à la une aux couleurs de la chaîne avec des clips à côté,Toggles.java:458
-No shelf,Полки нет,Pas d'étagère,Toggles.java:458
-Clips you made on your own channel stay,"Клипы, сделанные вами на своём канале, остаются",Les clips que vous avez faits sur votre propre chaîne restent,Toggles.java:460
-Streams by category,Эфиры по категориям,Streams par catégorie,Toggles.java:462
-The grid of categories the channel streams in,"Сетка категорий, в которых стримит канал",La grille des catégories dans lesquelles la chaîne streame,Toggles.java:463
-The channel's category covers in a grid,Обложки категорий канала сеткой,Les jaquettes des catégories de la chaîne en grille,Toggles.java:464
-No grid,Сетки нет,Pas de grille,Toggles.java:464
-Suggested streamers,Советует стримеров,Streameurs suggérés,Toggles.java:467
-The list of streamers the channel suggests,"Список стримеров, которых советует канал",La liste des streameurs que la chaîne suggère,Toggles.java:468
-Streamer avatars with viewers or Offline,Аватарки стримеров со зрителями или «Не в сети»,Des avatars de streameurs avec le nombre de spectateurs ou Hors ligne,Toggles.java:469
-No list,Списка нет,Pas de liste,Toggles.java:469
-"A team's channel shows its team's other channels there, hidden as well","У каналов из команды на этом месте другие каналы команды, они тоже скрываются","La chaîne d'une équipe y montre les autres chaînes de son équipe, masquées aussi",Toggles.java:471
-Mature content warning,Предупреждение 18+,Avertissement de contenu pour adultes,Toggles.java:475
-The stream starts right away. Doesn't skip age verification,Стрим запускается сразу. Проверку возраста не обходит,Le stream démarre immédiatement. Ne contourne pas la vérification d'âge,Toggles.java:476
-Bits button,Кнопка Bits,"Bouton ""Bits""",Toggles.java:479
-Chat settings button (⋮),Кнопка настроек чата (⋮),Bouton des paramètres du chat (⋮),Toggles.java:481
-Channel extensions,Расширения канала,Extensions de la chaîne,Toggles.java:483
-The header icon and the row under it,Значок в шапке и строка под ней,L'icône d'en-tête et la ligne située en dessous,Toggles.java:484
-Leaderboards,Таблицы лидеров,Classements,Toggles.java:487
-The header icon and the top supporters row,Значок в шапке и строка с топом,L'icône d'en-tête et la ligne des principaux soutiens,Toggles.java:488
-"""Chat Replay""",«Повтор чата»,"""Rediffusion du chat""",Toggles.java:492
-The title bar above a video's chat,Полоса с заголовком над чатом видео,La barre de titre au-dessus du chat d'une vidéo,Toggles.java:493
-Activity tab,Вкладка «Активность»,"Onglet ""Activité""",Toggles.java:498
-Browse tab,Вкладка «Просмотр»,"Onglet ""Parcourir""",Toggles.java:500
-Create (+) button,Кнопка «Создать» (+),"Bouton ""Créer"" (+)",Toggles.java:502
-Compact list,Компактный список,Liste compacte,Toggles.java:504
-"Preview on the left, nick and title on the right. Categories stay","Превью слева, ник и название справа. Категории остаются","Aperçu à gauche, pseudo et titre à droite. Les catégories restent",Toggles.java:505
-Stream uptime,Сколько идёт эфир,Durée du stream,Toggles.java:508
-Time since the stream started in the preview's corner,Время с начала трансляции в углу превью,Le temps écoulé depuis le début du stream dans le coin de l'aperçu,Toggles.java:509
-A preview shows only the viewer count,На превью только число зрителей,Un aperçu n'affiche que le nombre de spectateurs,Toggles.java:511
-"The preview's top right corner shows ""2:15"", how long the stream has been on","В правом верхнем углу превью - «2:15», сколько уже идёт эфир","Le coin supérieur droit de l'aperçu affiche ""2:15"", depuis combien de temps le stream est en cours",Toggles.java:512
-"On the previews of Home, Following, Live and other React Native screens; Twitch's native screens aren't covered. The start time is an anonymous Twitch request once per 10 minutes per channel","На превью главной, «Отслеживаемого», «В эфире» и других экранов на React Native; нативные экраны Twitch не покрыты. Время начала - анонимный запрос к Twitch раз в 10 минут на канал","Sur les aperçus d'Accueil, Suivis, Live et des autres écrans React Native ; les écrans natifs de Twitch ne sont pas concernés. L'heure de début vient d'une requête Twitch anonyme toutes les 10 minutes par chaîne",Toggles.java:515
-"""From channels you follow"" shelf",Полка «From channels you follow»,"Étagère 'Des chaînes que vous suivez""",Toggles.java:518
-"""Clips for you"" shelf",Полка «Clips for you»,"Étagère ""Clips pour vous""",Toggles.java:520
-"Which friends are watching, under the Live section","Кто из друзей смотрит, под разделом «В эфире»","Quels amis regardent, sous la section ""Live""",Toggles.java:523
-"The first 5 online, the rest behind a button. A tap opens the channel the friend watches. Friends are added on ext.rte.net.ru/friends.","Первые 5 онлайн, остальные по кнопке. Тап открывает канал, который смотрит друг. Друзей добавляют на ext.rte.net.ru/friends.","Les 5 premiers en ligne, les autres sont accessibles via un bouton. Un appui ouvre la chaîne que l'ami regarde. Les amis sont ajoutés sur ext.rte.net.ru/friends.",Toggles.java:526
-Favorite channels,Избранные каналы,Chaînes favorites,Toggles.java:530
-A section of their own above Live channels,Свой раздел над «Каналами в эфире»,Une section à part au-dessus des chaînes en live,Toggles.java:531
-"To add or remove a channel, long-press it in Following, or use ⋮ on its channel page. Channels that are offline show as a faded circle, live ones you don't follow as a circle with a red ring; a tap opens the channel.","Добавить или убрать канал - долгое нажатие на него в «Отслеживаемом» или ⋮ на странице канала. Кто не в эфире, показан бледным кружком, кто в эфире без подписки - кружком с красной рамкой; нажатие открывает канал.","Pour ajouter ou retirer une chaîne, faites un appui long dessus dans Suivis, ou utilisez ⋮ sur sa page de chaîne. Les chaînes hors ligne apparaissent comme un cercle pâle, celles en live que vous ne suivez pas comme un cercle avec un anneau rouge ; un appui ouvre la chaîne.",Toggles.java:533
-Watch streak tag,Значок серии просмотров,Badge de série de visionnage,Toggles.java:538
-On channels where the streak isn't extended yet,"На каналах, где серия ещё не продлена",Sur les chaînes où la série n'est pas encore prolongée,Toggles.java:539
-Categories A to Z,Категории по алфавиту,Catégories de A à Z,Toggles.java:543
-Followed categories in Following,Отслеживаемые категории в «Отслеживаемом»,"Suivis dans ""Suivis""",Toggles.java:544
-"In follow order, oldest first","В порядке подписки, сначала самые старые","Dans l'ordre de suivis, du plus ancien au plus récent",Toggles.java:545
-"By name, from A to Z","По названию, от А до Я","Par nom, de A à Z",Toggles.java:545
-Own sort for the left column,Своя сортировка у левой колонки,Tri à part pour la colonne de gauche,Toggles.java:549
-Tablet: the followed channels on the left and the list on the right sort separately,Планшет: отслеживаемые каналы слева и список справа сортируются отдельно,Tablette : les chaînes suivies à gauche et la liste à droite se trient séparément,Toggles.java:551
-Changing the sort on the left changes the list on the right too,Смена сортировки слева меняет и список справа,Changer le tri à gauche change aussi la liste à droite,Toggles.java:553
-"Say, Recommended on the left and By viewers on the right","Слева, например, «Рекомендовано», справа «По зрителям»","Par exemple, Recommandées à gauche et Par spectateurs à droite",Toggles.java:553
-Offline channels,Каналы не в эфире,Chaînes hors ligne,Toggles.java:561
-Stories placeholder,Табличка об историях,Emplacement réservé aux stories,Toggles.java:564
-While channels have no stories. Stories themselves stay,Пока у каналов нет историй. Сами истории остаются,Tant que les chaînes n'ont pas de stories. Les stories elles-mêmes restent,Toggles.java:565
-"""Stories from creators you follow will appear here!"" above the tabs","«Здесь будут появляться истории авторов, которых вы отслеживаете!» над вкладками","""Les stories des créateurs que vous suivez apparaîtront ici !"" au-dessus des onglets",Toggles.java:567
-"No card, stories take its place once there are any","Таблички нет, истории появятся на её месте, как только будут","Aucune carte, les stories prennent sa place dès qu'il y en a",Toggles.java:568
-Stories,Истории,Stories,Toggles.java:573
-The stories shelf above the tabs and their avatars in the tab row,Полка историй над вкладками и их аватарки в строке вкладок,L'étagère des stories au-dessus des onglets et leurs avatars dans la rangée d'onglets,Toggles.java:574
-Pulling the feed down opens the stories shelf,Оттяжка ленты вниз раскрывает полку историй,Tirer le feed vers le bas ouvre l'étagère des stories,Toggles.java:576
-"No stories, a pull refreshes the feed right away","Историй нет, оттяжка сразу обновляет ленту",Aucune story : tirer vers le bas actualise immédiatement le feed,Toggles.java:576
-Home tabs,Вкладки главной,Onglets de l'accueil,Toggles.java:580
-The Following · Live · Clips row above the feed,Строка «Отслеживаемое · В эфире · Клипы» над лентой,"La rangée ""Suivis · Live · Clips"" au-dessus du feed",Toggles.java:581
-Tabs above the feed,Вкладки над лентой,Les onglets au-dessus du feed,Toggles.java:582
-"Feeds switch with a sideways swipe, starting from the tab set by Open Following","Ленты листаются свайпом вбок, начинается с вкладки из настройки «Открывать «Отслеживаемое»»","Les feeds changent par balayage latéral, à partir de l'onglet défini par Ouvrir ""Suivis""",Toggles.java:582
-Turbo offers and discounts,Предложения Turbo и скидки,Offres et réductions Turbo,Toggles.java:586
-Turbo ads and subscription discount banners,Реклама Turbo и баннеры скидок на подписку,Publicités Turbo et bannières de réduction sur les abonnements,Toggles.java:587
-Gift subs banner,Баннер подарочных подписок,Bannière d'abonnements offerts,Toggles.java:591
-"""Tap Follow!"" under the player and on the channel page",«Tap Follow!» под плеером и на странице канала,"""Tap Follow!"" sous le lecteur et sur la page de la chaîne",Toggles.java:592
-Under the Follow button a banner: follow the channel to get a gifted sub,Под кнопкой «Отслеживать» баннер: подпишитесь на канал и получите подарочную подписку,"Sous le bouton Suivre, une bannière : suivez la chaîne pour recevoir un abonnement offert",Toggles.java:594
-"No banner, the Follow button stays","Баннера нет, кнопка «Отслеживать» на месте","Pas de bannière, le bouton Suivre reste",Toggles.java:595
-"The ""Chat"" title",Заголовок «Чат»,"Le titre ""Chat""",Toggles.java:601
-Subscribe and Gift,Подписаться и Подарок,S'abonner et Offrir,Toggles.java:604
-Only Gift,Только Подарок,Offrir uniquement,Toggles.java:608
-Badges on one line,Значки на одной линии,Badges sur une seule ligne,Toggles.java:613
-For new messages,Для новых сообщений,Pour les nouveaux messages,Toggles.java:614
-Badges of different heights sit at different levels,Значки разной высоты стоят вразнобой,Les badges de différentes hauteurs sont placés à différents niveaux,Toggles.java:615
-"All badges end on one line, the name stays centred","Низ у всех значков на одной линии, ник по центру","Tous les badges sont alignés sur une seule ligne, le nom reste centré",Toggles.java:615
-Check for updates,Проверять обновления,Vérifier les mises à jour,Toggles.java:619
-"At launch. The mod asks before installing, and after Later it stays quiet for a day","При запуске. Перед установкой мод спросит, а после «Позже» не будет напоминать сутки","Au lancement. Le mod demande confirmation avant l’installation et, si vous choisissez ""Plus tard"" , il ne vous sollicite plus pendant un jour",Toggles.java:620
-Input in fullscreen,Поле ввода в полном экране,Saisie en plein écran,Toggles.java:623
-Input in the chat over the video,Поле ввода в чате поверх видео,Saisie dans le chat par-dessus la vidéo,Toggles.java:626
-Chat mode popup,Подсказка о режиме чата,Pop-up mode du chat,Toggles.java:629
-"""Chat mode: column"" when switching in fullscreen",«Режим чата: колонка» при смене режима в полном экране,"""Mode du chat : colonne"" lors du passage en plein écran",Toggles.java:630
-And Twitch's one-time Chat Overlay window about the new chat in full screen: with it Twitch turns the chat overlay on by itself,И разовое окно Twitch «Chat Overlay» о новом виде чата в полном экране: с ним Twitch сам включает оверлей чата,"Et la fenêtre unique de Twitch Chat Overlay sur le nouveau chat en plein écran : avec elle, Twitch active tout seul le chat en superposition",Toggles.java:633
-Points in portrait,Баллы в портрете,Points en mode portrait,Toggles.java:638
-The channel points button by the input,Кнопка баллов канала у поля ввода,Le bouton des points de chaîne à côté du champ de saisie,Toggles.java:639 Toggles.java:643
-Points in fullscreen,Баллы в полном экране,Points en plein écran,Toggles.java:642
-Points balance in fullscreen,Баланс баллов в полном экране,Solde de points en plein écran,Toggles.java:647
-The number next to the points icon,Число рядом со значком баллов,Le nombre à côté de l'icône de points,Toggles.java:648
-Balance under the icon,Баланс под значком,Solde sous l'icône,Toggles.java:652
-Leaves the input more room,Поле ввода станет шире,Laisse plus de place au champ de saisie,Toggles.java:653
-Emote button only while typing,Смайлик только при наборе,Bouton d'émotes uniquement pendant la saisie,Toggles.java:658
-The button shows while you write: the keyboard is up or the field has text. The input gets its room,"Кнопка появляется, когда вы пишете: открыта клавиатура или в поле есть текст. Поле ввода получает её место",Le bouton s'affiche pendant la saisie : le clavier est ouvert ou le champ contient du texte. Le champ de saisie garde sa place,Toggles.java:659
-In portrait and in the side chat; in the side chat together with the Input above the keyboard fix. Before 0.5.21 it worked only in the side chat,В портрете и в боковом чате; в боковом - вместе с исправлением «Поле ввода над клавиатурой». До 0.5.21 работало только в боковом чате,"En portrait et dans le chat latéral ; dans le chat latéral avec la correction Champ de saisie au-dessus du clavier. Avant la 0.5.21, cela ne marchait que dans le chat latéral",Toggles.java:661
-Input above the keyboard,Поле ввода над клавиатурой,Champ de saisie au-dessus du clavier,Toggles.java:665
-"While typing in fullscreen, and wider than usual","На время набора в полном экране, и шире обычного","Pendant la saisie en plein écran, et plus large que d’habitude",Toggles.java:666
-No blinking cursor,Без мигающего курсора,Pas de curseur clignotant,Toggles.java:671
-After the keyboard closes. Android 11+,После закрытия клавиатуры. Android 11+,Après la fermeture du clavier. Android 11 et versions ultérieures,Toggles.java:672
-Badges right after launch,Значки сразу после запуска,Badges dès le lancement,Toggles.java:677
-"VIP, moderator, broadcaster, Prime","VIP, модератор, стример, Prime","VIP, modérateur, diffuseur, Prime",Toggles.java:678
-"After a cold start chat has no global badges, only sub ones","После холодного старта в чате нет общих значков, только сабовые","Après un démarrage à froid, le chat n'a pas de badges globaux, seulement des badges de sub",Toggles.java:680
-Badges are there from the first message,Значки на месте с первого сообщения,Les badges sont présents dès le premier message,Toggles.java:681
-Pause under the layout buttons,Пауза под кнопками макета,Pause sous les boutons de mise en page,Toggles.java:688
-Streams with a vertical format,Стримы с вертикальным форматом,Streams avec un format vertical,Toggles.java:689
-Twitch emotes in VOD chat,Эмоуты Twitch в чате VOD,Émotes Twitch dans le chat des rediffusions,Toggles.java:694
-An emote after Cyrillic text or an emoji stayed a word,Эмоут после русского текста или эмодзи оставался словом,Une émote après du texte cyrillique ou un émoji restait un mot,Toggles.java:695
-"Kappa as a picture, as in the browser","""Привет Kappa"": Kappa as a word","Kappa sous forme d'image, comme dans le navigateur",Toggles.java:698
-"Twitch's server gives an emote's place in bytes, the app counts characters. The stock app has the bug too.","Сервер Twitch даёт место эмоута в байтах, а приложение считает символы. Ошибка есть и в Twitch без мода.","Le serveur de Twitch donne la place d'une émote en octets, l'application compte les caractères. L'application d'origine a aussi ce bug",Toggles.java:699
-Wide chat for polls,Широкий чат для опросов,Chat large pour les sondages,Toggles.java:704
-The side chat widens while a poll or prediction is open,"Боковой чат расширяется, пока открыт опрос или прогноз",Le chat latéral s'élargit lorsqu'un sondage ou une prédiction est ouvert,Toggles.java:705
-Chat over the video,Чат поверх видео,Chat par-dessus la vidéo,Toggles.java:709
-"The video takes the full width, the side chat lies on it as a see-through column","Видео на всю ширину, боковой чат лежит на нём полупрозрачной колонкой","La vidéo prend toute la largeur, le chat latéral se superpose par-dessus sous forme de colonne transparente",Toggles.java:710
-"The video is squeezed to the left, the chat column on black","Видео сжато слева, справа колонка чата на чёрном","La vidéo est compressée vers la gauche, la colonne du chat est sur fond noir",Toggles.java:712
-"The video fills the screen, the chat on top of it on the right","Видео на весь экран, чат справа поверх него","La vidéo remplit l'écran, le chat par-dessus sur la droite",Toggles.java:712
-"The Chat next to video mode. A tap on the strip between the video and the chat opens this switch and the opacity right in the player. While the player buttons show, they're above the chat. During picture-by-picture ads and in VODs it's the usual column.","Режим «Чат рядом». Нажатие на полоску между видео и чатом открывает этот переключатель и прозрачность прямо в плеере. Пока видны кнопки плеера, они поверх чата. Во время рекламы «картинка в картинке» и в записях - обычная колонка.","Le mode ""Chat à côté de la vidéo"". Un appui sur la bande située entre la vidéo et le chat ouvre ce commutateur et l'opacité directement dans le lecteur. Lorsque les boutons du lecteur s'affichent, ils sont au-dessus du chat. Pendant les publicités en mode image dans l'image et dans les rediffusions, il s'agit de la colonne habituelle.",Toggles.java:714
-Low latency with ad blocking,Низкая задержка без рекламы,Faible latence avec blocage des publicités,Toggles.java:722
-Turn it off if streams stop starting,"Выключите, если стримы перестали запускаться",Désactivez-le si les streams s'arrêtent de démarrer,Toggles.java:723
-With ad blocking the stream runs a few seconds late,С блокировкой рекламы стрим идёт на несколько секунд позже,"Avec le blocage des publicités, le stream a quelques secondes de retard",Toggles.java:725
-Latency is the same as without ad blocking,"Задержка такая же, как без блокировки",La latence est identique à celle sans blocage des publicités,Toggles.java:726
-"""Blocking ads"" label",Плашка «Реклама блокируется»,"Libellé 'Blocage des publicités""",Toggles.java:731
-A label on the video during an ad break,"Надпись на видео, пока идёт подмена",Un libellé sur la vidéo pendant une coupure publicitaire,Toggles.java:732
-Ad blocking log,Лог блокировки рекламы,Journal de blocage des publicités,Toggles.java:737
-"For freeze reports. A file in Downloads, no tokens","Для отчёта о фризах. Файл в Загрузках, без токенов","Pour les rapports de blocage. Un fichier dans Téléchargements, sans jetons",Toggles.java:738
-Bans and deletions log,Лог банов и удалений,Journal des bannissements et des suppressions,Toggles.java:742
-For reports of vanished messages. A file in Downloads,Для отчёта о пропавших сообщениях. Файл в Загрузках,Pour les rapports de messages disparus. Un fichier dans Téléchargements,Toggles.java:743
-UI stall log,Лог подвисаний,Journal des blocages de l'interface,Toggles.java:746
-For lag reports. A file in Downloads,Для отчёта о тормозах. Файл в Загрузках,Pour les rapports de ralentissement. Un fichier dans Téléchargements,Toggles.java:747
-Signing in on a modified app,Вход с изменённым приложением,Connexion sur une application modifiée,Toggles.java:751
-"Removes the ""This app version/OS is not currently supported"" error",Убирает ошибку «This app version/OS is not currently supported»,"Supprime l'erreur ""Cette version de l'application/ce système d’exploitation n'est actuellement pas pris en charge""",Toggles.java:752
-Twitch checks the app through Play Integrity and can refuse the login,Twitch проверяет приложение через Play Integrity и может отказать во входе,Twitch vérifie l'application via Play Integrity et peut refuser la connexion,Toggles.java:754
-The check is not sent,Проверка не отправляется,La vérification n'est pas envoyée,Toggles.java:755
-Banners and sponsored cards,Баннеры и спонсорские карточки,Bannières et cartes sponsorisées,Toggles.java:759
-Ads in the feed and sponsored channel skins,Реклама в ленте и спонсорское оформление каналов,Publicités dans le feed et habillages de chaîne sponsorisés,Toggles.java:760
-"Display ads, the headliner above Following, sponsored cards, channel skins and the ""Includes Paid Promotion"" label on the player.","Display-реклама, headliner над «Отслеживаемым», промо-карточки, скины каналов и плашка «Includes Paid Promotion» на плеере.","Afficher les publicités, la bannière principale au-dessus de ""Suivis"", les cartes sponsorisées, les habillages de chaîne et le libellé ""Contient une promotion rémunérée"".",Toggles.java:763
-Bots,Боты,Bots,Toggles.java:766
-"Nightbot, StreamElements and channel bots from BTTV","Nightbot, StreamElements и боты канала из BTTV","Nightbot, StreamElements et les bots de chaîne de BTTV",Toggles.java:767
-Share what I watch,"Сообщать, что смотрю",Partager ce que je regarde,Toggles.java:771
-RTE friends see your stream,Друзья RTE видят ваш стрим,Les amis RTE voient votre stream,Toggles.java:772
-Button on the viewer card,Кнопка в карточке зрителя,Bouton sur la carte de spectateur,Toggles.java:775
-Add an RTE friend from the chat,Добавить в друзья RTE из чата,Ajouter un ami RTE depuis le chat,Toggles.java:776
-Friends are added on the website only,В друзья добавляют только на сайте,Les amis sont ajoutés uniquement sur le site web,Toggles.java:778
-"The viewer card has an ""Add friend"" button and the request status",В карточке зрителя кнопка «Добавить в друзья» и статус заявки,"La carte de spectateur dispose d'un bouton ""Ajouter un ami"" et du statut de demande",Toggles.java:779
-"The button opens ext.rte.net.ru/friends, the request is confirmed there.","Кнопка открывает ext.rte.net.ru/friends, заявка подтверждается там.","Le bouton ouvre ext.rte.net.ru/friends, la demande y est confirmée.",Toggles.java:782
-Chat through a proxy,Чат через прокси,Chat via un proxy,Toggles.java:785
-If Twitch chat won't connect,Если чат Twitch не подключается,Si le chat Twitch ne se connecte pas,Toggles.java:786
-Chat connects to Twitch directly,Чат подключается напрямую к Twitch,Le chat se connecte directement à Twitch,Toggles.java:788
-"Chat goes through the ReYohoho proxy, and directly while it is down","Чат идёт через прокси ReYohoho, а если он недоступен - напрямую","Le chat passe par le proxy ReYohoho, et directement en cas de panne",Toggles.java:789
-Cookie dialog,Окно про cookie,Fenêtre de dialogue des cookies,Toggles.java:794
-"""Cookies and ad preferences"" at start",«Файлы cookie и предпочтения рекламы» при запуске,"""Cookies et préférences publicitaires"" au démarrage",Toggles.java:795
-"At start a dialog with Accept, Customize and Decline","При запуске окно с кнопками «Принять», «Настроить», «Отклонить»","Au démarrage, une fenêtre de dialogue avec les options ""Accepter"", 'Personnaliser"" et ""Refuser""",Toggles.java:797
-"No dialog, Twitch gets neither consent nor refusal","Окна нет, Twitch не получает ни согласия, ни отказа","Aucune fenêtre de dialogue, Twitch ne reçoit ni consentement ni refus",Toggles.java:798
-"A choice made earlier stays. Where Twitch shows it, the choice is also in its settings: ""Cookies and ad preferences"".","Выбор, сделанный раньше, остаётся. Где Twitch это показывает, выбор есть и в его настройках: «Файлы cookie и предпочтения рекламы».","Un choix effectué précédemment est conservé. Là où Twitch l'affiche, le choix se trouve également dans ses paramètres ""Cookies et préférences publicitaires"".",Toggles.java:801
-Trackers,Трекеры,Traqueurs,Toggles.java:805
-The app sends statistics to third-party services,Приложение отправляет статистику сторонним сервисам,L'application envoie des statistiques à des services tiers,Toggles.java:808
-These are blocked,Эти отправки заблокированы,Ceux-ci sont bloqués,Toggles.java:809
-A viewer's first message,Первое сообщение зрителя,Le premier message d'un spectateur,Toggles.java:814
-Marks someone writing on the channel for the first time,"Выделяет того, кто пишет на канале впервые",Marque les personnes qui écrivent sur la chaîne pour la première fois,Toggles.java:815
-Viewers' personal badges,Личные значки зрителей,Badges personnels des spectateurs,Toggles.java:828
-Images in the chat input,Картинки в поле ввода,Images dans le champ de saisie du chat,Toggles.java:832
-Emotes show before you send,Эмоуты видно ещё до отправки,Les émotes s'affichent avant l'envoi,Toggles.java:833
-"7TV, BTTV, FFZ and the Twitch emotes this account can send.","7TV, BTTV, FFZ и эмоуты Twitch, которые можно отправить с этого аккаунта.","7TV, BTTV, FFZ et les émotes Twitch que ce compte peut envoyer",Toggles.java:836
-Channel emotes only,Только эмоуты канала,Émotes de la chaîne uniquement,Toggles.java:841
-"No global 7TV, BTTV and FFZ: chat, suggestions and the panel show the channel's sets only","Без глобальных 7TV, BTTV и FFZ: в чате, подсказках и панели только наборы канала","Pas de 7TV, BTTV et FFZ globaux : le chat, les suggestions et le panneau affichent uniquement les ensembles de la chaîne",Toggles.java:842
-"A channel without its own 7TV, BTTV or FFZ emotes has no such sections in the panel. The panel updates on the next channel you open.","Канал без своих 7TV, BTTV или FFZ остаётся без этих разделов в панели. Панель обновится при следующем открытии канала.","Une chaîne qui ne possède pas ses propres émotes 7TV, BTTV ou FFZ ne comporte pas de telles sections dans le panneau. Le panneau se met à jour sur la prochaine chaîne que vous ouvrirez.",Toggles.java:844
-Giant emotes,Гигантские эмоуты,Émotes géantes,Toggles.java:849
-"An emote from an FFZ:GE reward, large",Эмоут за награду FFZ:GE крупным планом,"Une émote provenant d'une récompense FFZ:GE, en grand format",Toggles.java:850
-Favorite emotes,Избранные эмоуты,Émotes favorites,Toggles.java:854
-"Long press an emote in the panel, sub ones too","Долгое нажатие на эмоут в панели, сабовые тоже","Appuyez longuement sur une émote dans le panneau, y compris sur celles des abonnements",Toggles.java:855
-Separate favorites per channel,Своё избранное на каждом канале,Favoris séparés par chaîne,Toggles.java:858
-One list for all channels,Один список на все каналы,Une seule liste pour toutes les chaînes,Toggles.java:859
-Each channel has its own list,На каждом канале свой список,Chaque chaîne possède sa propre liste,Toggles.java:860
-Favorites first in suggestions,Избранные первыми в подсказках,Favoris en premier dans les suggestions,Toggles.java:863
-Count suggestions in Frequently Used,Учитывать подсказки в «Часто используемых»,"Inclure les suggestions dans ""Souvent utilisées""",Toggles.java:865
-Twitch emotes sent from a suggestion land there too,"Эмоуты Twitch, отправленные из подсказки, тоже попадут в этот раздел",Les émotes Twitch envoyées depuis une suggestion y apparaissent également,Toggles.java:866
-No sticky headers,Без закреплённых заголовков,Pas d'en-têtes fixes,Toggles.java:869
-A section title scrolls away with its emotes,Заголовок раздела уезжает вместе с эмоутами,Le titre d'une section défile avec ses émotes,Toggles.java:870
-Buttons with emotes open,Кнопки при открытых эмоутах,Boutons avec émotes ouverts,Toggles.java:874
-Send and the chat input work on the first tap,«Отправить» и поле ввода работают с первого нажатия,L'envoi et le champ de saisie du chat fonctionnent dès le premier appui,Toggles.java:875
-The first tap only closes the emote panel,Первое нажатие только закрывает панель эмоутов,Le premier appui ferme uniquement le panneau des émotes,Toggles.java:877
-"The message goes right away, the input opens the keyboard","Сообщение уходит сразу, поле ввода открывает клавиатуру","Le message s'envoie immédiatement, le champ de saisie ouvre le clavier",Toggles.java:878
-AutoMod in chat,AutoMod в чате,AutoMod dans le chat,Toggles.java:882
-"For moderators: held messages right in chat, with buttons","Для модераторов: задержанные сообщения прямо в чате, с кнопками","Pour les modérateurs : les messages mis en attente directement dans le chat, avec des boutons",Toggles.java:883
-Moderation from the message menu,Модерация из меню сообщения,Modération depuis le menu du message,Toggles.java:887
-"For moderators: delete, timeout, ban and unban on a long press","Для модераторов: удалить, таймаут, бан и разбан по долгому нажатию","Pour les modérateurs : suppression, exclusion temporaire, bannissement et débannissement par un appui long",Toggles.java:888
-As in reFrosty. Twitch decides what may be deleted or banned: a refusal shows the reason.,"Как в reFrosty. Что можно удалить или забанить, решает Twitch: при отказе будет подсказка с причиной.",Comme dans reFrosty. Twitch décide ce qui peut être supprimé ou banni : un refus indique la raison.,Toggles.java:891
-Keep scroll position in VODs,Не сбрасывать прокрутку в записях,Conserver la position de défilement dans les rediffusions,Toggles.java:895
-A VOD's chat stays put while you read higher up,"Чат записи не уезжает вниз, пока вы читаете выше",Le chat d'une rediffusion reste en place pendant que vous lisez plus haut,Toggles.java:896
-Each batch of messages takes a VOD's chat back down,Каждая пачка сообщений возвращает чат записи вниз,Chaque lot de messages ramène le chat d'une rediffusion vers le bas,Toggles.java:898
-Messages without batches,Сообщения без пачек,Messages sans lots,Toggles.java:904
-"Right away, one by one, as on the web","Сразу, по одному, как в веб-версии","Immédiatement, un par un, comme sur le web",Toggles.java:905
-New message count,Счётчик новых сообщений,Compteur de nouveaux messages,Toggles.java:910
-How many came in while you read higher up,"Сколько пришло, пока вы читаете выше",Combien sont arrivés pendant que vous lisiez plus haut,Toggles.java:911
-"Counts the channel's messages as they come over IRC, filtered ones included.","Считаются сообщения канала, пришедшие по IRC: скрытые фильтрами тоже.","Compte les messages de la chaîne à mesure qu'ils arrivent via IRC, y compris ceux filtrés.",Toggles.java:913
-Reward cooldowns,Кулдаун наград за баллы,Temps de recharge des récompenses,Toggles.java:917
-"A timer on the reward's icon, ❌ if it's out of stock","Таймер на иконке награды, ❌ если она закончилась","Un minuteur sur l'icône de la récompense, ❌ si elle est en rupture de stock",Toggles.java:918
-You only learn a reward is unavailable by tapping it,"Что награда недоступна, видно только после нажатия",Vous ne découvrez qu'une récompense est indisponible qu'en appuyant dessus,Toggles.java:920
-"You see it right away, before tapping","Видно сразу, ещё до нажатия","Vous le voyez immédiatement, avant même d'appuyer dessus",Toggles.java:921
-Deleted message background,Фон удалённых,Arrière-plan des messages supprimés,Toggles.java:927
-"The whole row is tinted, name included, as on the web","Строка закрашивается целиком, вместе с ником, как в браузере","Toute la ligne est teintée, nom compris, comme sur le web",Toggles.java:928
-Chat in step with the stream,Чат вровень со стримом,Chat synchronisé avec le stream,Toggles.java:933
-Messages wait for the video's delay,Сообщения ждут задержку видео,Les messages attendent le délai de la vidéo,Toggles.java:934
-Chat reacts to what the video hasn't shown yet,"Чат реагирует на то, чего на видео ещё не было",Le chat réagit à ce que la vidéo n'a pas encore montré,Toggles.java:936
-A message shows up when the video reaches the same moment,"Сообщение появляется, когда видео дошло до того же момента",Un message s'affiche lorsque la vidéo atteint le même moment,Toggles.java:937
-The delay comes from the player and adds to the channel's chat delay. Your own messages don't wait. Live only.,Задержка берётся у плеера и добавляется к задержке чата канала. Свои сообщения не ждут. Только трансляции.,Le délai provient du lecteur et s'ajoute au délai du chat de la chaîne. Vos propres messages n'attendent pas. En live uniquement.,Toggles.java:940
-Coloured /me,Цветные /me,/me en couleur,Toggles.java:944
-/me text in the nick's colour,Текст /me цветом ника,Texte /me dans la couleur du pseudo,Toggles.java:945
-A viewer's message history,История сообщений зрителя,Historique des messages d'un spectateur,Toggles.java:948
-On their card: what they wrote while the chat was open,"В его карточке: что он писал, пока чат открыт",Sur leur carte : ce qu'ils ont écrit pendant que le chat était ouvert,Toggles.java:949
-Reply threads,Ветка ответов,Fils de réponses,Toggles.java:953
-"A tap on ""Replying to ..."" above a message shows the whole thread",Нажатие на «В ответ ...» над сообщением показывает всю ветку,"Un appui sur ""En réponse à ..."" au-dessus d'un message affiche tout le fil",Toggles.java:954
-A tap on a reply opens its author's card,Нажатие на ответ открывает карточку автора,Un appui sur une réponse ouvre la carte de son auteur,Toggles.java:956
-"A tap on ""Replying to ..."" opens the first message and every reply to it",Нажатие на «В ответ ...» открывает первое сообщение и все ответы на него,"Un appui sur ""En réponse à ..."" ouvre le premier message et toutes ses réponses",Toggles.java:957
-"It opens Twitch's own thread, the same as a long press > Reply. In landscape a reply is a pill with the name inside the message: tap it. Doesn't work in the chat overlay","Открывается ветка самого Twitch, та же, что по долгому нажатию > «Ответить». В горизонтальном режиме ответ - плашка с ником внутри сообщения, нажимать на неё. В оверлее чата не работает","Cela ouvre le fil de Twitch lui-même, comme un appui long > Répondre. En paysage, une réponse est une pastille avec le pseudo dans le message : appuyez dessus. Ne marche pas dans le chat en overlay",Toggles.java:960
-More chat history,Больше истории чата,Plus d'historique du chat,Toggles.java:963
-"Messages from before you came in, from the Robotty service: in the chat and on a viewer card",Сообщения до вашего входа - из сервиса Robotty: в самом чате и в карточке зрителя,"Les messages d'avant votre arrivée, depuis le service Robotty : dans le chat et sur une carte de spectateur",Toggles.java:964
-"The chat starts with Twitch's short history, a card knows only what came while you were there","Чат начинается с короткой истории Twitch, карточка помнит только то, что пришло при вас","Le chat commence avec le court historique de Twitch, une carte ne connaît que ce qui est arrivé pendant votre présence",Toggles.java:966
-"The chat starts with the last 200 messages, a card has up to the channel's last 800","Чат начинается с последних 200 сообщений, в карточке - до 800 последних сообщений канала","Le chat commence avec les 200 derniers messages, une carte a jusqu'aux 800 derniers de la chaîne",Toggles.java:967
-"The channel's name goes to the third-party service recent-messages.robotty.de (through the RTE emote proxy when it's on) when you open a chat or a viewer card. If it doesn't answer within 4 seconds, Twitch's history stays","Имя канала уходит стороннему сервису recent-messages.robotty.de (через прокси эмоутов RTE, если он включён), когда вы открываете чат или карточку зрителя. Если сервис не ответил за 4 секунды, остаётся история Twitch","Le nom de la chaîne part vers le service tiers recent-messages.robotty.de (via le proxy d'émotes RTE quand il est activé) quand vous ouvrez un chat ou une carte de spectateur. S'il ne répond pas en 4 secondes, l'historique de Twitch reste",Toggles.java:970
-Alternating rows,Чередование строк,Lignes alternées,Toggles.java:973
-Every other row is darker,Строки через одну темнее,Une ligne sur deux est plus sombre,Toggles.java:974
-Chat off,Чат выключен,Chat désactivé,Toggles.java:977
-For slow phones: the chat isn't drawn until you ask for it,"Для слабых телефонов: чат не рисуется, пока не попросите",Pour les téléphones lents : le chat n'est pas affiché tant que vous ne le demandez pas,Toggles.java:978
-"The chat under the player and beside it in full screen, with emotes","Чат под плеером и сбоку в полном экране, со смайлами","Le chat sous le lecteur et à côté en plein écran, avec les émotes",Toggles.java:980
-"""Chat is off · Show"" in the chat's place, the video takes the full width in full screen","На месте чата «Чат выключен · Показать», в полном экране видео на всю ширину","""Chat désactivé · Afficher"" à la place du chat, la vidéo prend toute la largeur en plein écran",Toggles.java:981
-"To turn the chat on until the app restarts: Show in its place or the chat button on the player. The chat stays connected: points, mentions and mod logs work. Vertical view isn't covered","Включить чат до перезапуска приложения: «Показать» на его месте или кнопка чата на плеере. Чат при этом подключён: баллы, упоминания и мод-логи работают. Не действует в вертикальном виде","Pour activer le chat jusqu'au redémarrage de l'application : Afficher à sa place ou le bouton du chat sur le lecteur. Le chat reste connecté : les points, les mentions et les journaux de modération fonctionnent. La vue verticale n'est pas concernée",Toggles.java:984
-Pinch to resize,Размер щипком,Pincer pour redimensionner,Toggles.java:989
-"With two fingers right in the chat, like a photo","Двумя пальцами прямо в чате, как фото","Avec deux doigts directement dans le chat, comme une photo",Toggles.java:990
-"Text size is set only here, in the settings","Размер текста - только здесь, в настройках","La taille du texte se règle seulement ici, dans les paramètres",Toggles.java:992
-A pinch on the chat changes it on the fly,Щипок по чату меняет размер на лету,Un pincement sur le chat la change en direct,Toggles.java:993
-The same steps as Text size. Badges of messages already shown change when the message is drawn again,"Шаги те же, что у «Размера текста». Значки уже показанных сообщений меняются, когда сообщение перерисуется",Les mêmes paliers que Taille du texte. Les badges des messages déjà affichés changent quand le message est redessiné,Toggles.java:996
-Coloured mentions,Цветные упоминания,Mentions en couleur,Toggles.java:999
-"@nick in that viewer's colour and paint, once they have written","@ник цветом и раскраской этого зрителя, если он уже писал","@pseudo dans la couleur et la teinte de ce spectateur, une fois qu'il a écrit",Toggles.java:1000
-Replies to you,Ответы вам,Réponses à vos messages,Toggles.java:1004
-"Like a mention: highlight, vibration and sound, whichever is on","Как упоминание: подсветка, вибрация и звук, что из них включено","Comme une mention : mise en avant, vibration et son, selon ce qui est activé",Toggles.java:1005
-"""Copy and send""",«Копировать и отправить»,"""Copier et envoyer""",Toggles.java:1009
-A new item in a message's long-press menu,Новый пункт в меню по долгому нажатию на сообщение,Un nouvel élément dans le menu par appui long d'un message,Toggles.java:1010
-Links without a warning,Ссылки без предупреждения,Liens sans avertissement,Toggles.java:1014
-"Skip ""This link goes to...""",Не спрашивать «Эта ссылка ведёт на...»,"Passe ""Ce lien mène vers...""",Toggles.java:1015
-Keep chat on /clear,Не очищать чат,Conserver le chat lors d'un /clear,Toggles.java:1019
-Messages stay when a moderator clears chat,"Сообщения остаются, когда модератор чистит чат",Les messages restent lorsqu'un modérateur efface le chat,Toggles.java:1020
-Mod logs,Мод-логи,Journaux de modération,Toggles.java:1025
-"Bans, timeouts and deletions as chat lines. Moderators see who did it","Баны, таймауты и удаления строкой в чате. Модераторы видят, кто это сделал","Les bannissements, exclusions temporaires et suppressions affichés comme lignes de chat. Les modérateurs voient qui a effectué l'action",Toggles.java:1026
-Raid line,Строка о рейде,Ligne de raid,Toggles.java:1030
-When you arrive with a raid,Если вы пришли на канал вместе с рейдом,Lorsque vous arrivez avec un raid,Toggles.java:1031
+Minimize (⌄),Свернуть (⌄),,Toggles.java:428
+The arrow in the player's top left corner. Swiping down still minimizes,Стрелка в левом верхнем углу плеера. Свернуть можно и свайпом вниз,,Toggles.java:429
+Follow and Subscribe,Отслеживать и Подписаться,Suivre et S'abonner,Toggles.java:433
+Unfollow,Перестать отслеживать,Ne plus suivre,Toggles.java:435
+In the player and on the channel page,В плеере и на странице канала,Dans le lecteur et sur la page de la chaîne,Toggles.java:436
+The channel page's button while you don't follow it,"Кнопка на странице канала, пока вы его не отслеживаете",Le bouton de la page de la chaîne tant que vous ne la suivez pas,Toggles.java:441
+Under the channel's description: Follow and Subscribe,Под описанием канала кнопки «Отслеживать» и «Подписаться»,Sous la description de la chaîne : Suivre et S'abonner,Toggles.java:442
+"No Follow, Subscribe takes the full width","Без «Отслеживать», «Подписаться» на всю ширину","Pas de Suivre, S'abonner prend toute la largeur",Toggles.java:442
+The channel page's button,Кнопка на странице канала,Le bouton de la page de la chaîne,Toggles.java:446
+Under the channel's description: Subscribe,Под описанием канала кнопка «Подписаться»,Sous la description de la chaîne : S'abonner,Toggles.java:447
+No button,Кнопки нет,Pas de bouton,Toggles.java:447 Toggles.java:452
+Gift A Sub,Сделать подарок,Offrir un abonnement,Toggles.java:450
+The channel page's button once you're subscribed,"Кнопка на странице канала, если вы уже подписаны",Le bouton de la page de la chaîne une fois abonné,Toggles.java:451
+Under the channel's description: Gift A Sub,Под описанием канала кнопка «Сделать подарок»,Sous la description de la chaîne : Offrir un abonnement,Toggles.java:452
+Stream recaps,Записи эфиров,Récaps de streams,Toggles.java:456
+The latest stream recaps shelf on the channel's Home tab,Полка последних записей трансляций на главной вкладке канала,L'étagère des derniers récaps de streams dans l'onglet Accueil de la chaîne,Toggles.java:457
+Under the channel's tabs: cards of past stream recaps,Под вкладками канала - карточки записей прошлых эфиров,Sous les onglets de la chaîne : des cartes de récaps des anciens streams,Toggles.java:458
+"No shelf, the rest moves up","Полки нет, ниже идут остальные","Pas d'étagère, le reste remonte",Toggles.java:458
+Featured clips,Избранные клипы,Clips à la une,Toggles.java:461
+The featured clips shelf on the channel's Home tab,Полка избранных клипов на главной вкладке канала,L'étagère des clips à la une dans l'onglet Accueil de la chaîne,Toggles.java:462
+A Featured Clips card in the channel's colour with clips next to it,Карточка «Избранные клипы» в цвете канала и клипы рядом,Une carte Clips à la une aux couleurs de la chaîne avec des clips à côté,Toggles.java:463
+No shelf,Полки нет,Pas d'étagère,Toggles.java:463
+Clips you made on your own channel stay,"Клипы, сделанные вами на своём канале, остаются",Les clips que vous avez faits sur votre propre chaîne restent,Toggles.java:465
+Streams by category,Эфиры по категориям,Streams par catégorie,Toggles.java:467
+The grid of categories the channel streams in,"Сетка категорий, в которых стримит канал",La grille des catégories dans lesquelles la chaîne streame,Toggles.java:468
+The channel's category covers in a grid,Обложки категорий канала сеткой,Les jaquettes des catégories de la chaîne en grille,Toggles.java:469
+No grid,Сетки нет,Pas de grille,Toggles.java:469
+Suggested streamers,Советует стримеров,Streameurs suggérés,Toggles.java:472
+The list of streamers the channel suggests,"Список стримеров, которых советует канал",La liste des streameurs que la chaîne suggère,Toggles.java:473
+Streamer avatars with viewers or Offline,Аватарки стримеров со зрителями или «Не в сети»,Des avatars de streameurs avec le nombre de spectateurs ou Hors ligne,Toggles.java:474
+No list,Списка нет,Pas de liste,Toggles.java:474
+"A team's channel shows its team's other channels there, hidden as well","У каналов из команды на этом месте другие каналы команды, они тоже скрываются","La chaîne d'une équipe y montre les autres chaînes de son équipe, masquées aussi",Toggles.java:476
+Mature content warning,Предупреждение 18+,Avertissement de contenu pour adultes,Toggles.java:480
+The stream starts right away. Doesn't skip age verification,Стрим запускается сразу. Проверку возраста не обходит,Le stream démarre immédiatement. Ne contourne pas la vérification d'âge,Toggles.java:481
+Bits button,Кнопка Bits,"Bouton ""Bits""",Toggles.java:484
+Chat settings button (⋮),Кнопка настроек чата (⋮),Bouton des paramètres du chat (⋮),Toggles.java:486
+Channel extensions,Расширения канала,Extensions de la chaîne,Toggles.java:488
+The header icon and the row under it,Значок в шапке и строка под ней,L'icône d'en-tête et la ligne située en dessous,Toggles.java:489
+Leaderboards,Таблицы лидеров,Classements,Toggles.java:492
+The header icon and the top supporters row,Значок в шапке и строка с топом,L'icône d'en-tête et la ligne des principaux soutiens,Toggles.java:493
+"""Chat Replay""",«Повтор чата»,"""Rediffusion du chat""",Toggles.java:497
+The title bar above a video's chat,Полоса с заголовком над чатом видео,La barre de titre au-dessus du chat d'une vidéo,Toggles.java:498
+⋮ by a video's messages,⋮ у сообщений записи,,Toggles.java:503
+"The menu on every line of a video's chat: share, report","Меню у каждой строки чата видео: поделиться, пожаловаться",,Toggles.java:504
+Activity tab,Вкладка «Активность»,"Onglet ""Activité""",Toggles.java:508
+Browse tab,Вкладка «Просмотр»,"Onglet ""Parcourir""",Toggles.java:510
+Create (+) button,Кнопка «Создать» (+),"Bouton ""Créer"" (+)",Toggles.java:512
+Compact list,Компактный список,Liste compacte,Toggles.java:514
+"Preview on the left, nick and title on the right. Categories stay","Превью слева, ник и название справа. Категории остаются","Aperçu à gauche, pseudo et titre à droite. Les catégories restent",Toggles.java:515
+Stream uptime,Сколько идёт эфир,Durée du stream,Toggles.java:518
+Time since the stream started in the preview's corner,Время с начала трансляции в углу превью,Le temps écoulé depuis le début du stream dans le coin de l'aperçu,Toggles.java:519
+A preview shows only the viewer count,На превью только число зрителей,Un aperçu n'affiche que le nombre de spectateurs,Toggles.java:521
+"The preview's top right corner shows ""2:15"", how long the stream has been on","В правом верхнем углу превью - «2:15», сколько уже идёт эфир","Le coin supérieur droit de l'aperçu affiche ""2:15"", depuis combien de temps le stream est en cours",Toggles.java:522
+"On the previews of Home, Following, Live and other React Native screens; Twitch's native screens aren't covered. The start time is an anonymous Twitch request once per 10 minutes per channel","На превью главной, «Отслеживаемого», «В эфире» и других экранов на React Native; нативные экраны Twitch не покрыты. Время начала - анонимный запрос к Twitch раз в 10 минут на канал","Sur les aperçus d'Accueil, Suivis, Live et des autres écrans React Native ; les écrans natifs de Twitch ne sont pas concernés. L'heure de début vient d'une requête Twitch anonyme toutes les 10 minutes par chaîne",Toggles.java:525
+"""From channels you follow"" shelf",Полка «From channels you follow»,"Étagère 'Des chaînes que vous suivez""",Toggles.java:528
+"""Clips for you"" shelf",Полка «Clips for you»,"Étagère ""Clips pour vous""",Toggles.java:530
+"Which friends are watching, under the Live section","Кто из друзей смотрит, под разделом «В эфире»","Quels amis regardent, sous la section ""Live""",Toggles.java:533
+"The first 5 online, the rest behind a button. A tap opens the channel the friend watches. Friends are added on ext.rte.net.ru/friends.","Первые 5 онлайн, остальные по кнопке. Тап открывает канал, который смотрит друг. Друзей добавляют на ext.rte.net.ru/friends.","Les 5 premiers en ligne, les autres sont accessibles via un bouton. Un appui ouvre la chaîne que l'ami regarde. Les amis sont ajoutés sur ext.rte.net.ru/friends.",Toggles.java:536
+Favorite channels,Избранные каналы,Chaînes favorites,Toggles.java:540
+A section of their own above Live channels,Свой раздел над «Каналами в эфире»,Une section à part au-dessus des chaînes en live,Toggles.java:541
+"To add or remove a channel, long-press it in Following, or use ⋮ on its channel page. Channels that are offline show as a faded circle, live ones you don't follow as a circle with a red ring; a tap opens the channel.","Добавить или убрать канал - долгое нажатие на него в «Отслеживаемом» или ⋮ на странице канала. Кто не в эфире, показан бледным кружком, кто в эфире без подписки - кружком с красной рамкой; нажатие открывает канал.","Pour ajouter ou retirer une chaîne, faites un appui long dessus dans Suivis, ou utilisez ⋮ sur sa page de chaîne. Les chaînes hors ligne apparaissent comme un cercle pâle, celles en live que vous ne suivez pas comme un cercle avec un anneau rouge ; un appui ouvre la chaîne.",Toggles.java:543
+Watch streak tag,Значок серии просмотров,Badge de série de visionnage,Toggles.java:548
+On channels where the streak isn't extended yet,"На каналах, где серия ещё не продлена",Sur les chaînes où la série n'est pas encore prolongée,Toggles.java:549
+Categories A to Z,Категории по алфавиту,Catégories de A à Z,Toggles.java:553
+Followed categories in Following,Отслеживаемые категории в «Отслеживаемом»,"Suivis dans ""Suivis""",Toggles.java:554
+"In follow order, oldest first","В порядке подписки, сначала самые старые","Dans l'ordre de suivis, du plus ancien au plus récent",Toggles.java:555
+"By name, from A to Z","По названию, от А до Я","Par nom, de A à Z",Toggles.java:555
+Own sort for the left column,Своя сортировка у левой колонки,Tri à part pour la colonne de gauche,Toggles.java:559
+Tablet: the followed channels on the left and the list on the right sort separately,Планшет: отслеживаемые каналы слева и список справа сортируются отдельно,Tablette : les chaînes suivies à gauche et la liste à droite se trient séparément,Toggles.java:561
+Changing the sort on the left changes the list on the right too,Смена сортировки слева меняет и список справа,Changer le tri à gauche change aussi la liste à droite,Toggles.java:563
+"Say, Recommended on the left and By viewers on the right","Слева, например, «Рекомендовано», справа «По зрителям»","Par exemple, Recommandées à gauche et Par spectateurs à droite",Toggles.java:563
+Offline channels,Каналы не в эфире,Chaînes hors ligne,Toggles.java:571
+Stories placeholder,Табличка об историях,Emplacement réservé aux stories,Toggles.java:574
+While channels have no stories. Stories themselves stay,Пока у каналов нет историй. Сами истории остаются,Tant que les chaînes n'ont pas de stories. Les stories elles-mêmes restent,Toggles.java:575
+"""Stories from creators you follow will appear here!"" above the tabs","«Здесь будут появляться истории авторов, которых вы отслеживаете!» над вкладками","""Les stories des créateurs que vous suivez apparaîtront ici !"" au-dessus des onglets",Toggles.java:577
+"No card, stories take its place once there are any","Таблички нет, истории появятся на её месте, как только будут","Aucune carte, les stories prennent sa place dès qu'il y en a",Toggles.java:578
+"Empty ""Live Now""",Пустой раздел «В эфире»,,Toggles.java:583
+When nobody you follow is live,Когда никто из отслеживаемых не в эфире,,Toggles.java:584
+"""They'll be back!"" and ""Explore Live"" over half the screen",«Они вернутся!» и «Смотреть эфиры» на полэкрана,,Toggles.java:586
+"The next sections right away: continue watching, categories","Сразу следующие разделы: продолжить просмотр, категории",,Toggles.java:587
+With favorite channels the section stays: their row is in it,С избранными каналами раздел остаётся: в нём их строка,,Toggles.java:590
+Stories,Истории,Stories,Toggles.java:594
+The stories shelf above the tabs and their avatars in the tab row,Полка историй над вкладками и их аватарки в строке вкладок,L'étagère des stories au-dessus des onglets et leurs avatars dans la rangée d'onglets,Toggles.java:595
+Pulling the feed down opens the stories shelf,Оттяжка ленты вниз раскрывает полку историй,Tirer le feed vers le bas ouvre l'étagère des stories,Toggles.java:597
+"No stories, a pull refreshes the feed right away","Историй нет, оттяжка сразу обновляет ленту",Aucune story : tirer vers le bas actualise immédiatement le feed,Toggles.java:597
+Home tabs,Вкладки главной,Onglets de l'accueil,Toggles.java:601
+The Following · Live · Clips row above the feed,Строка «Отслеживаемое · В эфире · Клипы» над лентой,"La rangée ""Suivis · Live · Clips"" au-dessus du feed",Toggles.java:602
+Tabs above the feed,Вкладки над лентой,Les onglets au-dessus du feed,Toggles.java:603
+"Feeds switch with a sideways swipe, starting from the tab set by Open Following","Ленты листаются свайпом вбок, начинается с вкладки из настройки «Открывать «Отслеживаемое»»","Les feeds changent par balayage latéral, à partir de l'onglet défini par Ouvrir ""Suivis""",Toggles.java:603
+Turbo offers and discounts,Предложения Turbo и скидки,Offres et réductions Turbo,Toggles.java:607
+Turbo ads and subscription discount banners,Реклама Turbo и баннеры скидок на подписку,Publicités Turbo et bannières de réduction sur les abonnements,Toggles.java:608
+Gift subs banner,Баннер подарочных подписок,Bannière d'abonnements offerts,Toggles.java:612
+"""Tap Follow!"" under the player and on the channel page",«Tap Follow!» под плеером и на странице канала,"""Tap Follow!"" sous le lecteur et sur la page de la chaîne",Toggles.java:613
+Under the Follow button a banner: follow the channel to get a gifted sub,Под кнопкой «Отслеживать» баннер: подпишитесь на канал и получите подарочную подписку,"Sous le bouton Suivre, une bannière : suivez la chaîne pour recevoir un abonnement offert",Toggles.java:615
+"No banner, the Follow button stays","Баннера нет, кнопка «Отслеживать» на месте","Pas de bannière, le bouton Suivre reste",Toggles.java:616
+"The ""Chat"" title",Заголовок «Чат»,"Le titre ""Chat""",Toggles.java:622
+Subscribe and Gift,Подписаться и Подарок,S'abonner et Offrir,Toggles.java:625
+Only Gift,Только Подарок,Offrir uniquement,Toggles.java:629
+Badges on one line,Значки на одной линии,Badges sur une seule ligne,Toggles.java:634
+For new messages,Для новых сообщений,Pour les nouveaux messages,Toggles.java:635
+Badges of different heights sit at different levels,Значки разной высоты стоят вразнобой,Les badges de différentes hauteurs sont placés à différents niveaux,Toggles.java:636
+"All badges end on one line, the name stays centred","Низ у всех значков на одной линии, ник по центру","Tous les badges sont alignés sur une seule ligne, le nom reste centré",Toggles.java:636
+Check for updates,Проверять обновления,Vérifier les mises à jour,Toggles.java:640
+"At launch. The mod asks before installing, and after Later it stays quiet for a day","При запуске. Перед установкой мод спросит, а после «Позже» не будет напоминать сутки","Au lancement. Le mod demande confirmation avant l’installation et, si vous choisissez ""Plus tard"" , il ne vous sollicite plus pendant un jour",Toggles.java:641
+Notify about updates,Уведомлять об обновлении,,Toggles.java:646
+"A background check twice a day, one notification per version","Проверка в фоне дважды в день, уведомление один раз на версию",,Toggles.java:647
+Android won't show it without the notification permission,Без разрешения на уведомления Android их не покажет,,Toggles.java:649
+Input in fullscreen,Поле ввода в полном экране,Saisie en plein écran,Toggles.java:652
+Input in portrait,Поле ввода в портрете,,Toggles.java:654
+The input row under the chat. Then you can write only in fullscreen,Строка ввода под чатом. Написать в чат тогда можно только в полном экране,,Toggles.java:655
+Input in the chat over the video,Поле ввода в чате поверх видео,Saisie dans le chat par-dessus la vidéo,Toggles.java:659
+Chat mode popup,Подсказка о режиме чата,Pop-up mode du chat,Toggles.java:662
+"""Chat mode: column"" when switching in fullscreen",«Режим чата: колонка» при смене режима в полном экране,"""Mode du chat : colonne"" lors du passage en plein écran",Toggles.java:663
+And Twitch's one-time Chat Overlay window about the new chat in full screen: with it Twitch turns the chat overlay on by itself,И разовое окно Twitch «Chat Overlay» о новом виде чата в полном экране: с ним Twitch сам включает оверлей чата,"Et la fenêtre unique de Twitch Chat Overlay sur le nouveau chat en plein écran : avec elle, Twitch active tout seul le chat en superposition",Toggles.java:666
+Points in portrait,Баллы в портрете,Points en mode portrait,Toggles.java:671
+The channel points button by the input,Кнопка баллов канала у поля ввода,Le bouton des points de chaîne à côté du champ de saisie,Toggles.java:672 Toggles.java:676
+Points in fullscreen,Баллы в полном экране,Points en plein écran,Toggles.java:675
+Points balance in fullscreen,Баланс баллов в полном экране,Solde de points en plein écran,Toggles.java:680
+The number next to the points icon,Число рядом со значком баллов,Le nombre à côté de l'icône de points,Toggles.java:681
+Balance under the icon,Баланс под значком,Solde sous l'icône,Toggles.java:685
+Leaves the input more room,Поле ввода станет шире,Laisse plus de place au champ de saisie,Toggles.java:686
+Emote button only while typing,Смайлик только при наборе,Bouton d'émotes uniquement pendant la saisie,Toggles.java:691
+The button shows while you write: the keyboard is up or the field has text. The input gets its room,"Кнопка появляется, когда вы пишете: открыта клавиатура или в поле есть текст. Поле ввода получает её место",Le bouton s'affiche pendant la saisie : le clavier est ouvert ou le champ contient du texte. Le champ de saisie garde sa place,Toggles.java:692
+In portrait and in the side chat; in the side chat together with the Input above the keyboard fix. Before 0.5.21 it worked only in the side chat,В портрете и в боковом чате; в боковом - вместе с исправлением «Поле ввода над клавиатурой». До 0.5.21 работало только в боковом чате,"En portrait et dans le chat latéral ; dans le chat latéral avec la correction Champ de saisie au-dessus du clavier. Avant la 0.5.21, cela ne marchait que dans le chat latéral",Toggles.java:694
+Input above the keyboard,Поле ввода над клавиатурой,Champ de saisie au-dessus du clavier,Toggles.java:698
+"While typing in fullscreen, and wider than usual","На время набора в полном экране, и шире обычного","Pendant la saisie en plein écran, et plus large que d’habitude",Toggles.java:699
+No blinking cursor,Без мигающего курсора,Pas de curseur clignotant,Toggles.java:704
+After the keyboard closes. Android 11+,После закрытия клавиатуры. Android 11+,Après la fermeture du clavier. Android 11 et versions ultérieures,Toggles.java:705
+Badges right after launch,Значки сразу после запуска,Badges dès le lancement,Toggles.java:710
+"VIP, moderator, broadcaster, Prime","VIP, модератор, стример, Prime","VIP, modérateur, diffuseur, Prime",Toggles.java:711
+"After a cold start chat has no global badges, only sub ones","После холодного старта в чате нет общих значков, только сабовые","Après un démarrage à froid, le chat n'a pas de badges globaux, seulement des badges de sub",Toggles.java:713
+Badges are there from the first message,Значки на месте с первого сообщения,Les badges sont présents dès le premier message,Toggles.java:714
+Pause under the layout buttons,Пауза под кнопками макета,Pause sous les boutons de mise en page,Toggles.java:721
+Streams with a vertical format,Стримы с вертикальным форматом,Streams avec un format vertical,Toggles.java:722
+Sound in Audio Only,Звук в режиме «Только звук»,,Toggles.java:727
+If the player was muted: the mode has no mute button,"Если плеер был без звука, а кнопки звука в этом режиме нет",,Toggles.java:728
+"Silent, nothing to unmute it with","Без звука, включить нечем",,Toggles.java:730
+Sound comes on with the mode,Звук включается вместе с режимом,,Toggles.java:730
+Twitch emotes in VOD chat,Эмоуты Twitch в чате VOD,Émotes Twitch dans le chat des rediffusions,Toggles.java:735
+An emote after Cyrillic text or an emoji stayed a word,Эмоут после русского текста или эмодзи оставался словом,Une émote après du texte cyrillique ou un émoji restait un mot,Toggles.java:736
+"Kappa as a picture, as in the browser","""Привет Kappa"": Kappa as a word","Kappa sous forme d'image, comme dans le navigateur",Toggles.java:739
+"Twitch's server gives an emote's place in bytes, the app counts characters. The stock app has the bug too.","Сервер Twitch даёт место эмоута в байтах, а приложение считает символы. Ошибка есть и в Twitch без мода.","Le serveur de Twitch donne la place d'une émote en octets, l'application compte les caractères. L'application d'origine a aussi ce bug",Toggles.java:740
+Wide chat for polls,Широкий чат для опросов,Chat large pour les sondages,Toggles.java:745
+The side chat widens while a poll or prediction is open,"Боковой чат расширяется, пока открыт опрос или прогноз",Le chat latéral s'élargit lorsqu'un sondage ou une prédiction est ouvert,Toggles.java:746
+Chat over the video,Чат поверх видео,Chat par-dessus la vidéo,Toggles.java:750
+"The video takes the full width, the side chat lies on it as a see-through column","Видео на всю ширину, боковой чат лежит на нём полупрозрачной колонкой","La vidéo prend toute la largeur, le chat latéral se superpose par-dessus sous forme de colonne transparente",Toggles.java:751
+"The video is squeezed to the left, the chat column on black","Видео сжато слева, справа колонка чата на чёрном","La vidéo est compressée vers la gauche, la colonne du chat est sur fond noir",Toggles.java:753
+"The video fills the screen, the chat on top of it on the right","Видео на весь экран, чат справа поверх него","La vidéo remplit l'écran, le chat par-dessus sur la droite",Toggles.java:753
+"The Chat next to video mode. A tap on the strip between the video and the chat opens this switch and the opacity right in the player. While the player buttons show, they're above the chat. During picture-by-picture ads and in VODs it's the usual column.","Режим «Чат рядом». Нажатие на полоску между видео и чатом открывает этот переключатель и прозрачность прямо в плеере. Пока видны кнопки плеера, они поверх чата. Во время рекламы «картинка в картинке» и в записях - обычная колонка.","Le mode ""Chat à côté de la vidéo"". Un appui sur la bande située entre la vidéo et le chat ouvre ce commutateur et l'opacité directement dans le lecteur. Lorsque les boutons du lecteur s'affichent, ils sont au-dessus du chat. Pendant les publicités en mode image dans l'image et dans les rediffusions, il s'agit de la colonne habituelle.",Toggles.java:755
+Low latency with ad blocking,Низкая задержка без рекламы,Faible latence avec blocage des publicités,Toggles.java:763
+Turn it off if streams stop starting,"Выключите, если стримы перестали запускаться",Désactivez-le si les streams s'arrêtent de démarrer,Toggles.java:764
+With ad blocking the stream runs a few seconds late,С блокировкой рекламы стрим идёт на несколько секунд позже,"Avec le blocage des publicités, le stream a quelques secondes de retard",Toggles.java:766
+Latency is the same as without ad blocking,"Задержка такая же, как без блокировки",La latence est identique à celle sans blocage des publicités,Toggles.java:767
+"""Blocking ads"" label",Плашка «Реклама блокируется»,"Libellé 'Blocage des publicités""",Toggles.java:772
+A label on the video during an ad break,"Надпись на видео, пока идёт подмена",Un libellé sur la vidéo pendant une coupure publicitaire,Toggles.java:773
+Ad blocking log,Лог блокировки рекламы,Journal de blocage des publicités,Toggles.java:778
+"For freeze reports. A file in Downloads, no tokens","Для отчёта о фризах. Файл в Загрузках, без токенов","Pour les rapports de blocage. Un fichier dans Téléchargements, sans jetons",Toggles.java:779
+Bans and deletions log,Лог банов и удалений,Journal des bannissements et des suppressions,Toggles.java:783
+For reports of vanished messages. A file in Downloads,Для отчёта о пропавших сообщениях. Файл в Загрузках,Pour les rapports de messages disparus. Un fichier dans Téléchargements,Toggles.java:784
+UI stall log,Лог подвисаний,Journal des blocages de l'interface,Toggles.java:787
+For lag reports. A file in Downloads,Для отчёта о тормозах. Файл в Загрузках,Pour les rapports de ralentissement. Un fichier dans Téléchargements,Toggles.java:788
+Signing in on a modified app,Вход с изменённым приложением,Connexion sur une application modifiée,Toggles.java:792
+"Removes the ""This app version/OS is not currently supported"" error",Убирает ошибку «This app version/OS is not currently supported»,"Supprime l'erreur ""Cette version de l'application/ce système d’exploitation n'est actuellement pas pris en charge""",Toggles.java:793
+Twitch checks the app through Play Integrity and can refuse the login,Twitch проверяет приложение через Play Integrity и может отказать во входе,Twitch vérifie l'application via Play Integrity et peut refuser la connexion,Toggles.java:795
+The check is not sent,Проверка не отправляется,La vérification n'est pas envoyée,Toggles.java:796
+Banners and sponsored cards,Баннеры и спонсорские карточки,Bannières et cartes sponsorisées,Toggles.java:800
+Ads in the feed and sponsored channel skins,Реклама в ленте и спонсорское оформление каналов,Publicités dans le feed et habillages de chaîne sponsorisés,Toggles.java:801
+"Display ads, the headliner above Following, sponsored cards, channel skins and the ""Includes Paid Promotion"" label on the player.","Display-реклама, headliner над «Отслеживаемым», промо-карточки, скины каналов и плашка «Includes Paid Promotion» на плеере.","Afficher les publicités, la bannière principale au-dessus de ""Suivis"", les cartes sponsorisées, les habillages de chaîne et le libellé ""Contient une promotion rémunérée"".",Toggles.java:804
+Bots,Боты,Bots,Toggles.java:807
+"Nightbot, StreamElements and channel bots from BTTV","Nightbot, StreamElements и боты канала из BTTV","Nightbot, StreamElements et les bots de chaîne de BTTV",Toggles.java:808
+Share what I watch,"Сообщать, что смотрю",Partager ce que je regarde,Toggles.java:812
+RTE friends see your stream,Друзья RTE видят ваш стрим,Les amis RTE voient votre stream,Toggles.java:813
+Button on the viewer card,Кнопка в карточке зрителя,Bouton sur la carte de spectateur,Toggles.java:816
+Add an RTE friend from the chat,Добавить в друзья RTE из чата,Ajouter un ami RTE depuis le chat,Toggles.java:817
+Friends are added on the website only,В друзья добавляют только на сайте,Les amis sont ajoutés uniquement sur le site web,Toggles.java:819
+"The viewer card has an ""Add friend"" button and the request status",В карточке зрителя кнопка «Добавить в друзья» и статус заявки,"La carte de spectateur dispose d'un bouton ""Ajouter un ami"" et du statut de demande",Toggles.java:820
+"The button opens ext.rte.net.ru/friends, the request is confirmed there.","Кнопка открывает ext.rte.net.ru/friends, заявка подтверждается там.","Le bouton ouvre ext.rte.net.ru/friends, la demande y est confirmée.",Toggles.java:823
+Chat through a proxy,Чат через прокси,Chat via un proxy,Toggles.java:826
+If Twitch chat won't connect,Если чат Twitch не подключается,Si le chat Twitch ne se connecte pas,Toggles.java:827
+Chat connects to Twitch directly,Чат подключается напрямую к Twitch,Le chat se connecte directement à Twitch,Toggles.java:829
+"Chat goes through the ReYohoho proxy, and directly while it is down","Чат идёт через прокси ReYohoho, а если он недоступен - напрямую","Le chat passe par le proxy ReYohoho, et directement en cas de panne",Toggles.java:830
+Cookie dialog,Окно про cookie,Fenêtre de dialogue des cookies,Toggles.java:835
+"""Cookies and ad preferences"" at start",«Файлы cookie и предпочтения рекламы» при запуске,"""Cookies et préférences publicitaires"" au démarrage",Toggles.java:836
+"At start a dialog with Accept, Customize and Decline","При запуске окно с кнопками «Принять», «Настроить», «Отклонить»","Au démarrage, une fenêtre de dialogue avec les options ""Accepter"", 'Personnaliser"" et ""Refuser""",Toggles.java:838
+"No dialog, Twitch gets neither consent nor refusal","Окна нет, Twitch не получает ни согласия, ни отказа","Aucune fenêtre de dialogue, Twitch ne reçoit ni consentement ni refus",Toggles.java:839
+"A choice made earlier stays. Where Twitch shows it, the choice is also in its settings: ""Cookies and ad preferences"".","Выбор, сделанный раньше, остаётся. Где Twitch это показывает, выбор есть и в его настройках: «Файлы cookie и предпочтения рекламы».","Un choix effectué précédemment est conservé. Là où Twitch l'affiche, le choix se trouve également dans ses paramètres ""Cookies et préférences publicitaires"".",Toggles.java:842
+Trackers,Трекеры,Traqueurs,Toggles.java:846
+The app sends statistics to third-party services,Приложение отправляет статистику сторонним сервисам,L'application envoie des statistiques à des services tiers,Toggles.java:849
+These are blocked,Эти отправки заблокированы,Ceux-ci sont bloqués,Toggles.java:850
+A viewer's first message,Первое сообщение зрителя,Le premier message d'un spectateur,Toggles.java:855
+Marks someone writing on the channel for the first time,"Выделяет того, кто пишет на канале впервые",Marque les personnes qui écrivent sur la chaîne pour la première fois,Toggles.java:856
+Viewers' personal badges,Личные значки зрителей,Badges personnels des spectateurs,Toggles.java:869
+Images in the chat input,Картинки в поле ввода,Images dans le champ de saisie du chat,Toggles.java:873
+Emotes show before you send,Эмоуты видно ещё до отправки,Les émotes s'affichent avant l'envoi,Toggles.java:874
+"7TV, BTTV, FFZ and the Twitch emotes this account can send.","7TV, BTTV, FFZ и эмоуты Twitch, которые можно отправить с этого аккаунта.","7TV, BTTV, FFZ et les émotes Twitch que ce compte peut envoyer",Toggles.java:877
+Channel emotes only,Только эмоуты канала,Émotes de la chaîne uniquement,Toggles.java:882
+"No global 7TV, BTTV and FFZ: chat, suggestions and the panel show the channel's sets only","Без глобальных 7TV, BTTV и FFZ: в чате, подсказках и панели только наборы канала","Pas de 7TV, BTTV et FFZ globaux : le chat, les suggestions et le panneau affichent uniquement les ensembles de la chaîne",Toggles.java:883
+"A channel without its own 7TV, BTTV or FFZ emotes has no such sections in the panel. The panel updates on the next channel you open.","Канал без своих 7TV, BTTV или FFZ остаётся без этих разделов в панели. Панель обновится при следующем открытии канала.","Une chaîne qui ne possède pas ses propres émotes 7TV, BTTV ou FFZ ne comporte pas de telles sections dans le panneau. Le panneau se met à jour sur la prochaine chaîne que vous ouvrirez.",Toggles.java:885
+Giant emotes,Гигантские эмоуты,Émotes géantes,Toggles.java:890
+"An emote from an FFZ:GE reward, large",Эмоут за награду FFZ:GE крупным планом,"Une émote provenant d'une récompense FFZ:GE, en grand format",Toggles.java:891
+Favorite emotes,Избранные эмоуты,Émotes favorites,Toggles.java:895
+"Long press an emote in the panel, sub ones too","Долгое нажатие на эмоут в панели, сабовые тоже","Appuyez longuement sur une émote dans le panneau, y compris sur celles des abonnements",Toggles.java:896
+Separate favorites per channel,Своё избранное на каждом канале,Favoris séparés par chaîne,Toggles.java:899
+One list for all channels,Один список на все каналы,Une seule liste pour toutes les chaînes,Toggles.java:900
+Each channel has its own list,На каждом канале свой список,Chaque chaîne possède sa propre liste,Toggles.java:901
+Favorites first in suggestions,Избранные первыми в подсказках,Favoris en premier dans les suggestions,Toggles.java:904
+Count suggestions in Frequently Used,Учитывать подсказки в «Часто используемых»,"Inclure les suggestions dans ""Souvent utilisées""",Toggles.java:906
+Twitch emotes sent from a suggestion land there too,"Эмоуты Twitch, отправленные из подсказки, тоже попадут в этот раздел",Les émotes Twitch envoyées depuis une suggestion y apparaissent également,Toggles.java:907
+No sticky headers,Без закреплённых заголовков,Pas d'en-têtes fixes,Toggles.java:910
+A section title scrolls away with its emotes,Заголовок раздела уезжает вместе с эмоутами,Le titre d'une section défile avec ses émotes,Toggles.java:911
+Buttons with emotes open,Кнопки при открытых эмоутах,Boutons avec émotes ouverts,Toggles.java:915
+Send and the chat input work on the first tap,«Отправить» и поле ввода работают с первого нажатия,L'envoi et le champ de saisie du chat fonctionnent dès le premier appui,Toggles.java:916
+The first tap only closes the emote panel,Первое нажатие только закрывает панель эмоутов,Le premier appui ferme uniquement le panneau des émotes,Toggles.java:918
+"The message goes right away, the input opens the keyboard","Сообщение уходит сразу, поле ввода открывает клавиатуру","Le message s'envoie immédiatement, le champ de saisie ouvre le clavier",Toggles.java:919
+AutoMod in chat,AutoMod в чате,AutoMod dans le chat,Toggles.java:923
+"For moderators: held messages right in chat, with buttons","Для модераторов: задержанные сообщения прямо в чате, с кнопками","Pour les modérateurs : les messages mis en attente directement dans le chat, avec des boutons",Toggles.java:924
+Moderation from the message menu,Модерация из меню сообщения,Modération depuis le menu du message,Toggles.java:928
+"For moderators: delete, timeout, ban and unban on a long press","Для модераторов: удалить, таймаут, бан и разбан по долгому нажатию","Pour les modérateurs : suppression, exclusion temporaire, bannissement et débannissement par un appui long",Toggles.java:929
+As in reFrosty. Twitch decides what may be deleted or banned: a refusal shows the reason.,"Как в reFrosty. Что можно удалить или забанить, решает Twitch: при отказе будет подсказка с причиной.",Comme dans reFrosty. Twitch décide ce qui peut être supprimé ou banni : un refus indique la raison.,Toggles.java:932
+Keep scroll position in VODs,Не сбрасывать прокрутку в записях,Conserver la position de défilement dans les rediffusions,Toggles.java:936
+A VOD's chat stays put while you read higher up,"Чат записи не уезжает вниз, пока вы читаете выше",Le chat d'une rediffusion reste en place pendant que vous lisez plus haut,Toggles.java:937
+Each batch of messages takes a VOD's chat back down,Каждая пачка сообщений возвращает чат записи вниз,Chaque lot de messages ramène le chat d'une rediffusion vers le bas,Toggles.java:939
+Messages without batches,Сообщения без пачек,Messages sans lots,Toggles.java:945
+"Right away, one by one, as on the web","Сразу, по одному, как в веб-версии","Immédiatement, un par un, comme sur le web",Toggles.java:946
+New message count,Счётчик новых сообщений,Compteur de nouveaux messages,Toggles.java:951
+How many came in while you read higher up,"Сколько пришло, пока вы читаете выше",Combien sont arrivés pendant que vous lisiez plus haut,Toggles.java:952
+"Counts the channel's messages as they come over IRC, filtered ones included.","Считаются сообщения канала, пришедшие по IRC: скрытые фильтрами тоже.","Compte les messages de la chaîne à mesure qu'ils arrivent via IRC, y compris ceux filtrés.",Toggles.java:954
+Reward cooldowns,Кулдаун наград за баллы,Temps de recharge des récompenses,Toggles.java:958
+"A timer on the reward's icon, ❌ if it's out of stock","Таймер на иконке награды, ❌ если она закончилась","Un minuteur sur l'icône de la récompense, ❌ si elle est en rupture de stock",Toggles.java:959
+You only learn a reward is unavailable by tapping it,"Что награда недоступна, видно только после нажатия",Vous ne découvrez qu'une récompense est indisponible qu'en appuyant dessus,Toggles.java:961
+"You see it right away, before tapping","Видно сразу, ещё до нажатия","Vous le voyez immédiatement, avant même d'appuyer dessus",Toggles.java:962
+Deleted message background,Фон удалённых,Arrière-plan des messages supprimés,Toggles.java:968
+"The whole row is tinted, name included, as on the web","Строка закрашивается целиком, вместе с ником, как в браузере","Toute la ligne est teintée, nom compris, comme sur le web",Toggles.java:969
+Chat in step with the stream,Чат вровень со стримом,Chat synchronisé avec le stream,Toggles.java:974
+Messages wait for the video's delay,Сообщения ждут задержку видео,Les messages attendent le délai de la vidéo,Toggles.java:975
+Chat reacts to what the video hasn't shown yet,"Чат реагирует на то, чего на видео ещё не было",Le chat réagit à ce que la vidéo n'a pas encore montré,Toggles.java:977
+A message shows up when the video reaches the same moment,"Сообщение появляется, когда видео дошло до того же момента",Un message s'affiche lorsque la vidéo atteint le même moment,Toggles.java:978
+The delay comes from the player and adds to the channel's chat delay. Your own messages don't wait. Live only.,Задержка берётся у плеера и добавляется к задержке чата канала. Свои сообщения не ждут. Только трансляции.,Le délai provient du lecteur et s'ajoute au délai du chat de la chaîne. Vos propres messages n'attendent pas. En live uniquement.,Toggles.java:981
+Coloured /me,Цветные /me,/me en couleur,Toggles.java:985
+/me text in the nick's colour,Текст /me цветом ника,Texte /me dans la couleur du pseudo,Toggles.java:986
+A viewer's message history,История сообщений зрителя,Historique des messages d'un spectateur,Toggles.java:989
+On their card: what they wrote while the chat was open,"В его карточке: что он писал, пока чат открыт",Sur leur carte : ce qu'ils ont écrit pendant que le chat était ouvert,Toggles.java:990
+Reply threads,Ветка ответов,Fils de réponses,Toggles.java:994
+"A tap on ""Replying to ..."" above a message shows the whole thread",Нажатие на «В ответ ...» над сообщением показывает всю ветку,"Un appui sur ""En réponse à ..."" au-dessus d'un message affiche tout le fil",Toggles.java:995
+A tap on a reply opens its author's card,Нажатие на ответ открывает карточку автора,Un appui sur une réponse ouvre la carte de son auteur,Toggles.java:997
+"A tap on ""Replying to ..."" opens the first message and every reply to it",Нажатие на «В ответ ...» открывает первое сообщение и все ответы на него,"Un appui sur ""En réponse à ..."" ouvre le premier message et toutes ses réponses",Toggles.java:998
+"It opens Twitch's own thread, the same as a long press > Reply. In landscape a reply is a pill with the name inside the message: tap it. Doesn't work in the chat overlay","Открывается ветка самого Twitch, та же, что по долгому нажатию > «Ответить». В горизонтальном режиме ответ - плашка с ником внутри сообщения, нажимать на неё. В оверлее чата не работает","Cela ouvre le fil de Twitch lui-même, comme un appui long > Répondre. En paysage, une réponse est une pastille avec le pseudo dans le message : appuyez dessus. Ne marche pas dans le chat en overlay",Toggles.java:1001
+More chat history,Больше истории чата,Plus d'historique du chat,Toggles.java:1004
+"Messages from before you came in, from the Robotty service: in the chat and on a viewer card",Сообщения до вашего входа - из сервиса Robotty: в самом чате и в карточке зрителя,"Les messages d'avant votre arrivée, depuis le service Robotty : dans le chat et sur une carte de spectateur",Toggles.java:1005
+"The chat starts with Twitch's short history, a card knows only what came while you were there","Чат начинается с короткой истории Twitch, карточка помнит только то, что пришло при вас","Le chat commence avec le court historique de Twitch, une carte ne connaît que ce qui est arrivé pendant votre présence",Toggles.java:1007
+"The chat starts with the last 200 messages, a card has up to the channel's last 800","Чат начинается с последних 200 сообщений, в карточке - до 800 последних сообщений канала","Le chat commence avec les 200 derniers messages, une carte a jusqu'aux 800 derniers de la chaîne",Toggles.java:1008
+"The channel's name goes to the third-party service recent-messages.robotty.de (through the RTE emote proxy when it's on) when you open a chat or a viewer card. If it doesn't answer within 4 seconds, Twitch's history stays","Имя канала уходит стороннему сервису recent-messages.robotty.de (через прокси эмоутов RTE, если он включён), когда вы открываете чат или карточку зрителя. Если сервис не ответил за 4 секунды, остаётся история Twitch","Le nom de la chaîne part vers le service tiers recent-messages.robotty.de (via le proxy d'émotes RTE quand il est activé) quand vous ouvrez un chat ou une carte de spectateur. S'il ne répond pas en 4 secondes, l'historique de Twitch reste",Toggles.java:1011
+Alternating rows,Чередование строк,Lignes alternées,Toggles.java:1014
+Every other row is darker,Строки через одну темнее,Une ligne sur deux est plus sombre,Toggles.java:1015
+Chat off,Чат выключен,Chat désactivé,Toggles.java:1018
+For slow phones: the chat isn't drawn until you ask for it,"Для слабых телефонов: чат не рисуется, пока не попросите",Pour les téléphones lents : le chat n'est pas affiché tant que vous ne le demandez pas,Toggles.java:1019
+"The chat under the player and beside it in full screen, with emotes","Чат под плеером и сбоку в полном экране, со смайлами","Le chat sous le lecteur et à côté en plein écran, avec les émotes",Toggles.java:1021
+"""Chat is off · Show"" in the chat's place, the video takes the full width in full screen","На месте чата «Чат выключен · Показать», в полном экране видео на всю ширину","""Chat désactivé · Afficher"" à la place du chat, la vidéo prend toute la largeur en plein écran",Toggles.java:1022
+"To turn the chat on until the app restarts: Show in its place or the chat button on the player. The chat stays connected: points, mentions and mod logs work. Vertical view isn't covered","Включить чат до перезапуска приложения: «Показать» на его месте или кнопка чата на плеере. Чат при этом подключён: баллы, упоминания и мод-логи работают. Не действует в вертикальном виде","Pour activer le chat jusqu'au redémarrage de l'application : Afficher à sa place ou le bouton du chat sur le lecteur. Le chat reste connecté : les points, les mentions et les journaux de modération fonctionnent. La vue verticale n'est pas concernée",Toggles.java:1025
+Pinch to resize,Размер щипком,Pincer pour redimensionner,Toggles.java:1030
+"With two fingers right in the chat, like a photo","Двумя пальцами прямо в чате, как фото","Avec deux doigts directement dans le chat, comme une photo",Toggles.java:1031
+"Text size is set only here, in the settings","Размер текста - только здесь, в настройках","La taille du texte se règle seulement ici, dans les paramètres",Toggles.java:1033
+A pinch on the chat changes it on the fly,Щипок по чату меняет размер на лету,Un pincement sur le chat la change en direct,Toggles.java:1034
+The same steps as Text size. Badges of messages already shown change when the message is drawn again,"Шаги те же, что у «Размера текста». Значки уже показанных сообщений меняются, когда сообщение перерисуется",Les mêmes paliers que Taille du texte. Les badges des messages déjà affichés changent quand le message est redessiné,Toggles.java:1037
+Coloured mentions,Цветные упоминания,Mentions en couleur,Toggles.java:1040
+"@nick in that viewer's colour and paint, once they have written","@ник цветом и раскраской этого зрителя, если он уже писал","@pseudo dans la couleur et la teinte de ce spectateur, une fois qu'il a écrit",Toggles.java:1041
+Replies to you,Ответы вам,Réponses à vos messages,Toggles.java:1045
+"Like a mention: highlight, vibration and sound, whichever is on","Как упоминание: подсветка, вибрация и звук, что из них включено","Comme une mention : mise en avant, vibration et son, selon ce qui est activé",Toggles.java:1046
+"""Copy and send""",«Копировать и отправить»,"""Copier et envoyer""",Toggles.java:1050
+A new item in a message's long-press menu,Новый пункт в меню по долгому нажатию на сообщение,Un nouvel élément dans le menu par appui long d'un message,Toggles.java:1051
+Links without a warning,Ссылки без предупреждения,Liens sans avertissement,Toggles.java:1055
+"Skip ""This link goes to...""",Не спрашивать «Эта ссылка ведёт на...»,"Passe ""Ce lien mène vers...""",Toggles.java:1056
+Keep chat on /clear,Не очищать чат,Conserver le chat lors d'un /clear,Toggles.java:1060
+Messages stay when a moderator clears chat,"Сообщения остаются, когда модератор чистит чат",Les messages restent lorsqu'un modérateur efface le chat,Toggles.java:1061
+Mod logs,Мод-логи,Journaux de modération,Toggles.java:1066
+"Bans, timeouts and deletions as chat lines. Moderators see who did it","Баны, таймауты и удаления строкой в чате. Модераторы видят, кто это сделал","Les bannissements, exclusions temporaires et suppressions affichés comme lignes de chat. Les modérateurs voient qui a effectué l'action",Toggles.java:1067
+Raid line,Строка о рейде,Ligne de raid,Toggles.java:1071
+When you arrive with a raid,Если вы пришли на канал вместе с рейдом,Lorsque vous arrivez avec un raid,Toggles.java:1072
 System language,Как в системе,Langue du système,TranslationFiles.java:143
 Russian: fixes to the Russian text,Русский: правки к русскому тексту,Russe : corrections apportées au texte en russe,TranslationFiles.java:181
 A new language...,Новый язык...,Une nouvelle langue...,TranslationFiles.java:184

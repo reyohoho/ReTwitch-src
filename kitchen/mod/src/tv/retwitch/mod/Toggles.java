@@ -424,6 +424,11 @@ public final class Toggles {
             .about("Кнопка выключения звука внизу плеера",
                     "The mute button at the bottom of the player")
             .look(SettingsPreview.PLAYER, SettingsPreview.P_MUTE).asNew("0.5.27-beta");
+    /** The ⌄ in the player's top left corner (back_button of the overlay); swiping down still minimizes. */
+    public static final Toggle HIDE_PLAYER_MINIMIZE = new Toggle("hide_player_minimize", "Свернуть (⌄)", "Minimize (⌄)", false)
+            .about("Стрелка в левом верхнем углу плеера. Свернуть можно и свайпом вниз",
+                    "The arrow in the player's top left corner. Swiping down still minimizes")
+            .look(SettingsPreview.PLAYER, SettingsPreview.P_MINIMIZE).asNew("0.5.30-beta");
     /** Player metadata, theatre overlay and One Chat; the chat header strip is ChatHeaderSetting. */
     public static final Toggle HIDE_FOLLOW_SUB = new Toggle("hide_follow_sub", "Отслеживать и Подписаться", "Follow and Subscribe", false)
             .look(SettingsPreview.PLAYER, SettingsPreview.P_FOLLOW);
@@ -494,6 +499,11 @@ public final class Toggles {
                     "The title bar above a video's chat")
             .look(SettingsPreview.HEADER, SettingsPreview.T_REPLAY)
             .asNew("0.5.29-beta");
+    /** The ⋮ at the end of every line in a video's chat (chomment_list_item, overflow_image_view). */
+    public static final Toggle HIDE_VOD_ROW_MENU = new Toggle("hide_vod_row_menu", "⋮ у сообщений записи", "⋮ by a video's messages", false)
+            .about("Меню у каждой строки чата видео: поделиться, пожаловаться",
+                    "The menu on every line of a video's chat: share, report")
+            .look(SettingsPreview.HEADER, SettingsPreview.T_ROW_MENU).asNew("0.5.30-beta");
 
     public static final Toggle HIDE_TAB_ACTIVITY = new Toggle("hide_tab_activity", "Вкладка «Активность»", "Activity tab", false)
             .look(SettingsPreview.HOME, SettingsPreview.H_ACTIVITY);
@@ -569,6 +579,17 @@ public final class Toggles {
                     "\"Stories from creators you follow will appear here!\" above the tabs",
                     "No card, stories take its place once there are any")
             .asNew("0.5.4-beta");
+    /** Following's live section when nobody is live ("They'll be back!"); RnScript. */
+    public static final Toggle HIDE_LIVE_EMPTY = new Toggle("hide_live_empty", "Пустой раздел «В эфире»", "Empty \"Live Now\"", true)
+            .about("Когда никто из отслеживаемых не в эфире",
+                    "When nobody you follow is live")
+            .compare("«Они вернутся!» и «Смотреть эфиры» на полэкрана",
+                    "Сразу следующие разделы: продолжить просмотр, категории",
+                    "\"They'll be back!\" and \"Explore Live\" over half the screen",
+                    "The next sections right away: continue watching, categories")
+            .note("С избранными каналами раздел остаётся: в нём их строка",
+                    "With favorite channels the section stays: their row is in it")
+            .asNew("0.5.30-beta");
     /** FeedTopChrome's StoriesShelf and CollapsedStoriesIcons; RnScript. */
     public static final Toggle HIDE_HOME_STORIES = new Toggle("hide_home_stories", "Истории", "Stories", true)
             .about("Полка историй над вкладками и их аватарки в строке вкладок",
@@ -620,8 +641,20 @@ public final class Toggles {
             .about("При запуске. Перед установкой мод спросит, а после «Позже» не будет напоминать сутки",
                     "At launch. The mod asks before installing, and after Later it stays quiet for a day")
             .asNew("0.5.1-beta");
+    /** A notification about a new version while the app is closed (UpdateCheckReceiver, twice a day). */
+    public static final Toggle UPDATE_NOTIFY = new Toggle("update_notify",
+            "Уведомлять об обновлении", "Notify about updates", false)
+            .about("Проверка в фоне дважды в день, уведомление один раз на версию",
+                    "A background check twice a day, one notification per version")
+            .note("Без разрешения на уведомления Android их не покажет",
+                    "Android won't show it without the notification permission")
+            .asNew("0.5.30-beta");
     public static final Toggle HIDE_LANDSCAPE_CHAT_INPUT = new Toggle("hide_landscape_chat_input", "Поле ввода в полном экране", "Input in fullscreen", false)
             .look(SettingsPreview.INPUT, SettingsPreview.I_FULLSCREEN);
+    public static final Toggle HIDE_PORTRAIT_CHAT_INPUT = new Toggle("hide_portrait_chat_input", "Поле ввода в портрете", "Input in portrait", false)
+            .about("Строка ввода под чатом. Написать в чат тогда можно только в полном экране",
+                    "The input row under the chat. Then you can write only in fullscreen")
+            .look(SettingsPreview.INPUT, SettingsPreview.I_PORTRAIT).asNew("0.5.30-beta");
     /** The input of the chat laid over the video in fullscreen ("One Chat"). */
     public static final Toggle HIDE_ONE_CHAT_INPUT = new Toggle("hide_one_chat_input", "Поле ввода в чате поверх видео", "Input in the chat over the video", false)
             .look(SettingsPreview.INPUT, SettingsPreview.I_OVERLAY);
@@ -689,6 +722,14 @@ public final class Toggles {
             .about("Стримы с вертикальным форматом", "Streams with a vertical format")
             .look(SettingsPreview.PLAYER, SettingsPreview.P_LAYOUT)
             .asNew("0.5.10-beta");
+    /** Twitch's Audio Only mode has no mute button: a muted player stayed silent (issue #10). */
+    public static final Toggle AUDIO_ONLY_UNMUTE = new Toggle("audio_only_unmute",
+            "Звук в режиме «Только звук»", "Sound in Audio Only", false, true)
+            .about("Если плеер был без звука, а кнопки звука в этом режиме нет",
+                    "If the player was muted: the mode has no mute button")
+            .compare("Без звука, включить нечем", "Звук включается вместе с режимом",
+                    "Silent, nothing to unmute it with", "Sound comes on with the mode")
+            .asNew("0.5.30-beta");
     /** VOD chat emote ranges from UTF-8 bytes to chars (VodChatEmotes). */
     public static final Toggle VOD_CHAT_EMOTES = new Toggle("vod_chat_emotes",
             "Эмоуты Twitch в чате VOD", "Twitch emotes in VOD chat", false, true)
@@ -1053,7 +1094,7 @@ public final class Toggles {
     /** Interface page sections, by where the thing is on screen (top to bottom). */
     static final Toggle[] UI_PLAYER = {
             HIDE_PLAYER_CAST, HIDE_PLAYER_SHARE, HIDE_PLAYER_CLIP, HIDE_PLAYER_FULLSCREEN, HIDE_PLAYER_MUTE, HIDE_PLAYER_ROTATE,
-            HIDE_FOLLOW_SUB, HIDE_UNFOLLOW,
+            HIDE_PLAYER_MINIMIZE, HIDE_FOLLOW_SUB, HIDE_UNFOLLOW,
             HIDE_MATURE_WARNING, HIDE_CHAT_MODE_POPUP,
     };
     /** After the whole-header choice (ChatHeaderSetting): the header row's elements, left to right, then their rows. */
@@ -1068,7 +1109,7 @@ public final class Toggles {
 
     /** Bug fixes (on by default), on their own page so they aren't switched off by accident. */
     static final Toggle[] FIXES = {NO_MANIFEST_CACHE, FRESH_RN_PREVIEWS, FEED_TAB_INDICATOR, ALL_FOLLOWED_CATEGORIES, LANDSCAPE_INPUT_VISIBLE, IDLE_INPUT_CURSOR,
-            GLOBAL_BADGES_NOW, BADGES_ON_BASELINE, LAYOUT_PICKER_ICONS, VOD_CHAT_EMOTES, VAFT_LOW_LATENCY, PICKER_OUTSIDE_TAP, FIX_LOGIN};
+            GLOBAL_BADGES_NOW, BADGES_ON_BASELINE, LAYOUT_PICKER_ICONS, AUDIO_ONLY_UNMUTE, VOD_CHAT_EMOTES, VAFT_LOW_LATENCY, PICKER_OUTSIDE_TAP, FIX_LOGIN};
 
     private Toggles() {
     }

@@ -186,8 +186,12 @@ public final class UserHistory {
         return line;
     }
 
-    /** The row's text is final (emotes injected): keeps it for the history list. */
-    public static void rendered(Object line, TextView row) {
+    /** Chat row view -> its {@link Line} (null when the row isn't a known message); set on every bind. */
+    public static final int LINE_TAG_KEY = 0x7e700d71;
+
+    /** The row's text changed (bind, or a later pass that drew late emote images): keeps it for the history list. */
+    public static void rendered(TextView row) {
+        Object line = row.getTag(LINE_TAG_KEY);
         if (line instanceof Line) {
             ((Line) line).rendered = new SpannableString(row.getText());
         }

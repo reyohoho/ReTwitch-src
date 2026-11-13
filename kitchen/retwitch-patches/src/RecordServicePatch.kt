@@ -12,7 +12,7 @@ import org.w3c.dom.Element
  */
 val retwitchRecordServicePatch = resourcePatch(
     name = "ReTwitch record service",
-    description = "Declares the foreground service for stream recording and VOD downloads, and the recording player.",
+    description = "Declares the foreground service for stream recording and VOD downloads, the recording player and the update check receiver.",
 ) {
     compatibleWith(twitchCompatibility)
 
@@ -36,6 +36,11 @@ val retwitchRecordServicePatch = resourcePatch(
                 setAttribute("android:value", "Records a live stream the user chose to a file")
             })
             application.appendChild(service)
+            // The background update check (UpdateCheckReceiver): an explicit broadcast from the mod's own alarm.
+            application.appendChild(document.createElement("receiver").apply {
+                setAttribute("android:name", "tv.retwitch.mod.UpdateCheckReceiver")
+                setAttribute("android:exported", "false")
+            })
             // The recording player: its own activity, so it can go picture-in-picture (RecordPlayerActivity).
             application.appendChild(document.createElement("activity").apply {
                 setAttribute("android:name", "tv.retwitch.mod.RecordPlayerActivity")

@@ -287,7 +287,14 @@ public final class ChatFilters {
             if (c.getName().startsWith("java.") || c.getName().startsWith("android.")) {
                 return null;
             }
-            for (java.lang.reflect.Field field : c.getDeclaredFields()) {
+            java.lang.reflect.Field[] fields;
+            try {
+                fields = c.getDeclaredFields();
+            } catch (LinkageError e) {
+                // A field of a type this Android lacks (OnBackInvokedDispatcher before 13, 111 reports a week): no id there
+                continue;
+            }
+            for (java.lang.reflect.Field field : fields) {
                 if (field.getType().isPrimitive() || java.lang.reflect.Modifier.isStatic(field.getModifiers())) {
                     continue;
                 }

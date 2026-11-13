@@ -1,8 +1,13 @@
 package tv.retwitch.mod;
 
 import android.app.Activity;
+import android.app.AlarmManager;
 import android.app.AlertDialog;
 import android.app.Application;
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -11,6 +16,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.SystemClock;
 import android.provider.Settings;
 import android.text.Html;
 import android.util.Log;
@@ -46,6 +52,9 @@ final class ModUpdate {
     private static final String BASE_URL = "https://storage.yandexcloud.net/rte/ReTwitch/";
     private static final String PREFS = "retwitch_update";
     private static final String KEY_LATER = "later_until";
+    private static final String KEY_NOTIFIED = "notified_version";
+    private static final String CHANNEL = "retwitch_update";
+    private static final int NOTIFICATION_ID = 0x7e7001;
     private static final long LATER_MS = 24 * 60 * 60 * 1000L;
     private static final String APK_MIME = "application/vnd.android.package-archive";
     private static final String FILE_NAME = "ReTwitch-update.apk";
@@ -106,7 +115,8 @@ final class ModUpdate {
             if (!checked) {
                 checked = true;
                 apkFile(activity).delete();
-                if (Toggles.on(Toggles.UPDATE_CHECK) && System.currentTimeMillis() >= prefs(activity).getLong(KEY_LATER, 0)) {
+                schedule(activity);
+                if ((Toggles.on(Toggles.UPDATE_CHECK) || Toggles.on(Toggles.UPDATE_NOTIFY)) && System.currentTimeMillis() >= prefs(activity).getLong(KEY_LATER, 0)) {
                     check(activity, false);
                 }
             }
@@ -121,6 +131,56 @@ final class ModUpdate {
             }
         } catch (Throwable t) {
             Log.w(TAG, "resume failed", t);
+        }
+    }
+
+    /**
+     * The background check (UPDATE_NOTIFY) twice a day, inexact and without waking the phone. The alarm lives until a
+     * reboot or a force stop; every launch sets it again, and the receiver cancels it once the toggle is off.
+     */
+    static void schedule(Context context) {
+        try {
+            Context app = context.getApplicationContext();
+            AlarmManager alarms = app.getSystemService(AlarmManager.class);
+            PendingIntent check = PendingIntent.getBroadcast(app, 0, new Intent(app, UpdateCheckReceiver.class),
+                    PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
+            if (Toggles.on(Toggles.UPDATE_NOTIFY)) {
+                alarms.setInexactRepeating(AlarmManager.ELAPSED_REALTIME, SystemClock.elapsedRealtime() + AlarmManager.INTERVAL_HALF_DAY,
+                        AlarmManager.INTERVAL_HALF_DAY, check);
+            } else {
+                alarms.cancel(check);
+            }
+        } catch (Throwable t) {
+            Log.w(TAG, "schedule failed", t);
+        }
+    }
+
+    /** From UpdateCheckReceiver, off the main thread: one notification per new version. */
+    static void notifyIfNewer(Context app) {
+        try {
+            Release release = parse(new String(read(BASE_URL + "latest.json"), StandardCharsets.UTF_8));
+            SharedPreferences prefs = prefs(app);
+            if (!BuildInfo.isNewer(release.version, BuildInfo.VERSION_NAME) || release.version.equals(prefs.getString(KEY_NOTIFIED, null))) {
+                return;
+            }
+            NotificationManager notifications = app.getSystemService(NotificationManager.class);
+            notifications.createNotificationChannel(new NotificationChannel(CHANNEL,
+                    Strings.pick("Обновления мода", "Mod updates"), NotificationManager.IMPORTANCE_DEFAULT));
+            Intent launch = app.getPackageManager().getLaunchIntentForPackage(app.getPackageName());
+            Notification.Builder builder = new Notification.Builder(app, CHANNEL)
+                    .setSmallIcon(android.R.drawable.stat_sys_download_done)
+                    .setContentTitle(Strings.updateTitle(release.version))
+                    .setContentText(Strings.pick("Откройте приложение, чтобы обновить", "Open the app to update"))
+                    .setAutoCancel(true);
+            if (launch != null) {
+                builder.setContentIntent(PendingIntent.getActivity(app, 0, launch, PendingIntent.FLAG_IMMUTABLE));
+            }
+            notifications.notify(NOTIFICATION_ID, builder.build());
+            // The tap opens the app: the update dialog comes up then, "Later" from yesterday or not.
+            prefs.edit().putString(KEY_NOTIFIED, release.version).remove(KEY_LATER).apply();
+            MAIN.post(() -> waiting = release);
+        } catch (IOException | JSONException | RuntimeException e) {
+            Log.w(TAG, "background check failed", e);
         }
     }
 

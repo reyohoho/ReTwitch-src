@@ -33,6 +33,7 @@ public final class RnScript {
             boolean hideFollowedShelf = Toggles.on(Toggles.HIDE_LIVE_FOLLOWED_SHELF);
             boolean hideClipsShelf = Toggles.on(Toggles.HIDE_LIVE_CLIPS_SHELF);
             boolean hideStoriesEmpty = Toggles.on(Toggles.HIDE_STORIES_EMPTY);
+            boolean hideLiveEmpty = Toggles.on(Toggles.HIDE_LIVE_EMPTY);
             String me = TwitchAuth.getUserId();
             boolean friends = Toggles.on(Toggles.FRIENDS_HOME) && !me.isEmpty();
             int previewSize = LandingSettings.getFollowingPreviewSize();
@@ -45,7 +46,7 @@ public final class RnScript {
             boolean profileClips = Toggles.on(Toggles.HIDE_PROFILE_FEATURED_CLIPS);
             boolean profileCategories = Toggles.on(Toggles.HIDE_PROFILE_CATEGORIES);
             boolean profileStreamers = Toggles.on(Toggles.HIDE_PROFILE_STREAMERS);
-            if (!compactLive && !hideFollowedShelf && !hideClipsShelf && !hideStoriesEmpty && !friends && previewSize == 0
+            if (!compactLive && !hideFollowedShelf && !hideClipsShelf && !hideStoriesEmpty && !hideLiveEmpty && !friends && previewSize == 0
                     && !tabIndicator && !hideStories && !hideTabs && !favorites && !uptime
                     && !profileRecaps && !profileClips && !profileCategories && !profileStreamers) {
                 return;
@@ -55,6 +56,7 @@ public final class RnScript {
                     .put("hideFollowedShelf", hideFollowedShelf)
                     .put("hideClipsShelf", hideClipsShelf)
                     .put("hideStoriesEmpty", hideStoriesEmpty)
+                    .put("hideLiveEmpty", hideLiveEmpty)
                     .put("previewSize", previewSize)
                     .put("tabIndicator", tabIndicator)
                     .put("hideStories", hideStories)

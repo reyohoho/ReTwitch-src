@@ -41,7 +41,7 @@ final class SettingsPreview extends View {
             P_AD_LABEL = 1L << 19, P_UP_NEXT = 1L << 20, P_DANMAKU = 1L << 21, P_DANMAKU_NICKS = 1L << 22,
             P_GESTURES = 1L << 23, P_CUTOUT = 1L << 24, P_DIVIDER = 1L << 25, P_WIDE_PANEL = 1L << 26,
             P_CHATTERS = 1L << 27, P_LAYOUT = 1L << 28, P_RECORD = 1L << 29, P_REC_LABEL = 1L << 30, P_ROTATE = 1L << 31,
-            P_MUTE = 1L << 32, P_BATTERY = 1L << 33;
+            P_MUTE = 1L << 32, P_BATTERY = 1L << 33, P_MINIMIZE = 1L << 34;
 
     static final long C_ALT = 1L, C_ME = 1L << 1, C_FIRST = 1L << 2, C_PAINT = 1L << 3, C_RTE = 1L << 4,
             C_BADGE_FFZ = 1L << 5, C_BADGE_CHATTERINO = 1L << 6, C_BADGE_DANKCHAT = 1L << 7, C_BADGE_CHATSEN = 1L << 8,
@@ -54,14 +54,15 @@ final class SettingsPreview extends View {
             C_DELETED_BG = 1L << 36, C_NEW_COUNT = 1L << 37;
 
     static final long T_TITLE = 1L, T_BUTTONS = 1L << 1, T_GIFT = 1L << 2, T_EXTENSIONS = 1L << 3,
-            T_LEADERBOARD = 1L << 4, T_REPLAY = 1L << 5;
+            T_LEADERBOARD = 1L << 4, T_REPLAY = 1L << 5, T_ROW_MENU = 1L << 6;
 
     static final long B_HYPE = 1L, B_POLL = 1L << 1, B_RAID = 1L << 2, B_SHOUTOUT = 1L << 3, B_DROPS = 1L << 4,
             B_GIFTS = 1L << 5, B_SHARED = 1L << 6, B_PAID_PIN = 1L << 7, B_PIN = 1L << 8;
 
     static final long I_BITS = 1L, I_SETTINGS = 1L << 1, I_BALANCE = 1L << 2, I_LATENCY = 1L << 3, I_IMAGES = 1L << 4,
             I_FULLSCREEN = 1L << 5, I_OVERLAY = 1L << 6, I_NO_COLON = 1L << 7, I_CURSOR = 1L << 8, I_RAISED = 1L << 9,
-            I_EMOTE_IDLE = 1L << 10, I_BALANCE_UNDER = 1L << 11, I_POINTS_PORTRAIT = 1L << 12, I_POINTS_LANDSCAPE = 1L << 13;
+            I_EMOTE_IDLE = 1L << 10, I_BALANCE_UNDER = 1L << 11, I_POINTS_PORTRAIT = 1L << 12, I_POINTS_LANDSCAPE = 1L << 13,
+            I_PORTRAIT = 1L << 14;
 
     static final long H_FOLLOWING = 1L, H_BROWSE = 1L << 1, H_ACTIVITY = 1L << 2, H_CREATE = 1L << 3,
             H_CATEGORIES = 1L << 4, H_CONTINUE = 1L << 5, H_OFFLINE = 1L << 6, H_STREAK = 1L << 7,
@@ -437,7 +438,9 @@ final class SettingsPreview extends View {
         }
         gradient(0, 0, 320, 56, 0, true, 0x99000000, 0x00000000);
         gradient(0, 124, 320, 56, 0, true, 0x00000000, 0xA6000000);
-        icon("ic_arrow_down", 8, 8, 26, WHITE);
+        if (hides(P_MINIMIZE, 8, 8, 26, 26, 6)) {
+            icon("ic_arrow_down", 8, 8, 26, WHITE);
+        }
         if (focus == P_FOLLOW || focus == P_UNFOLLOW || focus == 0 && !on(P_STATS)) {
             metadata();
         }
@@ -1178,6 +1181,24 @@ final class SettingsPreview extends View {
         box(0, 0, 340, 400, 0, colors.bg);
         y = 0;
         float baseline = 28;
+        if (focus == T_ROW_MENU) {
+            // A video's chat: every line ends with its own menu.
+            label(t("Повтор чата", "Chat Replay"), 14, baseline, 15, colors.fg, true);
+            box(0, 44, 340, 1, 0, colors.line);
+            y = 45;
+            String[] lines = {t("всем привет", "hey everyone"), t("гг", "gg"), t("что за игра?", "what game is this?")};
+            for (int i = 0; i < lines.length; i++) {
+                float top = y;
+                say(1 + i % 2, lines[i]);
+                float middle = (top + y) / 2;
+                if (hides(T_ROW_MENU, 322, middle - 9, 10, 18, 4)) {
+                    for (int dot = -1; dot <= 1; dot++) {
+                        box(325.5f, middle + dot * 5.5f - 1.5f, 3, 3, 1.5f, colors.fg);
+                    }
+                }
+            }
+            return;
+        }
         if (focus == T_REPLAY) {
             // A video's chat: its own header bar instead of the live one.
             if (hides(T_REPLAY, 0, 0, 340, 44, 0)) {
@@ -1306,6 +1327,10 @@ final class SettingsPreview extends View {
                 label(t("подсказок нет, нужно «:cat»", "no hints, it takes \":cat\""), 58, y + 21, 12.5f, colors.dim, false);
             }
             y += 38;
+        }
+        if (focus == I_PORTRAIT && !hides(I_PORTRAIT, 4, y - 4, 332, 44, 9)) {
+            y += 38;
+            return;
         }
         float top = y;
         float left = 10;

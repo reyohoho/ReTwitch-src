@@ -50,6 +50,7 @@ public final class UiHider {
     /** The side chat column of the live theatre and of VODs. */
     private static final String[] SIDE_CHAT = {"chat_wrapper", "landscape_chat_container"};
     private static final int HIDDEN_TAG_KEY = 0x7e700d40;
+    private static final int AUDIO_UNMUTED_TAG_KEY = 0x7e700d72;
     private static final int REMEASURED_TAG_KEY = 0x7e700d46;
     private static final int EMOTE_TOUCH_TAG_KEY = 0x7e700d47;
     private static final int PRESSED_TAG_KEY = 0x7e700d41;
@@ -158,11 +159,19 @@ public final class UiHider {
         }
         final View decor = activity.getWindow().getDecorView();
         final ViewTreeObserver.OnPreDrawListener checkBeforeDraw = new ViewTreeObserver.OnPreDrawListener() {
+            private boolean skipped;
+
             @Override
             public boolean onPreDraw() {
                 decor.getViewTreeObserver().removeOnPreDrawListener(this);
+                boolean before = decor.isLayoutRequested();
+                long t0 = UiStallLog.start();
                 safeApply(activity, decor);
-                return true;
+                UiStallLog.end("UiHider pre-draw", t0);
+                // Something hidden now: skip this frame so the next one is laid out without it. Never twice in a row,
+                // in case Twitch shows it again before every draw.
+                skipped = !skipped && !before && decor.isLayoutRequested();
+                return !skipped;
             }
         };
         decor.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
@@ -229,6 +238,19 @@ public final class UiHider {
         }
         if (Toggles.on(Toggles.HIDE_PLAYER_FULLSCREEN)) {
             hideAll(activity, decor, PLAYER_BAR_IDS);
+        }
+        boolean minimize = Toggles.on(Toggles.HIDE_PLAYER_MINIMIZE);
+        if (minimize || minimizeTouched) {
+            minimizeTouched = minimize;
+            // back_button is a common id (the points panel has one too): only the player overlay's.
+            for (View overlay : findAll(activity, decor, PLAYER_OVERLAY)) {
+                hideWhile(minimize, find(activity, overlay, "back_button"));
+            }
+        }
+        if (Toggles.on(Toggles.AUDIO_ONLY_UNMUTE)) {
+            for (View toggle : findAll(activity, decor, "toggle_player_mode")) {
+                unmuteAudioOnly(activity, toggle);
+            }
         }
         boolean rotate = Toggles.on(Toggles.HIDE_PLAYER_ROTATE);
         boolean mute = Toggles.on(Toggles.HIDE_PLAYER_MUTE);
@@ -333,6 +355,41 @@ public final class UiHider {
     }
 
     private static boolean squashTouched;
+    private static boolean minimizeTouched;
+
+    /** From the chat adapter's bind (AutoModChat.onRowBound): the ⋮ of a video's chat line, which Twitch never hides. */
+    static void bindChatRow(View row) {
+        int id = id(row.getContext(), "overflow_image_view");
+        View menu = id == 0 ? null : row.findViewById(id);
+        if (menu != null) {
+            hideWhile(Toggles.on(Toggles.HIDE_VOD_ROW_MENU), menu);
+        }
+    }
+
+    /**
+     * Twitch's Audio Only mode shows its switch where the mute button was (issue #10): a muted player stayed silent with
+     * nothing to unmute it. Once per switch-on, a muted player is unmuted by the mute button itself: its click (31.9.0
+     * f93 case 5) doesn't look at visibility. Muted is the "Mute" description (t4u.A(isMuted=true)).
+     */
+    private static void unmuteAudioOnly(Activity activity, View toggle) {
+        boolean audioOnly = toggle.getVisibility() == View.VISIBLE && toggle instanceof android.widget.CompoundButton
+                && ((android.widget.CompoundButton) toggle).isChecked();
+        if (!audioOnly) {
+            toggle.setTag(AUDIO_UNMUTED_TAG_KEY, null);
+            return;
+        }
+        if (toggle.getTag(AUDIO_UNMUTED_TAG_KEY) != null || !(toggle.getParent() instanceof View)) {
+            return;
+        }
+        View mute = ((View) toggle.getParent()).findViewById(id(activity, "mute_button"));
+        int muted = res(activity, "mute_button_text", "string");
+        if (mute == null || muted == 0 || !activity.getString(muted).equals(String.valueOf(mute.getContentDescription()))) {
+            return;
+        }
+        // Before the click: if Twitch ignores it, the description stays and the next pass would click again.
+        toggle.setTag(AUDIO_UNMUTED_TAG_KEY, Boolean.TRUE);
+        mute.performClick();
+    }
 
     /**
      * Hides a player button but keeps its visibility (HIDE_PLAYER_ROTATE, HIDE_PLAYER_MUTE): ReloadHook's strip anchors
@@ -660,7 +717,7 @@ public final class UiHider {
     private static void applyLandscapeChat(Activity activity, View decor) {
         boolean land = activity.getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE;
         boolean header = ChatHeaderSetting.hidden(land);
-        boolean input = land && Toggles.on(Toggles.HIDE_LANDSCAPE_CHAT_INPUT);
+        boolean input = Toggles.on(land ? Toggles.HIDE_LANDSCAPE_CHAT_INPUT : Toggles.HIDE_PORTRAIT_CHAT_INPUT);
         stackPoints(activity, decor, land && Toggles.on(Toggles.POINTS_BALANCE_LANDSCAPE)
                 && Toggles.on(Toggles.POINTS_BALANCE_UNDER_ICON));
         // The theatre lives in this activity: another one on top (settings) doesn't mean it closed.

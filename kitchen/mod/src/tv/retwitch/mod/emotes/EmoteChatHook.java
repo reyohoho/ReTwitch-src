@@ -690,6 +690,7 @@ public final class EmoteChatHook {
             }
             BOUND_VIEWS.add(textView);
             applyFontScale(textView);
+            LinkPreview.fitWidth(spanned, textView);
             // Rows carry "name: message": tie tag-flagged senders to them before
             // the highlight below and the refresh pass that renders giant emotes.
             GiantEmotes.onRowBound(spanned);
@@ -701,14 +702,15 @@ public final class EmoteChatHook {
             // the plain cached Spanned is actually on the TextView -- otherwise
             // history/VOD rows that were built before third-party data finished
             // loading stay plain text until the view is recycled and rebound.
-            final Object historyLine = tv.retwitch.mod.UserHistory.takeBound();
+            textView.setTag(tv.retwitch.mod.UserHistory.LINE_TAG_KEY, tv.retwitch.mod.UserHistory.takeBound());
             textView.post(new Runnable() {
                 @Override
                 public void run() {
                     // Also a bare main-thread callback -- guard it too.
                     try {
-                        refreshTextView(textView);
-                        tv.retwitch.mod.UserHistory.rendered(historyLine, textView);
+                        if (!refreshTextView(textView)) {
+                            tv.retwitch.mod.UserHistory.rendered(textView);
+                        }
                     } catch (Throwable t) {
                         Log.w(TAG, "per-row refresh crashed", t);
                         CrashReporter.report(TAG, "per-row refresh crashed", t);
@@ -1137,9 +1139,11 @@ public final class EmoteChatHook {
             return false;
         }
         SpannedString updated = new SpannedString(builder);
+        LinkPreview.fitWidth(updated, textView);
         textView.setText(updated);
         attachAnimatedHosts(updated, textView);
         ensureClickable(updated, textView);
+        tv.retwitch.mod.UserHistory.rendered(textView);
         return true;
     }
 }

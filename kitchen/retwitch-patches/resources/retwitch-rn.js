@@ -7,7 +7,7 @@
     var fav = !!config.favorites;
     var targets = {FeedStreamItem: config.compactLive, FeedAdItem: config.compactLive, RecapsShelfHeader: config.hideFollowedShelf,
         FeedShelfContainer: config.hideClipsShelf, FollowingTab: !!config.friends || fav, FollowingCategories: !!config.friends,
-        useFollowingTabData: fav, FollowingLiveHeader: fav, TrackedFollowingChannelRow: fav, FollowingChannelMenu: fav,
+        useFollowingTabData: fav || config.hideLiveEmpty, FollowingLiveHeader: fav, TrackedFollowingChannelRow: fav, FollowingChannelMenu: fav,
         ChannelProfileOverflowMenu: fav,
         StoriesEmptyState: config.hideStoriesEmpty, useStoriesShelf: config.hideStoriesEmpty || config.hideStories,
         FollowingChannelRow: config.previewSize > 0, CustomTabIndicator: config.tabIndicator,
@@ -582,17 +582,30 @@
 
     var adapters = {
         // Favorites go first among live channels; the section header and the strip are drawn around them below.
+        // Empty live section (issue #12): FollowingTabContent draws "Live Now" and "They'll be back!" only when
+        // hasAnyFollows is set and nobody is live; nothing else reads it from here (the offline gate has its own).
+        // Config doesn't change while the script runs, so the hooks below are called the same way every render.
         useFollowingTabData: function (original) {
             return function () {
                 var data = original.apply(this, arguments);
-                var list = useFavorites();
-                var edges = data && data.liveEdges;
-                var sorted = React.useMemo(function () { return favoritesFirst(edges, list); }, [edges, list]);
-                var result = React.useMemo(function () {
-                    return sorted.edges === edges ? data : Object.assign({}, data, {liveEdges: sorted.edges});
-                }, [data, sorted]);
-                liveFav = sorted;
-                return result;
+                var list = [];
+                if (fav) {
+                    list = useFavorites();
+                    var edges = data && data.liveEdges;
+                    var sorted = React.useMemo(function () { return favoritesFirst(edges, list); }, [edges, list]);
+                    var source = data;
+                    data = React.useMemo(function () {
+                        return sorted.edges === edges ? source : Object.assign({}, source, {liveEdges: sorted.edges});
+                    }, [source, sorted]);
+                    liveFav = sorted;
+                }
+                if (!config.hideLiveEmpty) return data;
+                // The favorites strip is drawn by the live header's wrapper: with favorites the section stays.
+                var shown = data, keep = list.length > 0;
+                return React.useMemo(function () {
+                    return shown && shown.hasAnyFollows && !shown.hasLiveChannels && !keep
+                        ? Object.assign({}, shown, {hasAnyFollows: false}) : shown;
+                }, [shown, keep]);
             };
         },
         // With live favorites, their rows come first and Twitch's header ("Live channels", sort) moves below them:

@@ -13,6 +13,23 @@ import android.text.TextUtils;
 public final class Changelog {
 
     private static final String[][] ENTRIES = {
+            {"0.5.30-beta",
+                    "Скрытые кнопки и полосы больше не мелькают при открытии плеера (спасибо Beorge-web)\n"
+                            + "«Только звук» включает звук, если плеер был без звука: кнопки звука в этом режиме нет\n"
+                            + "Можно скрыть: стрелку сворачивания плеера, ⋮ у сообщений в чате записи, поле ввода в портрете, "
+                            + "пустой раздел «В эфире» в «Отслеживаемом»\n"
+                            + "Уведомление о новой версии, пока приложение закрыто (в «О моде», по умолчанию выключено)\n"
+                            + "Превью картинок в узком чате ужимаются по ширине колонки, а не обрезаются, "
+                            + "счётчик новых сообщений там - одной строкой\n"
+                            + "Испанский перевод обновлён (спасибо FredMan95)",
+                    "Hidden buttons and bars no longer flash when the player opens (thanks to Beorge-web)\n"
+                            + "Audio Only turns the sound on if the player was muted: the mode has no mute button\n"
+                            + "New to hide: the player's minimize arrow, the ⋮ by messages in a video's chat, the input in portrait, "
+                            + "the empty \"Live Now\" section in Following\n"
+                            + "A notification about a new version while the app is closed (in About, off by default)\n"
+                            + "Image previews in a narrow chat shrink to the column instead of being cut off, "
+                            + "and the new messages counter there fits one line\n"
+                            + "Spanish translation updated (thanks to FredMan95)"},
             {"0.5.29-beta",
                     "Отчёты о сбоях больше не отправляют обычные обрывы сети",
                     "Crash reports no longer send ordinary network drops"},
