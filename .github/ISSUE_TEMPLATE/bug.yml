@@ -1,15 +1,17 @@
-name: "Баг / Bug"
-description: "Что-то работает не так / Something doesn't work right"
+name: "Bug / Баг"
+description: "Something doesn't work right / Что-то работает не так"
 labels: ["bug"]
 body:
   - type: markdown
     attributes:
       value: |
-        Один баг - одна заявка. Сначала поищите похожие в Issues: если уже есть, поставьте 👍 и допишите своё там.
         One bug per issue. Search first: if it's there, add 👍 and your details to it.
+        Один баг - одна заявка. Сначала поищите похожие в Issues: если уже есть, поставьте 👍 и допишите своё там.
 
-        **Файлы.** Перетащите в любое поле ниже или вставьте из буфера: скриншоты, запись экрана, логи (`.txt`), экспорт настроек (`.json`).
         **Files.** Drag them into any field below or paste them: screenshots, a screen recording, logs (`.txt`), the settings export (`.json`).
+        **Файлы.** Перетащите в любое поле ниже или вставьте из буфера: скриншоты, запись экрана, логи (`.txt`), экспорт настроек (`.json`).
+
+        **Logs.** Twitch settings > ReTwitch > Diagnostics > Logs for reports. Turn on the one for your problem (ad blocking log for freezes and ads, UI stall log for lag, bans and deletions log for missing messages), reproduce the problem and attach `ReTwitch-*.txt` from Downloads.
 
         **Логи.** Настройки Twitch > ReTwitch > «Диагностика» > «Логи для отчётов». Включите лог под вашу проблему:
         - фризы, зависания стрима, реклама - «Лог блокировки рекламы»;
@@ -18,63 +20,61 @@ body:
 
         Повторите проблему, затем приложите файл `ReTwitch-*.txt` из папки «Загрузки» (Download). Токенов и паролей в логах нет. Лог потом можно выключить.
 
-        **Logs.** Twitch settings > ReTwitch > Diagnostics > Logs for reports. Turn on the one for your problem (ad blocking log for freezes and ads, UI stall log for lag, bans and deletions log for missing messages), reproduce the problem and attach `ReTwitch-*.txt` from Downloads.
-
-        **Настройки - обязательно.** ReTwitch > «Резервная копия» > «Сохранить в файл» > `retwitch-settings-ДАТА.json`, приложите его в поле «Экспорт настроек». Без него заявку не разобрать: баг часто зависит от того, что включено. В файле только настройки мода и флаги экспериментов Twitch.
         **Settings - required.** ReTwitch > Backup > Save to a file > `retwitch-settings-DATE.json`, attach it in the "Settings export" field. Without it we can't look into the issue: a bug often depends on what's turned on. The file has the mod's settings and Twitch's experiment flags only.
+        **Настройки - обязательно.** ReTwitch > «Резервная копия» > «Сохранить в файл» > `retwitch-settings-ДАТА.json`, приложите его в поле «Экспорт настроек». Без него заявку не разобрать: баг часто зависит от того, что включено. В файле только настройки мода и флаги экспериментов Twitch.
 
-        Если приложение вылетает, отчёт уходит сам: напишите, во сколько это было. / If the app crashes, the report is sent by itself: tell us when it happened.
+        If the app crashes, the report is sent by itself: tell us when it happened. / Если приложение вылетает, отчёт уходит сам: напишите, во сколько это было.
   - type: input
     id: version
     attributes:
-      label: "Версия мода / Mod version"
-      description: "ReTwitch > «О моде» / About the mod"
+      label: "Mod version / Версия мода"
+      description: "ReTwitch > About the mod / «О моде»"
       placeholder: "0.5.27-beta"
     validations:
       required: true
   - type: input
     id: device
     attributes:
-      label: "Телефон и Android / Device and Android"
+      label: "Device and Android / Телефон и Android"
       placeholder: "Pixel 7, Android 16"
     validations:
       required: true
   - type: textarea
     id: what
     attributes:
-      label: "Что случилось / What happened"
-      description: "И что должно было быть вместо этого / and what you expected instead"
+      label: "What happened / Что случилось"
+      description: "And what you expected instead / и что должно было быть вместо этого"
     validations:
       required: true
   - type: textarea
     id: steps
     attributes:
-      label: "Как повторить / Steps to reproduce"
+      label: "Steps to reproduce / Как повторить"
       placeholder: |
-        1. Открыть канал ... / Open a channel ...
-        2. Повернуть в полный экран / Go fullscreen
+        1. Open a channel ... / Открыть канал ...
+        2. Go fullscreen / Повернуть в полный экран
         3. ...
     validations:
       required: true
   - type: textarea
     id: settings
     attributes:
-      label: "Экспорт настроек (обязательно) / Settings export (required)"
-      description: "Перетащите сюда `retwitch-settings-ДАТА.json` из «Резервной копии» / Drag `retwitch-settings-DATE.json` from Backup here"
+      label: "Settings export (required) / Экспорт настроек (обязательно)"
+      description: "Drag `retwitch-settings-DATE.json` from Backup here / Перетащите сюда `retwitch-settings-ДАТА.json` из «Резервной копии»"
     validations:
       required: true
   - type: textarea
     id: files
     attributes:
-      label: "Запись экрана, скриншоты, логи / Recording, screenshots, logs"
-      description: "Перетащите файлы сюда / Drag the files here"
+      label: "Recording, screenshots, logs / Запись экрана, скриншоты, логи"
+      description: "Drag the files here / Перетащите файлы сюда"
   - type: checkboxes
     id: checks
     attributes:
-      label: "Проверки / Checks"
+      label: "Checks / Проверки"
       options:
-        - label: "Такой заявки ещё нет / There's no issue about it yet"
+        - label: "There's no issue about it yet / Такой заявки ещё нет"
           required: true
-        - label: "Экспорт настроек приложен / The settings export is attached"
+        - label: "The settings export is attached / Экспорт настроек приложен"
           required: true
-        - label: "Повторяется на последней версии мода / Happens on the latest version"
+        - label: "Happens on the latest version / Повторяется на последней версии мода"

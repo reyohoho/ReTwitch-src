@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Writes the current mod version's changelog (RU + EN) as plain text.
+"""Writes the current mod version's changelog (EN + RU) as plain text.
 
 Reads BuildInfo.VERSION_NAME and that version's entry from Changelog.ENTRIES
 ({version, Russian items, English items}, items joined with "\\n").
@@ -58,7 +58,8 @@ def entry(changelog_src, ver):
 def render(ver, ru, en):
     def items(text):
         return "\n".join("- " + line for line in text.split("\n") if line.strip())
-    return "ReTwitch %s\n\nRU:\n%s\n\nEN:\n%s\n" % (ver, items(ru), items(en))
+    # English first: the public repo and its releases are read in English before Russian.
+    return "ReTwitch %s\n\nEN:\n%s\n\nRU:\n%s\n" % (ver, items(en), items(ru))
 
 
 def selftest():
@@ -70,8 +71,8 @@ def selftest():
     assert ver == "1.0", ver
     assert ru == 'Первое "в кавычках"\nВторое', ru
     assert en == "First\nSecond, with a comma", en
-    assert render(ver, ru, en) == ('ReTwitch 1.0\n\nRU:\n- Первое "в кавычках"\n- Второе\n\n'
-                                   'EN:\n- First\n- Second, with a comma\n')
+    assert render(ver, ru, en) == ('ReTwitch 1.0\n\nEN:\n- First\n- Second, with a comma\n\n'
+                                   'RU:\n- Первое "в кавычках"\n- Второе\n')
     assert version('String VERSION_NAME = "1.0";') == "1.0"
     print("changelog_text selftest OK")
 
