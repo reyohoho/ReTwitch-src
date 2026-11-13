@@ -21,6 +21,8 @@ public final class Changelog {
                             + "Уведомление о новой версии, пока приложение закрыто (в «О моде», по умолчанию выключено)\n"
                             + "Превью картинок в узком чате ужимаются по ширине колонки, а не обрезаются, "
                             + "счётчик новых сообщений там - одной строкой\n"
+                            + "Скрытие баннеров над чатом теперь работает и на Android 9-12, раньше там оно не срабатывало\n"
+                            + "История сообщений в карточке зрителя показывает смайлы, которые догрузились позже\n"
                             + "Испанский перевод обновлён (спасибо FredMan95)",
                     "Hidden buttons and bars no longer flash when the player opens (thanks to Beorge-web)\n"
                             + "Audio Only turns the sound on if the player was muted: the mode has no mute button\n"
@@ -29,6 +31,8 @@ public final class Changelog {
                             + "A notification about a new version while the app is closed (in About, off by default)\n"
                             + "Image previews in a narrow chat shrink to the column instead of being cut off, "
                             + "and the new messages counter there fits one line\n"
+                            + "Hiding the banners above the chat now works on Android 9-12 too, it didn't before\n"
+                            + "The message history in the viewer card shows emotes that finished loading later\n"
                             + "Spanish translation updated (thanks to FredMan95)"},
             {"0.5.29-beta",
                     "Отчёты о сбоях больше не отправляют обычные обрывы сети",
