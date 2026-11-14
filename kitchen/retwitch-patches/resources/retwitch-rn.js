@@ -172,10 +172,11 @@
             });
     }
 
+    // "2:15" read as minutes and seconds as easily as hours and minutes: units instead ("2h 15m", "45m").
     function formatUptime(ms) {
         var minutes = Math.max(0, Math.floor(ms / 60000));
-        var m = minutes % 60;
-        return Math.floor(minutes / 60) + ':' + (m < 10 ? '0' : '') + m;
+        var hours = Math.floor(minutes / 60);
+        return (hours ? hours + config.text.hours + ' ' : '') + minutes % 60 + config.text.minutes;
     }
 
     function Uptime(props) {

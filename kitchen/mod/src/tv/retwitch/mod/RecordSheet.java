@@ -370,7 +370,8 @@ final class RecordSheet {
         }
         View bar = strip.get();
         boolean controls = bar != null && bar.isShown();
-        if (rec == null || video == null || controls || video.getWidth() < decor.getWidth() * 0.4f) {
+        if (rec == null || video == null || controls || video.getWidth() < decor.getWidth() * 0.4f
+                || PipOverlays.hides(video)) {
             view.setVisibility(View.GONE);
             return;
         }

@@ -55,9 +55,15 @@ final class ModUpdate {
     private static final String KEY_NOTIFIED = "notified_version";
     /** The background check's interval (issue #22): a setting, so outside the backup-excluded state file above. */
     private static final String SETTINGS = "retwitch_update_settings";
-    private static final String KEY_INTERVAL = "interval_index";
-    static final int[] INTERVAL_HOURS = {1, 3, 6, 12, 24};
-    private static final int DEFAULT_INTERVAL = 3;
+    private static final String KEY_INTERVAL = "interval_minutes";
+    static final int[] INTERVAL_MINUTES = {30, 60, 180, 360, 720, 1440};
+    private static final int DEFAULT_MINUTES = 720;
+    /**
+     * Before 30 minutes came in (issue #24) the choice was saved as an index into these hours: read when the minutes
+     * aren't there yet, so a saved "every hour" doesn't slide to the option now in its place.
+     */
+    private static final String KEY_INTERVAL_OLD = "interval_index";
+    private static final int[] OLD_INTERVAL_HOURS = {1, 3, 6, 12, 24};
     private static final String CHANNEL = "retwitch_update";
     private static final int NOTIFICATION_ID = 0x7e7001;
     private static final long LATER_MS = 24 * 60 * 60 * 1000L;
@@ -140,8 +146,8 @@ final class ModUpdate {
     }
 
     /**
-     * The background check (UPDATE_NOTIFY) twice a day, inexact and without waking the phone. The alarm lives until a
-     * reboot or a force stop; every launch sets it again, and the receiver cancels it once the toggle is off.
+     * The background check (UPDATE_NOTIFY) at the chosen interval, inexact and without waking the phone. The alarm lives
+     * until a reboot or a force stop; every launch sets it again, and the receiver cancels it once the toggle is off.
      */
     static void schedule(Context context) {
         try {
@@ -150,7 +156,7 @@ final class ModUpdate {
             PendingIntent check = PendingIntent.getBroadcast(app, 0, new Intent(app, UpdateCheckReceiver.class),
                     PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
             if (Toggles.on(Toggles.UPDATE_NOTIFY)) {
-                long every = INTERVAL_HOURS[intervalIndex(app)] * AlarmManager.INTERVAL_HOUR;
+                long every = INTERVAL_MINUTES[intervalIndex(app)] * 60_000L;
                 alarms.setInexactRepeating(AlarmManager.ELAPSED_REALTIME, SystemClock.elapsedRealtime() + every, every, check);
             } else {
                 alarms.cancel(check);
@@ -160,14 +166,30 @@ final class ModUpdate {
         }
     }
 
+    /** Position of the saved interval in {@link #INTERVAL_MINUTES}. */
     static int intervalIndex(Context context) {
-        int index = context.getSharedPreferences(SETTINGS, Context.MODE_PRIVATE).getInt(KEY_INTERVAL, DEFAULT_INTERVAL);
-        return index >= 0 && index < INTERVAL_HOURS.length ? index : DEFAULT_INTERVAL;
+        SharedPreferences settings = context.getSharedPreferences(SETTINGS, Context.MODE_PRIVATE);
+        int minutes = settings.getInt(KEY_INTERVAL, -1);
+        if (minutes < 0) {
+            int old = settings.getInt(KEY_INTERVAL_OLD, -1);
+            minutes = old >= 0 && old < OLD_INTERVAL_HOURS.length ? OLD_INTERVAL_HOURS[old] * 60 : DEFAULT_MINUTES;
+        }
+        int fallback = 0;
+        for (int i = 0; i < INTERVAL_MINUTES.length; i++) {
+            if (INTERVAL_MINUTES[i] == minutes) {
+                return i;
+            }
+            if (INTERVAL_MINUTES[i] == DEFAULT_MINUTES) {
+                fallback = i;
+            }
+        }
+        return fallback;
     }
 
     /** From the setting: saved, and the alarm set again at once. */
     static void setIntervalIndex(Context context, int index) {
-        context.getSharedPreferences(SETTINGS, Context.MODE_PRIVATE).edit().putInt(KEY_INTERVAL, index).apply();
+        context.getSharedPreferences(SETTINGS, Context.MODE_PRIVATE).edit()
+                .putInt(KEY_INTERVAL, INTERVAL_MINUTES[index]).remove(KEY_INTERVAL_OLD).apply();
         schedule(context);
     }
 

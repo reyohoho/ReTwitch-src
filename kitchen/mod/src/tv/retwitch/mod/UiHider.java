@@ -227,6 +227,7 @@ public final class UiHider {
         decor.getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
             @Override
             public boolean onPreDraw() {
+                PipOverlays.keep();
                 if (reshown(decor)) {
                     long t0 = UiStallLog.start();
                     safeApply(activity, decor);
@@ -867,6 +868,7 @@ public final class UiHider {
                 ChatOff.apply(theatre);
             }
             navUnderKeyboard(activity, decor, theatres);
+            PipOverlays.apply(activity, decor);
         }
         // Container of the chat mode snackbar ("Changed to No Chat" + "Next Mode") and Twitch's
         // "try chat overlay later" tooltip; Twitch never toggles its visibility, so GONE sticks.
@@ -1247,7 +1249,8 @@ public final class UiHider {
         }
         if (scan == null && build) {
             SparseArray<List<View>> byId = new SparseArray<>();
-            for (String[] names : new String[][]{SCANNED, FOLLOW_SUB, EXTENSIONS, CHANNEL_SKINS, NAV_VIEWS, SIDE_CHAT, CHAT_PANELS}) {
+            for (String[] names : new String[][]{SCANNED, FOLLOW_SUB, EXTENSIONS, CHANNEL_SKINS, NAV_VIEWS, SIDE_CHAT, CHAT_PANELS,
+                    PipOverlays.IDS}) {
                 for (String name : names) {
                     int id = id(context, name);
                     if (id != 0) {

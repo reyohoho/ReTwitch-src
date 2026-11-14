@@ -13,6 +13,17 @@ import android.text.TextUtils;
 public final class Changelog {
 
     private static final String[][] ENTRIES = {
+            {"0.5.34-beta",
+                    "В окне PiP только видео: уведомления о серии просмотров и другие плашки его больше не закрывают\n"
+                            + "Время эфира на превью пишется как «2ч 15м», а не «2:15»\n"
+                            + "Когда кнопок плеера много, время эфира и зрители поднимаются над ними, а не прячутся под кнопками\n"
+                            + "Проверять обновления можно раз в 30 минут\n"
+                            + "В списках выбора в настройках каждый вариант написан один раз",
+                    "Only the video in picture-in-picture: watch streak notices and other callouts no longer cover it\n"
+                            + "Stream uptime on previews reads \"2h 15m\" instead of \"2:15\"\n"
+                            + "With many player buttons, the uptime and viewers move above them instead of hiding under them\n"
+                            + "Updates can be checked every 30 minutes\n"
+                            + "Pick lists in the settings show each option once"},
             {"0.5.33-beta",
                     "Раздел «О моде и что нового» в настройках получает метку NEW, когда внутри есть новое\n"
                             + "Интерфейс меньше нагружает телефон, пока открыт стрим\n"

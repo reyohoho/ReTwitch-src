@@ -62,7 +62,7 @@ final class AboutPage {
         s.action(Strings.changelogTitle(), t("Версия ", "Version ") + BuildInfo.VERSION_NAME, () -> SettingsHook.showChangelog(c));
         s.toggle(Toggles.UPDATE_CHECK);
         s.group(Toggles.UPDATE_NOTIFY, () -> s.markNew("0.5.32-beta").choice(t("Как часто проверять", "How often to check"),
-                new String[]{t("Раз в час", "Every hour"), t("Раз в 3 часа", "Every 3 hours"), t("Раз в 6 часов", "Every 6 hours"),
+                new String[]{t("Раз в 30 минут", "Every 30 minutes"), t("Раз в час", "Every hour"), t("Раз в 3 часа", "Every 3 hours"), t("Раз в 6 часов", "Every 6 hours"),
                         t("Дважды в день", "Twice a day"), t("Раз в день", "Once a day")},
                 ModUpdate.intervalIndex(c), false, i -> ModUpdate.setIntervalIndex(c, i)));
         s.action(t("Проверить обновления сейчас", "Check for updates now"), null, () -> ModUpdate.checkNow(c));

@@ -548,6 +548,7 @@ public final class ReloadHook {
                     if (ref != null) {
                         existing.setVisibility(ref.getVisibility());
                     }
+                    liftCrowdedStats(exParent);
                     return;
                 }
                 // Our bar isn't on screen: either the controls are simply hidden
@@ -716,9 +717,103 @@ public final class ReloadHook {
             if (parent != null) {
                 parent.removeView(button);
                 parent.requestLayout();
+                lowerStats(parent);
             }
         } catch (Throwable t) {
             onFailure(button.getContext(), t);
+        }
+    }
+
+    /** The live bottom bar's left group (bottom_player_overlay_controls): stream type, uptime, viewers. */
+    private static final String[] BAR_LEFT = {"stream_type_indicator", "stream_type_label", "stream_uptime_label", "stream_stats_text"};
+    /** On the bar while its left group is lifted: {its own top padding, the room we added on top, its clipToPadding as 0/1}. */
+    private static final int LIFTED_TAG_KEY = 0x7e700d74;
+
+    /**
+     * With many strip buttons the right-hand chain reaches the bar's left group, and the bar (a ConstraintLayout) lets
+     * them overlap: uptime and viewers under the buttons. Then the left group goes up, just over the buttons' icons.
+     * The check is horizontal layout positions, which neither the lift nor the padding below changes, so it doesn't flip.
+     */
+    private static void liftCrowdedStats(ViewGroup bar) {
+        Context ctx = bar.getContext();
+        List<View> left = new ArrayList<>();
+        int leftEnd = Integer.MIN_VALUE;
+        int leftTop = Integer.MAX_VALUE;
+        int leftBottom = Integer.MIN_VALUE;
+        for (String name : BAR_LEFT) {
+            View view = childById(bar, idOf(ctx, name));
+            if (view != null) {
+                left.add(view);
+                if (view.getVisibility() == View.VISIBLE) {
+                    leftEnd = Math.max(leftEnd, view.getRight());
+                    leftTop = Math.min(leftTop, view.getTop());
+                    leftBottom = Math.max(leftBottom, view.getBottom());
+                }
+            }
+        }
+        if (left.isEmpty()) {
+            return; // not the live bar: the portrait widget's row is a LinearLayout, nothing overlaps there
+        }
+        int progress = idOf(ctx, "progress_text");
+        int tooltip = idOf(ctx, "tooltip_container");
+        int rightStart = Integer.MAX_VALUE;
+        int center = 0;
+        for (int i = 0; i < bar.getChildCount(); i++) {
+            View child = bar.getChildAt(i);
+            // progress_text stretches from the viewers to the buttons; squashed buttons (UiHider.squashWhile) are 1 px.
+            if (left.contains(child) || child.getVisibility() != View.VISIBLE || child.getWidth() <= 1
+                    || child.getScaleX() == 0f || child.getId() == progress || child.getId() == tooltip) {
+                continue;
+            }
+            if (child.getLeft() < rightStart) {
+                rightStart = child.getLeft();
+                center = (child.getTop() + child.getBottom()) / 2;
+            }
+        }
+        float lift = 0f;
+        if (leftEnd != Integer.MIN_VALUE && rightStart != Integer.MAX_VALUE && leftEnd > rightStart - dp(ctx, 4)) {
+            // The icons are 24dp around the row's centre: the group's bottom 2dp above them.
+            lift = Math.min(0, center - dp(ctx, 14) - leftBottom);
+        }
+        for (View view : left) {
+            if (view.getTranslationY() != lift) {
+                view.setTranslationY(lift);
+            }
+        }
+        if (lift == 0f) {
+            lowerStats(bar);
+            return;
+        }
+        // Above the bar the group would be clipped (by the bar's parent, and more on the Pixel), so the bar grows up instead:
+        // a top padding just tall enough to hold it. The row stays centred in its band at the bottom (wrap_content, pinned to
+        // the parent's bottom). The padding shifts the group and its lifted top alike, so this is the same on every pass.
+        // The group then sits in that padding, which the bar clips its children to (clipToPadding): off while lifted.
+        int[] saved = bar.getTag(LIFTED_TAG_KEY) instanceof int[] ? (int[]) bar.getTag(LIFTED_TAG_KEY) : null;
+        int base = saved != null ? saved[0] : bar.getPaddingTop();
+        int added = saved != null ? saved[1] : 0;
+        int clip = saved != null ? saved[2] : bar.getClipToPadding() ? 1 : 0;
+        int room = Math.max(0, dp(ctx, 2) - (leftTop + Math.round(lift) - added));
+        if (saved == null || room != added) {
+            bar.setTag(LIFTED_TAG_KEY, new int[]{base, room, clip});
+            bar.setClipToPadding(false);
+            bar.setPadding(bar.getPaddingLeft(), base + room, bar.getPaddingRight(), bar.getPaddingBottom());
+        }
+    }
+
+    /** The strip left this bar, or there's room again: its left group goes back down. */
+    private static void lowerStats(ViewGroup bar) {
+        Object saved = bar.getTag(LIFTED_TAG_KEY);
+        if (!(saved instanceof int[])) {
+            return;
+        }
+        bar.setTag(LIFTED_TAG_KEY, null);
+        bar.setPadding(bar.getPaddingLeft(), ((int[]) saved)[0], bar.getPaddingRight(), bar.getPaddingBottom());
+        bar.setClipToPadding(((int[]) saved)[2] != 0);
+        for (String name : BAR_LEFT) {
+            View view = childById(bar, idOf(bar.getContext(), name));
+            if (view != null) {
+                view.setTranslationY(0f);
+            }
         }
     }
 

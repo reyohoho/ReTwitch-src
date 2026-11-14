@@ -1143,20 +1143,30 @@ final class SettingsScreen {
         area.addView(note);
     }
 
-    /** A framed piece of content under a caption with a radio mark; the frame lights up when selected. */
+    /**
+     * A framed piece of content under a caption with a radio mark; the frame lights up when selected. Without content
+     * (a plain text option) the mark and the label go inside the frame: a caption over a copy of itself read twice.
+     */
     private View pane(String label, View content, BooleanSupplier selected, View.OnClickListener click) {
         LinearLayout pane = new LinearLayout(context);
         pane.setOrientation(LinearLayout.VERTICAL);
+        boolean inside = content == null;
         LinearLayout caption = new LinearLayout(context);
         caption.setGravity(Gravity.CENTER_VERTICAL);
-        caption.setPadding(dp(2), 0, 0, dp(6));
+        if (inside) {
+            caption.setPadding(dp(12), dp(12), dp(12), dp(12));
+        } else {
+            caption.setPadding(dp(2), 0, 0, dp(6));
+        }
         View mark = new View(context);
         caption.addView(mark, new LinearLayout.LayoutParams(dp(12), dp(12)));
-        TextView name = text(label, 12.5f, fgDim);
-        name.setPadding(dp(6), 0, 0, 0);
+        TextView name = text(label, inside ? 13.5f : 12.5f, fgDim);
+        name.setPadding(dp(inside ? 10 : 6), 0, 0, 0);
         caption.addView(name);
-        pane.addView(caption);
-        FrameLayout frame = frame(content);
+        if (!inside) {
+            pane.addView(caption);
+        }
+        FrameLayout frame = frame(inside ? caption : content);
         pane.addView(frame);
         pane.setOnClickListener(click);
         Runnable paint = () -> {
@@ -1288,13 +1298,11 @@ final class SettingsScreen {
     }
 
     private View option(String label, Extra extra, int which, BooleanSupplier selected, View.OnClickListener click) {
-        View content;
+        View content = null;
         if (extra.scene != 0) {
             SettingsPreview preview = new SettingsPreview(context, extra.scene, extra.focus, colors, icons);
             preview.values[extra.slot] = which;
             content = preview;
-        } else {
-            content = paneText(label);
         }
         View pane = pane(label, content, selected, click);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(

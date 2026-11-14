@@ -769,6 +769,14 @@ public final class Toggles {
             .compare("Без звука, включить нечем", "Звук включается вместе с режимом",
                     "Silent, nothing to unmute it with", "Sound comes on with the mode")
             .asNew("0.5.30-beta");
+    /** Overlays over the player go transparent in picture-in-picture (PipOverlays). */
+    public static final Toggle PIP_CLEAN_VIDEO = new Toggle("pip_clean_video",
+            "Только видео в окне PiP", "Only the video in picture-in-picture", false, true)
+            .about("Уведомления о серии просмотров и другие плашки не закрывают маленькое окно",
+                    "Watch streak notices and other callouts don't cover the small window")
+            .compare("Плашки поверх видео в окне", "В окне только видео",
+                    "Callouts over the video in the window", "Only the video in the window")
+            .asNew("0.5.34-beta");
     /** VOD chat emote ranges from UTF-8 bytes to chars (VodChatEmotes). */
     public static final Toggle VOD_CHAT_EMOTES = new Toggle("vod_chat_emotes",
             "Эмоуты Twitch в чате VOD", "Twitch emotes in VOD chat", false, true)
@@ -1148,7 +1156,7 @@ public final class Toggles {
 
     /** Bug fixes (on by default), on their own page so they aren't switched off by accident. */
     static final Toggle[] FIXES = {NO_MANIFEST_CACHE, FRESH_RN_PREVIEWS, FEED_TAB_INDICATOR, ALL_FOLLOWED_CATEGORIES, LANDSCAPE_INPUT_VISIBLE, IDLE_INPUT_CURSOR,
-            GLOBAL_BADGES_NOW, BADGES_ON_BASELINE, LAYOUT_PICKER_ICONS, AUDIO_ONLY_UNMUTE, VOD_CHAT_EMOTES, VAFT_LOW_LATENCY, PICKER_OUTSIDE_TAP, FIX_LOGIN};
+            GLOBAL_BADGES_NOW, BADGES_ON_BASELINE, LAYOUT_PICKER_ICONS, AUDIO_ONLY_UNMUTE, PIP_CLEAN_VIDEO, VOD_CHAT_EMOTES, VAFT_LOW_LATENCY, PICKER_OUTSIDE_TAP, FIX_LOGIN};
 
     private Toggles() {
     }

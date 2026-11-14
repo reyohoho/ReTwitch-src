@@ -77,7 +77,10 @@ public final class RnScript {
                             .put("friends", Strings.pick("Друзья RTE", "RTE friends"))
                             .put("watching", Strings.pick("смотрит", "watching"))
                             .put("more", Strings.pick("Показать всех", "Show all"))
-                            .put("less", Strings.pick("Свернуть", "Show less")))
+                            .put("less", Strings.pick("Свернуть", "Show less"))
+                            // Stream uptime on previews: "2h 15m".
+                            .put("hours", Strings.pick("ч", "h"))
+                            .put("minutes", Strings.pick("м", "m")))
                     .put("locale", Locale.getDefault().toLanguageTag());
             Context context = AppContext.get();
             // registerSegment takes a path, and an asset has none.
