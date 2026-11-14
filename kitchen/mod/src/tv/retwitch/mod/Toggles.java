@@ -234,6 +234,24 @@ public final class Toggles {
                     "Swipes do nothing on a portrait stream",
                     "Brightness and volume at the edges, a swipe down in the middle minimizes the player")
             .asNew("0.3.9-alpha");
+    /** Issue #15: the minimized theatre is closed with its own ✕ (UiHider, minimized_overlay_close). */
+    public static final Toggle NO_MINI_PLAYER = new Toggle("no_mini_player", "Без мини-плеера", "No mini player", false)
+            .about("Свернуть плеер - значит закрыть его", "Minimizing the player closes it")
+            .compare("Свёрнутый плеер остаётся маленьким окном поверх приложения",
+                    "Вместо мини-плеера плеер закрывается",
+                    "A minimized player stays as a small window over the app",
+                    "The player closes instead of shrinking")
+            .note("Twitch сворачивает плеер и сам, например когда из плеера открывают страницу канала: тогда он тоже закроется",
+                    "Twitch also minimizes the player by itself, e.g. when you open the channel page from it: it closes then too")
+            .asNew("0.5.31-beta");
+    /** Issue #16: Twitch's drag moves the mini player freely on X and snaps it to a side on release (PlayerGestures). */
+    public static final Toggle MINI_PLAYER_SWIPE_CLOSE = new Toggle("mini_player_swipe_close", "Смахнуть мини-плеер", "Swipe away the mini player", false)
+            .about("Утащить мини-плеер за край экрана - закрыть его", "Drag the mini player past the screen's edge to close it")
+            .compare("Мини-плеер закрывается только крестиком, свайп переносит его к другому краю",
+                    "Мини-плеер, утащенный на треть за левый или правый край, закрывается",
+                    "The mini player closes only with its ✕, a swipe moves it to the other side",
+                    "A mini player dragged a third of the way past the left or right edge closes")
+            .asNew("0.5.31-beta");
 
     public static final Toggle COMPRESSOR_BUTTON = new Toggle("compressor_button", "Кнопка компрессора", "Compressor button", false)
             .about("Выравнивает тихое и громкое, включается прямо в плеере. Android 9+",
@@ -452,6 +470,14 @@ public final class Toggles {
             .compare("Под описанием канала кнопка «Сделать подарок»", "Кнопки нет",
                     "Under the channel's description: Gift A Sub", "No button")
             .asNew("0.5.22-beta");
+    /** Issue #13: mod_dashboard_button of profile_card_no_divider; Twitch names it Stream Manager on your own channel. */
+    public static final Toggle HIDE_PROFILE_STREAM_MANAGER = new Toggle("hide_profile_stream_manager", "Управление стримами", "Stream Manager", false)
+            .about("Кнопка в своём профиле", "The button on your own profile")
+            .compare("Под числом фолловеров фиолетовая кнопка «Управление стримами»", "Кнопки нет",
+                    "Under the follower count: a purple Stream Manager button", "No button")
+            .note("Модератору на чужом канале на этом месте кнопка «Режим модератора», она тоже скрывается",
+                    "A moderator sees Mod View there on other channels, it's hidden as well")
+            .asNew("0.5.31-beta");
     /** Shelves of the channel page's Home tab (React Native, RnScript). */
     public static final Toggle HIDE_PROFILE_RECAPS = new Toggle("hide_profile_recaps", "Записи эфиров", "Stream recaps", true)
             .about("Полка последних записей трансляций на главной вкладке канала", "The latest stream recaps shelf on the channel's Home tab")
@@ -464,6 +490,12 @@ public final class Toggles {
                     "A Featured Clips card in the channel's colour with clips next to it", "No shelf")
             .note("Клипы, сделанные вами на своём канале, остаются", "Clips you made on your own channel stay")
             .asNew("0.5.27-beta");
+    /** Issue #14: the clip shelf that isn't featured (native "clips_by_user", React Native kind "curated"). */
+    public static final Toggle HIDE_PROFILE_USER_CLIPS = new Toggle("hide_profile_user_clips", "Мои клипы", "Clips I've made", true)
+            .about("Полка «Мои клипы» на главной вкладке своего канала", "The Clips I've Made shelf on your channel's Home tab")
+            .compare("Карточка «Мои клипы» с кнопкой «Показать все» и клипы рядом", "Полки нет",
+                    "A Clips I've Made card with Show All and clips next to it", "No shelf")
+            .asNew("0.5.31-beta");
     public static final Toggle HIDE_PROFILE_CATEGORIES = new Toggle("hide_profile_categories", "Эфиры по категориям", "Streams by category", true)
             .about("Сетка категорий, в которых стримит канал", "The grid of categories the channel streams in")
             .compare("Обложки категорий канала сеткой", "Сетки нет",
@@ -658,6 +690,13 @@ public final class Toggles {
     /** The input of the chat laid over the video in fullscreen ("One Chat"). */
     public static final Toggle HIDE_ONE_CHAT_INPUT = new Toggle("hide_one_chat_input", "Поле ввода в чате поверх видео", "Input in the chat over the video", false)
             .look(SettingsPreview.INPUT, SettingsPreview.I_OVERLAY);
+    /** Issue #17: chat_restrictions_container above the input, one bar for every chat mode. */
+    public static final Toggle HIDE_CHAT_RESTRICTIONS = new Toggle("hide_chat_restrictions", "Режим чата над полем", "Chat mode above the input", false)
+            .about("Полоса «Медленный режим», «Чат только для фолловеров» и подобные",
+                    "The Slow Mode, Follower Only Chat and similar bar")
+            .compare("Над полем ввода полоса с режимом чата и значком ⓘ", "Полосы нет, поле ввода сразу под сообщениями",
+                    "Above the input: a bar with the chat mode and an ⓘ", "No bar, the input sits right under the messages")
+            .asNew("0.5.31-beta");
     /** Landscape snackbar "Changed to No Chat / Column Chat / Chat Overlay" on every chat mode switch. */
     public static final Toggle HIDE_CHAT_MODE_POPUP = new Toggle("hide_chat_mode_popup", "Подсказка о режиме чата", "Chat mode popup", false)
             .about("«Режим чата: колонка» при смене режима в полном экране",

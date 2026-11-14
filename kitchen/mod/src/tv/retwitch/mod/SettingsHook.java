@@ -386,6 +386,9 @@ public final class SettingsHook {
         s.toggle(Toggles.PLAYER_GESTURES);
         s.toggle(Toggles.PLAYER_GESTURES_VERTICAL);
         s.toggle(Toggles.PLAYER_SWIPE_FULLSCREEN);
+        s.section(t("Мини-плеер", "Mini player"));
+        s.toggle(Toggles.NO_MINI_PLAYER);
+        s.toggle(Toggles.MINI_PLAYER_SWIPE_CLOSE);
     }
 
     private static void fullscreenPage(SettingsScreen s) {
@@ -795,8 +798,10 @@ public final class SettingsHook {
         s.toggle(Toggles.HIDE_PROFILE_FOLLOW);
         s.toggle(Toggles.HIDE_PROFILE_SUBSCRIBE);
         s.toggle(Toggles.HIDE_PROFILE_GIFT);
+        s.toggle(Toggles.HIDE_PROFILE_STREAM_MANAGER);
         s.toggle(Toggles.HIDE_PROFILE_RECAPS);
         s.toggle(Toggles.HIDE_PROFILE_FEATURED_CLIPS);
+        s.toggle(Toggles.HIDE_PROFILE_USER_CLIPS);
         s.toggle(Toggles.HIDE_PROFILE_CATEGORIES);
         s.toggle(Toggles.HIDE_PROFILE_STREAMERS);
         s.section(Strings.sectionAppIcon());
@@ -858,6 +863,7 @@ public final class SettingsHook {
         s.toggle(Toggles.HIDE_PORTRAIT_CHAT_INPUT);
         s.toggle(Toggles.HIDE_LANDSCAPE_CHAT_INPUT);
         s.toggle(Toggles.HIDE_ONE_CHAT_INPUT);
+        s.toggle(Toggles.HIDE_CHAT_RESTRICTIONS);
         s.section(t("Показать", "Show"));
         s.group(Toggles.POINTS_BALANCE_LANDSCAPE, () -> s.toggle(Toggles.POINTS_BALANCE_UNDER_ICON));
     }

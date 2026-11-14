@@ -62,7 +62,8 @@ public final class UiHider {
     private static final String[] FOLLOW_SUB = {
             "follow_subscribe_button", "extended_follow_button_container", "extended_subscribe_button_container",
             // Compose strip of the extended metadata: its notifications bell can't be split off, so it goes too.
-            "metadata_buttons_container",
+            // The native bell as well: Twitch shows the native row until the strip's state arrives (issue #5).
+            "metadata_buttons_container", "extended_notification_button_container",
             "theatre_overlay_subscribe_button_container", "subscribe_button_container",
     };
     /** Extension entry points: the icons (wherever inflated) and their containers above chat. */
@@ -96,7 +97,7 @@ public final class UiHider {
             // PlayerHook.attachLatencyLabels, called from the pass.
             "play_pause_container", "play_pause_fast_seek_view", "message_input",
             "fullscreen_button", "chat_mode_button", "emote_picker", "chat_header_container", "emoticon_picker",
-            "chomments_header_container",
+            "chomments_header_container", "mod_dashboard_button", "chat_restrictions_container", "minimized_overlay",
             "seek_forward_button", "seek_rewind_button",
             "community_points_button_container", "right_side_community_points_button_container",
     };
@@ -108,6 +109,8 @@ public final class UiHider {
     private static List<View> scanTurbo;
     /** Pass nesting: hiding a focused view moves focus, which runs a pass from inside this one. */
     private static int passDepth;
+    /** Views hidden by hide/hideWhile so far: the layout pass compares it to know it hid something. */
+    private static int hiddenCount;
     private static final Map<Class<?>, Method> MENU_GETTERS = new HashMap<>();
     private static boolean installed;
     private static boolean sideChatTouched;
@@ -117,7 +120,11 @@ public final class UiHider {
     private static boolean unfollowTouched;
     private static boolean pointsTouched;
     private static boolean replayHeaderTouched;
+    private static boolean streamManagerTouched;
+    private static boolean restrictionsTouched;
     private static boolean overlayCalloutMarked;
+    /** On draggable_layout: when we last pressed the mini player's ✕ (one press per close). */
+    private static final int MINI_CLOSE_TAG_KEY = 0x7e700d73;
     private static String unfollowLabel;
 
     private UiHider() {
@@ -178,7 +185,20 @@ public final class UiHider {
             @Override
             public void onGlobalLayout() {
                 long t0 = UiStallLog.start();
+                int hiddenBefore = hiddenCount;
                 safeApply(activity, decor);
+                if (hiddenCount != hiddenBefore) {
+                    // A delayed transition (the player metadata's) takes its end bounds in pre-draw and suppresses
+                    // layout until it ends: lay out now, or the room of the view just hidden stays empty (issue #5).
+                    try {
+                        decor.measure(View.MeasureSpec.makeMeasureSpec(decor.getWidth(), View.MeasureSpec.EXACTLY),
+                                View.MeasureSpec.makeMeasureSpec(decor.getHeight(), View.MeasureSpec.EXACTLY));
+                        decor.layout(decor.getLeft(), decor.getTop(), decor.getRight(), decor.getBottom());
+                    } catch (Throwable t) {
+                        Log.w(TAG, "relayout failed", t);
+                        CrashReporter.report(TAG, "relayout failed", t);
+                    }
+                }
                 UiStallLog.end("UiHider", t0);
                 // Transitions can restore visibility in pre-draw. Run after their already-registered callbacks.
                 ViewTreeObserver observer = decor.getViewTreeObserver();
@@ -267,8 +287,31 @@ public final class UiHider {
         }
         if (Toggles.on(Toggles.HIDE_FOLLOW_SUB)) {
             hideAll(activity, decor, FOLLOW_SUB);
+            // The native row's divider; button_divider is a One Chat id too, so only the bell's sibling.
+            for (View bell : findAll(activity, decor, "extended_notification_button_container")) {
+                if (bell.getParent() instanceof View) {
+                    hide(find(activity, (View) bell.getParent(), "button_divider"));
+                }
+            }
         }
         applyUnfollow(activity, decor);
+        boolean streamManager = Toggles.on(Toggles.HIDE_PROFILE_STREAM_MANAGER);
+        if (streamManager || streamManagerTouched) {
+            streamManagerTouched = streamManager;
+            hideWhileAll(activity, decor, streamManager, "mod_dashboard_button");
+        }
+        boolean restrictions = Toggles.on(Toggles.HIDE_CHAT_RESTRICTIONS);
+        if (restrictions || restrictionsTouched) {
+            restrictionsTouched = restrictions;
+            hideWhileAll(activity, decor, restrictions, "chat_restrictions_container");
+        }
+        if (Toggles.on(Toggles.NO_MINI_PLAYER)) {
+            for (View overlay : findAll(activity, decor, "minimized_overlay")) {
+                if (overlay.isShown() && overlay.getParent() instanceof View) {
+                    closeMiniPlayer((View) overlay.getParent());
+                }
+            }
+        }
         if (Toggles.on(Toggles.HIDE_MATURE_WARNING)) {
             hideAll(activity, decor, "mature_disclosure");
             answerStopSign(activity, decor);
@@ -560,9 +603,41 @@ public final class UiHider {
                 || "streamerShelfKey".equals(key) && Toggles.on(Toggles.HIDE_PROFILE_STREAMERS);
     }
 
-    /** ProfileShelvesPatch: the native Home tab's clip shelf builder; featured ones go, "clips by user" stay. */
+    /** ProfileShelvesPatch: the native Home tab's clip shelf builder, featured or "clips by user". */
     public static boolean profileClipShelfHidden(boolean featured) {
-        return featured && Toggles.on(Toggles.HIDE_PROFILE_FEATURED_CLIPS);
+        return Toggles.on(featured ? Toggles.HIDE_PROFILE_FEATURED_CLIPS : Toggles.HIDE_PROFILE_USER_CLIPS);
+    }
+
+    /**
+     * NO_MINI_PLAYER, MINI_PLAYER_SWIPE_CLOSE: presses the mini player's own ✕ under {@code mini} (draggable_layout),
+     * once per second at most. It's a ButtonIcon: the click listener is on its inner view.
+     */
+    static void closeMiniPlayer(View mini) {
+        View close = mini.findViewById(id(mini.getContext(), "minimized_overlay_close"));
+        final View target = close != null ? clickableIn(close) : null;
+        Object last = mini.getTag(MINI_CLOSE_TAG_KEY);
+        long now = android.os.SystemClock.uptimeMillis();
+        if (target == null || last instanceof Long && now - (Long) last < 1000) {
+            return;
+        }
+        mini.setTag(MINI_CLOSE_TAG_KEY, now);
+        target.post(target::performClick);
+    }
+
+    private static View clickableIn(View view) {
+        if (view.isClickable()) {
+            return view;
+        }
+        if (view instanceof ViewGroup) {
+            ViewGroup group = (ViewGroup) view;
+            for (int i = 0; i < group.getChildCount(); i++) {
+                View found = clickableIn(group.getChildAt(i));
+                if (found != null) {
+                    return found;
+                }
+            }
+        }
+        return null;
     }
 
     /** DrawerSortPatch: the tablet's followed channels column keeps its own sort while SEPARATE_DRAWER_SORT is on. */
@@ -1174,6 +1249,7 @@ public final class UiHider {
     private static void hide(View view) {
         if (view != null && view.getVisibility() == View.VISIBLE) {
             view.setVisibility(View.GONE);
+            hiddenCount++;
         }
     }
 
@@ -1196,6 +1272,7 @@ public final class UiHider {
             if (view.getVisibility() == View.VISIBLE) {
                 view.setVisibility(visibility);
                 view.setTag(HIDDEN_TAG_KEY, Boolean.TRUE);
+                hiddenCount++;
             }
         } else if (view.getTag(HIDDEN_TAG_KEY) != null) {
             view.setTag(HIDDEN_TAG_KEY, null);

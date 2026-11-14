@@ -93,7 +93,8 @@ public final class PlayerGestures {
             // Only wrap when the feature is on: no proxy in the window for anyone else.
             if (window == null
                     || !(Toggles.on(Toggles.PLAYER_GESTURES) || Toggles.on(Toggles.PLAYER_GESTURES_VERTICAL)
-                            || Toggles.on(Toggles.PLAYER_SWIPE_FULLSCREEN) || Toggles.on(Toggles.CHAT_PINCH_TEXT))
+                            || Toggles.on(Toggles.PLAYER_SWIPE_FULLSCREEN) || Toggles.on(Toggles.CHAT_PINCH_TEXT)
+                            || Toggles.on(Toggles.MINI_PLAYER_SWIPE_CLOSE))
                     || !activity.getClass().getName().startsWith("tv.twitch")) {
                 return;
             }
@@ -135,6 +136,7 @@ public final class PlayerGestures {
         public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
             if ("dispatchTouchEvent".equals(method.getName()) && args != null && args.length == 1) {
                 try {
+                    swipeAwayMini((MotionEvent) args[0]);
                     if (ChatPinch.onTouch(activity, original, (MotionEvent) args[0]) || onTouch((MotionEvent) args[0])) {
                         return true;
                     }
@@ -149,6 +151,26 @@ public final class PlayerGestures {
                 return method.invoke(original, args);
             } catch (InvocationTargetException e) {
                 throw e.getCause();
+            }
+        }
+
+        /**
+         * MINI_PLAYER_SWIPE_CLOSE (issue #16): Twitch's drag moves the mini player freely sideways and snaps it to a
+         * side on release; one let go a third of its width past the left or right edge is closed instead.
+         */
+        private void swipeAwayMini(MotionEvent ev) {
+            if (ev.getActionMasked() != MotionEvent.ACTION_UP || !Toggles.on(Toggles.MINI_PLAYER_SWIPE_CLOSE)) {
+                return;
+            }
+            for (View mini : UiHider.findAll(activity, activity.getWindow().getDecorView(), "draggable_layout")) {
+                View container = mini.getParent() instanceof View ? (View) mini.getParent() : null;
+                int width = mini.getWidth();
+                if (container == null || width <= 0 || width >= container.getWidth() - 2) {
+                    continue; // the expanded theatre
+                }
+                if (mini.getLeft() < -width / 3 || mini.getRight() > container.getWidth() + width / 3) {
+                    UiHider.closeMiniPlayer(mini);
+                }
             }
         }
 

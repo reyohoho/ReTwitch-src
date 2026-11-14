@@ -13,6 +13,21 @@ import android.text.TextUtils;
 public final class Changelog {
 
     private static final String[][] ENTRIES = {
+            {"0.5.31-beta",
+                    "Мини-плеер можно выключить: тогда свёрнутый плеер закрывается\n"
+                            + "Мини-плеер можно закрыть, утащив его за край экрана (включается в «Жестах»)\n"
+                            + "Можно скрыть: кнопку «Управление стримами» в профиле, полку «Мои клипы» на странице канала, "
+                            + "полосу режима чата над полем ввода («Медленный режим» и подобные)\n"
+                            + "«Отслеживать и Подписаться» прячет и колокольчик уведомлений под видео, "
+                            + "он больше не мелькает при открытии плеера\n"
+                            + "Скрытые кнопки под видео не оставляют на миг пустое место при открытии плеера",
+                    "The mini player can be turned off: a minimized player then closes\n"
+                            + "The mini player can be closed by dragging it past the screen's edge (turned on in Gestures)\n"
+                            + "New to hide: the Stream Manager button on your profile, the Clips I've Made shelf on the channel page, "
+                            + "the chat mode bar above the input (Slow Mode and the like)\n"
+                            + "Follow and Subscribe also hides the notifications bell under the video, "
+                            + "it no longer flashes when the player opens\n"
+                            + "Hidden buttons under the video no longer leave an empty gap for a moment when the player opens"},
             {"0.5.30-beta",
                     "Скрытые кнопки и полосы больше не мелькают при открытии плеера (спасибо Beorge-web)\n"
                             + "«Только звук» включает звук, если плеер был без звука: кнопки звука в этом режиме нет\n"

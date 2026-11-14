@@ -13,9 +13,9 @@
         FollowingChannelRow: config.previewSize > 0, CustomTabIndicator: config.tabIndicator,
         StoriesShelf: config.hideStories, CollapsedStoriesIcons: config.hideStories, FeedTabsRow: config.hideTabs,
         FreeScrollCellRenderer: config.compactLive, ChannelProfileRecapsShelf: config.hideProfileRecaps,
-        ChannelProfileClipShelf: config.hideProfileClips,
+        ChannelProfileClipShelf: config.hideProfileClips || config.hideProfileUserClips,
         ChannelProfileHomeShelf: config.hideProfileCategories || config.hideProfileStreamers,
-        ChannelProfileTrackedShelf: config.hideProfileRecaps || config.hideProfileClips};
+        ChannelProfileTrackedShelf: config.hideProfileRecaps || config.hideProfileClips || config.hideProfileUserClips};
     var FRIENDS_SHOWN = 5;
     // Tabs' content container: paddingEnd is space-0200 (paddingStart, where the first tab starts, is space-0250).
     var TABS_PADDING_END = 16;
@@ -752,9 +752,11 @@
         ChannelProfileRecapsShelf: function (original) {
             return hiddenShelf(original, function () { return true; });
         },
-        // Featured Clips; "Clips I've Made" (kind curated) stays.
+        // Featured Clips and "Clips I've Made" (kind curated), each by its own toggle.
         ChannelProfileClipShelf: function (original) {
-            return hiddenShelf(original, function (props) { return props.kind === 'featured'; });
+            return hiddenShelf(original, function (props) {
+                return props.kind === 'featured' ? !!config.hideProfileClips : props.kind === 'curated' && !!config.hideProfileUserClips;
+            });
         },
         // "<name>'s Streams by Category" and "<name> Suggests These Streamers" (or "Other <team> Channels").
         ChannelProfileHomeShelf: function (original) {

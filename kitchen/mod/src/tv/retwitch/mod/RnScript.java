@@ -44,11 +44,12 @@ public final class RnScript {
             boolean uptime = Toggles.on(Toggles.STREAM_UPTIME);
             boolean profileRecaps = Toggles.on(Toggles.HIDE_PROFILE_RECAPS);
             boolean profileClips = Toggles.on(Toggles.HIDE_PROFILE_FEATURED_CLIPS);
+            boolean profileUserClips = Toggles.on(Toggles.HIDE_PROFILE_USER_CLIPS);
             boolean profileCategories = Toggles.on(Toggles.HIDE_PROFILE_CATEGORIES);
             boolean profileStreamers = Toggles.on(Toggles.HIDE_PROFILE_STREAMERS);
             if (!compactLive && !hideFollowedShelf && !hideClipsShelf && !hideStoriesEmpty && !hideLiveEmpty && !friends && previewSize == 0
                     && !tabIndicator && !hideStories && !hideTabs && !favorites && !uptime
-                    && !profileRecaps && !profileClips && !profileCategories && !profileStreamers) {
+                    && !profileRecaps && !profileClips && !profileUserClips && !profileCategories && !profileStreamers) {
                 return;
             }
             JSONObject config = new JSONObject()
@@ -64,6 +65,7 @@ public final class RnScript {
                     .put("uptime", uptime)
                     .put("hideProfileRecaps", profileRecaps)
                     .put("hideProfileClips", profileClips)
+                    .put("hideProfileUserClips", profileUserClips)
                     .put("hideProfileCategories", profileCategories)
                     .put("hideProfileStreamers", profileStreamers)
                     .put("friends", friends ? me : "")
