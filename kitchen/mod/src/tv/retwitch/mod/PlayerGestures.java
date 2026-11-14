@@ -51,6 +51,9 @@ public final class PlayerGestures {
     /** Share of the video's width on each side that takes brightness and volume. */
     private static final float SIDE_ZONE = 0.35f;
     private static final int DRAG_TAG_KEY = 0x7e700d6a;
+    /** {@link #wrapDragArea} runs on every UiHider pass: its reflective getter, looked up once (main thread). */
+    private static Class<?> dragClass;
+    private static Method dragGetter;
     private static boolean installed;
     /** The running touch started in the middle of the Vertical view's video. */
     private static volatile boolean dragAnywhere;
@@ -405,7 +408,11 @@ public final class PlayerGestures {
      */
     static void wrapDragArea(View container) {
         try {
-            Method get = container.getClass().getMethod("getDraggableAreaCalculator");
+            if (dragClass != container.getClass()) {
+                dragGetter = container.getClass().getMethod("getDraggableAreaCalculator");
+                dragClass = container.getClass();
+            }
+            Method get = dragGetter;
             Object original = get.invoke(container);
             if (original == null || original == container.getTag(DRAG_TAG_KEY)) {
                 return;

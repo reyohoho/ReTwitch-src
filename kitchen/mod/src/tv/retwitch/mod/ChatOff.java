@@ -120,6 +120,7 @@ final class ChatOff {
             if (view.getVisibility() != View.GONE) {
                 view.setVisibility(View.GONE);
             }
+            UiHider.watchHidden(view);
         } else if (before instanceof Integer) {
             view.setTag(HIDDEN_TAG_KEY, null);
             view.setVisibility((Integer) before);
@@ -175,9 +176,19 @@ final class ChatOff {
         }
     }
 
+    /** Guideline's setters, looked up once: while the chat is off in landscape this runs on every UiHider pass. */
+    private static Class<?> guidelineClass;
+    private static java.lang.reflect.Method setPercent;
+    private static java.lang.reflect.Method setEnd;
+
     private static void setGuideline(View guideline, float percent, int end) throws ReflectiveOperationException {
-        guideline.getClass().getMethod("setGuidelinePercent", float.class).invoke(guideline, percent);
-        guideline.getClass().getMethod("setGuidelineEnd", int.class).invoke(guideline, end);
+        if (guidelineClass != guideline.getClass()) {
+            setPercent = guideline.getClass().getMethod("setGuidelinePercent", float.class);
+            setEnd = guideline.getClass().getMethod("setGuidelineEnd", int.class);
+            guidelineClass = guideline.getClass();
+        }
+        setPercent.invoke(guideline, percent);
+        setEnd.invoke(guideline, end);
     }
 
     private static View find(View root, String name) {

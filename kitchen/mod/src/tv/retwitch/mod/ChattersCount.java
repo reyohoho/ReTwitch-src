@@ -54,6 +54,9 @@ final class ChattersCount {
     /** From the UI pass: the viewer count of the open theatre. */
     static void attach(Activity activity, View decor) {
         boolean on = Toggles.on(Toggles.SHOW_CHATTERS_COUNT);
+        if (!on) {
+            return; // the watchers already attached check the toggle themselves; no walk of the theatre for nothing
+        }
         for (View theatre : UiHider.findAll(activity, decor, "draggable_container")) {
             for (View view : UiHider.findAll(activity, theatre, "stream_stats_text")) {
                 if (!(view instanceof TextView)) {

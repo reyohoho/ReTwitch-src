@@ -13,6 +13,13 @@ import android.text.TextUtils;
 public final class Changelog {
 
     private static final String[][] ENTRIES = {
+            {"0.5.33-beta",
+                    "Раздел «О моде и что нового» в настройках получает метку NEW, когда внутри есть новое\n"
+                            + "Интерфейс меньше нагружает телефон, пока открыт стрим\n"
+                            + "После уведомления об обновлении окно обновления открывается один раз, а не два",
+                    "The \"About and what's new\" section in the settings gets the NEW label when something inside is new\n"
+                            + "The interface puts less load on the phone while a stream is open\n"
+                            + "After an update notification the update dialog opens once instead of twice"},
             {"0.5.32-beta",
                     "Скрытые кнопки и поле ввода больше не появляются на миг при открытии стрима, "
                             + "серая полоса на месте скрытого поля при загрузке тоже скрыта\n"

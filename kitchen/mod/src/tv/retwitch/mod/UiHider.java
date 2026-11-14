@@ -104,6 +104,10 @@ public final class UiHider {
             "chomments_header_container", "mod_dashboard_button", "chat_restrictions_container", "minimized_overlay",
             "seek_forward_button", "seek_rewind_button",
             "community_points_button_container", "right_side_community_points_button_container",
+            // An id missing here costs a whole extra tree walk per pass (findAll falls back to collect).
+            "toggle_player_mode", "subscribe_button", "viewer_landing_bottom_navigation_group",
+            "play_pause_button", // StreamSwitch.sync
+            "chat_more_messages_below_text", // NewMessages.attach
     };
 
     private static final Map<String, Integer> IDS = new HashMap<>();
@@ -177,6 +181,11 @@ public final class UiHider {
             @Override
             public boolean onPreDraw() {
                 decor.getViewTreeObserver().removeOnPreDrawListener(this);
+                // Every view a pass hid or found is in HIDDEN, so a transition can only bring back one of those.
+                if (!reshown(decor)) {
+                    skipped = false;
+                    return true;
+                }
                 boolean before = decor.isLayoutRequested();
                 long t0 = UiStallLog.start();
                 safeApply(activity, decor);
@@ -566,14 +575,6 @@ public final class UiHider {
         }
     }
 
-    /**
-     * From the link router (31.8.0 {@code qz3.d}/{@code f}): its "check the link" flag;
-     * false opens the link without the "This link will take you to ..." dialog.
-     */
-    /**
-     * The points button's presenter state (31.9.0 {@code qb9}) hides the balance when
-     * landscape or the keyboard is open; with the toggle on it never hears about landscape.
-     */
     /** Whether "Vertical view" draws its row of buttons (VerticalOverlayPatch, at the composable's entry). */
     public static boolean hideVerticalButtons() {
         return Toggles.on(Toggles.HIDE_VERTICAL_BUTTONS);
@@ -589,10 +590,18 @@ public final class UiHider {
         return Toggles.on(Toggles.LAYOUT_PICKER_ICONS) ? "" : label;
     }
 
+    /**
+     * The points button's presenter state (31.9.0 {@code qb9}) hides the balance when
+     * landscape or the keyboard is open; with the toggle on it never hears about landscape.
+     */
     public static boolean pointsLandscape(boolean landscape) {
         return landscape && !Toggles.on(Toggles.POINTS_BALANCE_LANDSCAPE);
     }
 
+    /**
+     * From the link router (31.8.0 {@code qz3.d}/{@code f}): its "check the link" flag;
+     * false opens the link without the "This link will take you to ..." dialog.
+     */
     public static boolean linkDisclaimer(boolean check) {
         return check && !Toggles.on(Toggles.NO_LINK_DISCLAIMER);
     }
@@ -1311,6 +1320,11 @@ public final class UiHider {
         if (view != null) {
             HIDDEN.add(view);
         }
+    }
+
+    /** A view hidden outside hide/hideWhile (ChatOff): watched the same way in case Twitch shows it again. */
+    static void watchHidden(View view) {
+        HIDDEN.add(view);
     }
 
     private static void hideWhileAll(Activity activity, View root, boolean hidden, String idName) {

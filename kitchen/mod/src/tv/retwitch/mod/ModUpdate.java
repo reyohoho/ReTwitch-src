@@ -194,7 +194,12 @@ final class ModUpdate {
             notifications.notify(NOTIFICATION_ID, builder.build());
             // The tap opens the app: the update dialog comes up then, "Later" from yesterday or not.
             prefs.edit().putString(KEY_NOTIFIED, release.version).remove(KEY_LATER).apply();
-            MAIN.post(() -> waiting = release);
+            // Not before the first resume: its own check offers the release, and this would make it a second dialog.
+            MAIN.post(() -> {
+                if (checked) {
+                    waiting = release;
+                }
+            });
         } catch (IOException | JSONException | RuntimeException e) {
             Log.w(TAG, "background check failed", e);
         }

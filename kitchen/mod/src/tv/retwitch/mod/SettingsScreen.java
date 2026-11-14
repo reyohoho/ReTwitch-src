@@ -641,7 +641,20 @@ final class SettingsScreen {
         hero.setOnClickListener(v -> open(Strings.menuAbout(), page));
         LinearLayout texts = new LinearLayout(context);
         texts.setOrientation(LinearLayout.VERTICAL);
-        texts.addView(wordmark(context, heading, 24));
+        View title = wordmark(context, heading, 24);
+        // The hero isn't a nav row, so the NEW of a row inside "About" never reached it (issue #23).
+        if (hasNew(page)) {
+            LinearLayout line = new LinearLayout(context);
+            line.setGravity(Gravity.CENTER_VERTICAL);
+            line.addView(title);
+            TextView badge = newBadge();
+            // On the purple hero the usual purple badge would vanish.
+            badge.setTextColor(ACCENT);
+            badge.setBackground(rounded(Color.WHITE, dp(4)));
+            line.addView(badge);
+            title = line;
+        }
+        texts.addView(title);
         TextView under = text(subtitle, 13, 0xDDFFFFFF);
         under.setPadding(0, dp(4), 0, 0);
         texts.addView(under);
