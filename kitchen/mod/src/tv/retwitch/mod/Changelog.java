@@ -13,6 +13,17 @@ import android.text.TextUtils;
 public final class Changelog {
 
     private static final String[][] ENTRIES = {
+            {"0.5.32-beta",
+                    "Скрытые кнопки и поле ввода больше не появляются на миг при открытии стрима, "
+                            + "серая полоса на месте скрытого поля при загрузке тоже скрыта\n"
+                            + "Смахнутый за край мини-плеер исчезает сразу, без возврата к краю\n"
+                            + "Уведомление об обновлении: можно выбрать, как часто проверять, "
+                            + "и проверка начинает работать сразу после включения, без перезапуска",
+                    "Hidden buttons and the chat input no longer show up for a moment when a stream opens, "
+                            + "and the grey bar in place of the hidden input while loading is hidden too\n"
+                            + "A mini player swiped past the edge disappears at once instead of snapping back first\n"
+                            + "Update notifications: choose how often to check, "
+                            + "and the check works right after you turn it on, without a restart"},
             {"0.5.31-beta",
                     "Мини-плеер можно выключить: тогда свёрнутый плеер закрывается\n"
                             + "Мини-плеер можно закрыть, утащив его за край экрана (включается в «Жестах»)\n"

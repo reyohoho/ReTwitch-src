@@ -53,6 +53,11 @@ final class ModUpdate {
     private static final String PREFS = "retwitch_update";
     private static final String KEY_LATER = "later_until";
     private static final String KEY_NOTIFIED = "notified_version";
+    /** The background check's interval (issue #22): a setting, so outside the backup-excluded state file above. */
+    private static final String SETTINGS = "retwitch_update_settings";
+    private static final String KEY_INTERVAL = "interval_index";
+    static final int[] INTERVAL_HOURS = {1, 3, 6, 12, 24};
+    private static final int DEFAULT_INTERVAL = 3;
     private static final String CHANNEL = "retwitch_update";
     private static final int NOTIFICATION_ID = 0x7e7001;
     private static final long LATER_MS = 24 * 60 * 60 * 1000L;
@@ -145,14 +150,25 @@ final class ModUpdate {
             PendingIntent check = PendingIntent.getBroadcast(app, 0, new Intent(app, UpdateCheckReceiver.class),
                     PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
             if (Toggles.on(Toggles.UPDATE_NOTIFY)) {
-                alarms.setInexactRepeating(AlarmManager.ELAPSED_REALTIME, SystemClock.elapsedRealtime() + AlarmManager.INTERVAL_HALF_DAY,
-                        AlarmManager.INTERVAL_HALF_DAY, check);
+                long every = INTERVAL_HOURS[intervalIndex(app)] * AlarmManager.INTERVAL_HOUR;
+                alarms.setInexactRepeating(AlarmManager.ELAPSED_REALTIME, SystemClock.elapsedRealtime() + every, every, check);
             } else {
                 alarms.cancel(check);
             }
         } catch (Throwable t) {
             Log.w(TAG, "schedule failed", t);
         }
+    }
+
+    static int intervalIndex(Context context) {
+        int index = context.getSharedPreferences(SETTINGS, Context.MODE_PRIVATE).getInt(KEY_INTERVAL, DEFAULT_INTERVAL);
+        return index >= 0 && index < INTERVAL_HOURS.length ? index : DEFAULT_INTERVAL;
+    }
+
+    /** From the setting: saved, and the alarm set again at once. */
+    static void setIntervalIndex(Context context, int index) {
+        context.getSharedPreferences(SETTINGS, Context.MODE_PRIVATE).edit().putInt(KEY_INTERVAL, index).apply();
+        schedule(context);
     }
 
     /** From UpdateCheckReceiver, off the main thread: one notification per new version. */

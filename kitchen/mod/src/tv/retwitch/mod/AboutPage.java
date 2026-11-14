@@ -61,7 +61,10 @@ final class AboutPage {
         final Context c = s.context;
         s.action(Strings.changelogTitle(), t("Версия ", "Version ") + BuildInfo.VERSION_NAME, () -> SettingsHook.showChangelog(c));
         s.toggle(Toggles.UPDATE_CHECK);
-        s.toggle(Toggles.UPDATE_NOTIFY);
+        s.group(Toggles.UPDATE_NOTIFY, () -> s.markNew("0.5.32-beta").choice(t("Как часто проверять", "How often to check"),
+                new String[]{t("Раз в час", "Every hour"), t("Раз в 3 часа", "Every 3 hours"), t("Раз в 6 часов", "Every 6 hours"),
+                        t("Дважды в день", "Twice a day"), t("Раз в день", "Once a day")},
+                ModUpdate.intervalIndex(c), false, i -> ModUpdate.setIntervalIndex(c, i)));
         s.action(t("Проверить обновления сейчас", "Check for updates now"), null, () -> ModUpdate.checkNow(c));
         s.section(t("Основа", "Foundation"));
         credits(s, BASE);
@@ -75,6 +78,7 @@ final class AboutPage {
         s.action("ReYohoho", t("Сообщество и тестеры", "The community and testers"), () -> SettingsHook.openLink(c, SettingsHook.LINK_SITE));
         s.action("@FredMan95", t("Перевод на испанский", "Spanish translation"), null);
         s.action("@GoatKou", t("Перевод на французский", "French translation"), null);
+        s.action("@Kuddus73", t("Тестер, баги и идеи на GitHub", "Tester, bugs and ideas on GitHub"), null);
         s.action("Claude AI", t("Помогает писать код", "Helps writing the code"), null);
         s.section(t("Лицензия", "License"));
         s.hint(t("© 2026 ReYohoho и участники проекта. ReTwitch - свободная программа: её можно распространять и изменять "

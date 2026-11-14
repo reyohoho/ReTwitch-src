@@ -676,8 +676,8 @@ public final class Toggles {
     /** A notification about a new version while the app is closed (UpdateCheckReceiver, twice a day). */
     public static final Toggle UPDATE_NOTIFY = new Toggle("update_notify",
             "Уведомлять об обновлении", "Notify about updates", false)
-            .about("Проверка в фоне дважды в день, уведомление один раз на версию",
-                    "A background check twice a day, one notification per version")
+            .about("Проверка в фоне, уведомление один раз на версию",
+                    "A background check, one notification per version")
             .note("Без разрешения на уведомления Android их не покажет",
                     "Android won't show it without the notification permission")
             .asNew("0.5.30-beta");
@@ -1164,6 +1164,10 @@ public final class Toggles {
 
     static void set(Context context, Toggle toggle, boolean value) {
         prefs(context).edit().putBoolean(toggle.key, value).apply();
+        if (toggle == UPDATE_NOTIFY) {
+            // The alarm was set only on the next app start, so a fresh "on" missed releases until then (issue #22).
+            ModUpdate.schedule(context);
+        }
     }
 
     private static volatile SharedPreferences prefs;

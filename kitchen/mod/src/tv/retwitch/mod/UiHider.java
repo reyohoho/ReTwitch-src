@@ -5,6 +5,7 @@ import android.app.Application;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.util.Log;
 import android.util.SparseArray;
 import android.view.Menu;
@@ -18,9 +19,12 @@ import android.widget.TextView;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.WeakHashMap;
 
 /**
  * Hides optional UI by view-id *name* (resource names survive R8): player
@@ -111,6 +115,8 @@ public final class UiHider {
     private static int passDepth;
     /** Views hidden by hide/hideWhile so far: the layout pass compares it to know it hid something. */
     private static int hiddenCount;
+    /** Views hidden by hide/hideWhile, for the per-frame check that Twitch hasn't shown one again (main thread only). */
+    private static final Set<View> HIDDEN = Collections.newSetFromMap(new WeakHashMap<View, Boolean>());
     private static final Map<Class<?>, Method> MENU_GETTERS = new HashMap<>();
     private static boolean installed;
     private static boolean sideChatTouched;
@@ -206,6 +212,20 @@ public final class UiHider {
                 observer.addOnPreDrawListener(checkBeforeDraw);
             }
         });
+        // A view we hid, shown again while a transition suppresses layout: its requestLayout stops at the suppressed
+        // parent, so no layout pass and no pass of ours, only draws (issue #19, the chat input for ~0.8 s). Every
+        // frame only checks the views we hid; a whole pass runs when one of them is visible again.
+        decor.getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
+            @Override
+            public boolean onPreDraw() {
+                if (reshown(decor)) {
+                    long t0 = UiStallLog.start();
+                    safeApply(activity, decor);
+                    UiStallLog.end("UiHider reshown", t0);
+                }
+                return true;
+            }
+        });
         // Focus moving into / out of the chat input doesn't always relayout.
         decor.getViewTreeObserver().addOnGlobalFocusChangeListener(new ViewTreeObserver.OnGlobalFocusChangeListener() {
             @Override
@@ -213,6 +233,40 @@ public final class UiHider {
                 safeApply(activity, decor);
             }
         });
+    }
+
+    /**
+     * While the theatre's chat loads, Twitch puts live_chat_placeholder in chat_view_container: a frame whose only
+     * child is a grey rounded bar in the input's place (issue #18). Twitch removes it once the chat is there.
+     */
+    private static void hideInputPlaceholder(View chat) {
+        if (!(chat instanceof ViewGroup)) {
+            return;
+        }
+        ViewGroup group = (ViewGroup) chat;
+        for (int i = 0; i < group.getChildCount(); i++) {
+            View child = group.getChildAt(i);
+            if (child instanceof ViewGroup && ((ViewGroup) child).getChildCount() == 1) {
+                View bar = ((ViewGroup) child).getChildAt(0);
+                if (bar.getClass().getSimpleName().equals("PlaceholderRoundedRectangle")) {
+                    hide(bar);
+                }
+            }
+        }
+    }
+
+    /** Whether a view of this window that we hid is visible again; such views leave the set (the pass re-adds them). */
+    private static boolean reshown(View decor) {
+        boolean found = false;
+        IBinder window = decor.getWindowToken();
+        for (java.util.Iterator<View> it = HIDDEN.iterator(); it.hasNext(); ) {
+            View view = it.next();
+            if (view.getVisibility() == View.VISIBLE && view.getWindowToken() == window && window != null) {
+                it.remove();
+                found = true;
+            }
+        }
+        return found;
     }
 
     private static void safeApply(Activity activity, View decor) {
@@ -852,6 +906,9 @@ public final class UiHider {
             for (String name : SIDE_CHAT) {
                 for (View column : findAll(activity, decor, name)) {
                     hideWhile(input, find(activity, column, "chat_message_input_view_container"));
+                    if (input) {
+                        hideInputPlaceholder(find(activity, column, "chat_view_container"));
+                    }
                 }
             }
         }
@@ -1251,6 +1308,9 @@ public final class UiHider {
             view.setVisibility(View.GONE);
             hiddenCount++;
         }
+        if (view != null) {
+            HIDDEN.add(view);
+        }
     }
 
     private static void hideWhileAll(Activity activity, View root, boolean hidden, String idName) {
@@ -1274,8 +1334,10 @@ public final class UiHider {
                 view.setTag(HIDDEN_TAG_KEY, Boolean.TRUE);
                 hiddenCount++;
             }
+            HIDDEN.add(view);
         } else if (view.getTag(HIDDEN_TAG_KEY) != null) {
             view.setTag(HIDDEN_TAG_KEY, null);
+            HIDDEN.remove(view);
             if (view.getVisibility() == visibility) {
                 view.setVisibility(View.VISIBLE);
             }

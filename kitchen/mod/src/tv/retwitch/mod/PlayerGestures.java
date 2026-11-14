@@ -169,6 +169,11 @@ public final class PlayerGestures {
                     continue; // the expanded theatre
                 }
                 if (mini.getLeft() < -width / 3 || mini.getRight() > container.getWidth() + width / 3) {
+                    // Twitch snaps it back to its side on this release before the close lands, it looked stuck
+                    // (issue #21): it's gone right away instead, and visible again for the next theatre.
+                    final View faded = mini;
+                    faded.setAlpha(0f);
+                    faded.postDelayed(() -> faded.setAlpha(1f), 600);
                     UiHider.closeMiniPlayer(mini);
                 }
             }
