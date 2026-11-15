@@ -82,6 +82,12 @@ final class PlaybackScreenTimeout {
         lastTextureTimestamp = -1;
     }
 
+    /** A SurfaceView exposes frame statistics rather than a texture timestamp. */
+    void useFrameCounter() {
+        lastTextureTimestamp = -1;
+        textureTimestampMoves = false;
+    }
+
     void reset() {
         rebind();
         lastProgressAt = -1;

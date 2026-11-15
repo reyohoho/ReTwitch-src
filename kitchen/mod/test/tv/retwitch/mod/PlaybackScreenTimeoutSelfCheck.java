@@ -71,7 +71,16 @@ public final class PlaybackScreenTimeoutSelfCheck {
         assert screen.update("PLAYING", 33_000, 960, 21, false, 33_000);
         assert screen.update("PLAYING", 34_000, 990, 22, false, 34_000);
 
+        // Switching to a secure SurfaceView gives authority back to the rendered frame counter.
+        screen.useFrameCounter();
+        assert screen.update("PLAYING", 55_000, 1_500, -1, false, 55_000);
+        assert screen.update("PLAYING", 76_000, 2_100, -1, false, 76_000);
+        assert !screen.update("PLAYING", 106_000, 2_100, -1, false, 106_000);
+
         // Decoder retries use new baselines while the same theatre's deadline continues.
+        screen.reset();
+        assert screen.update("PLAYING", 33_000, 960, 21, false, 33_000);
+        assert screen.update("PLAYING", 34_000, 990, 22, false, 34_000);
         screen.rebind();
         assert screen.update("BUFFERING", -1, 0, 0, false, 50_000);
         screen.rebind();

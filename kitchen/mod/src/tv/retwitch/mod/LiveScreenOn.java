@@ -8,6 +8,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
 import android.util.Log;
+import android.view.SurfaceView;
 import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
@@ -258,8 +259,13 @@ public final class LiveScreenOn implements Runnable, View.OnAttachStateChangeLis
     }
 
     private long textureTimestamp(View playbackView) {
-        TextureView video = findTextureView(playbackView);
-        SurfaceTexture texture = video == null ? null : video.getSurfaceTexture();
+        View renderer = findRenderingView(playbackView);
+        if (renderer instanceof SurfaceView) {
+            lastTexture = null;
+            timeout.useFrameCounter();
+            return -1;
+        }
+        SurfaceTexture texture = renderer instanceof TextureView ? ((TextureView) renderer).getSurfaceTexture() : null;
         if (texture == null) {
             return -1;
         }
@@ -276,17 +282,17 @@ public final class LiveScreenOn implements Runnable, View.OnAttachStateChangeLis
         }
     }
 
-    private static TextureView findTextureView(View view) {
+    private static View findRenderingView(View view) {
         if (view == null || view.getVisibility() != View.VISIBLE || view.getAlpha() <= 0f) {
             return null;
         }
-        if (view instanceof TextureView) {
-            return (TextureView) view;
+        if (view instanceof SurfaceView || view instanceof TextureView) {
+            return view;
         }
         if (view instanceof ViewGroup) {
             ViewGroup group = (ViewGroup) view;
             for (int i = group.getChildCount() - 1; i >= 0; i--) {
-                TextureView video = findTextureView(group.getChildAt(i));
+                View video = findRenderingView(group.getChildAt(i));
                 if (video != null) {
                     return video;
                 }
