@@ -128,7 +128,7 @@ A handier chat,Удобный чат,Un chat más cómodo,QuickSetup.java:142
 Player,Плеер,Reproductor,QuickSetup.java:151 Strings.java:784
 "Highest quality on Wi-Fi right away, brightness and volume by swiping the edges in full screen, swipe to full screen, a frozen stream restarts itself","Сразу максимальное качество по Wi-Fi, яркость и громкость свайпом по краям в полном экране, свайп в полный экран, перезапуск зависшего стрима","Máxima calidad en Wi-Fi desde el inicio, brillo y volumen deslizando por los bordes en pantalla completa, deslizar para pantalla completa, un stream congelado se reinicia solo",QuickSetup.java:152
 Highest quality on Wi-Fi,Максимальное качество по Wi-Fi,Máxima calidad en Wi-Fi,QuickSetup.java:157
-Stream proxy,Прокси трансляций,Proxy de stream,QuickSetup.java:167 SettingsHook.java:911
+Stream proxy,Прокси трансляций,Proxy de stream,QuickSetup.java:167 SettingsHook.java:921
 "From Russia Twitch serves only transcodes up to 720p, the source quality (1080p and up) comes through a proxy. The mod checks the ReYohoho proxies and picks one that works","Из России Twitch отдаёт только транскоды до 720p, исходное качество (1080p и выше) приходит через прокси. Мод сам проверит прокси ReYohoho и выберет работающий","Desde Rusia, Twitch solo ofrece transcodificaciones de hasta 720p; la calidad original (1080p o más) llega a través de un proxy. El mod comprueba los proxies de ReYohoho y elige uno que funcione",QuickSetup.java:168
 ReYohoho proxy,Прокси ReYohoho,Proxy de ReYohoho,QuickSetup.java:173
 Home,Главная,Inicio,QuickSetup.java:175 SettingsHook.java:213
@@ -167,14 +167,14 @@ Download stopped,Скачивание остановлено,Descarga detenida,R
 Recording stopped,Запись остановлена,Grabación detenida,RecordService.java:100
 Download cut short,Скачивание прервалось,Descarga interrumpida,RecordService.java:101
 Recording cut short,Запись прервалась,Grabación interrumpida,RecordService.java:102
-Downloading · %s,Скачивание · %s,Descargando · %s,RecordService.java:259
-Recording · %s,Запись · %s,Grabando · %s,RecordService.java:260 RecordSheet.java:133
-Stop,Стоп,Detener,RecordService.java:270 RecordSettings.java:51 RecordSheet.java:135 RecordSheet.java:179 Strings.java:567
-Recordings: %d,Записи: %d,Grabaciones: %d,RecordService.java:277
-Stop all,Стоп всё,Detener todo,RecordService.java:281
-ReTwitch is waiting for streams,ReTwitch ждёт эфира,ReTwitch está esperando streams,RecordService.java:285
-Turn off,Выключить,Desactivar,RecordService.java:288
-Stream recording,Запись трансляций,Grabación de streams,RecordService.java:305 RecordSettings.java:40 RecordSettings.java:63 Toggles.java:283
+Downloading · %s,Скачивание · %s,Descargando · %s,RecordService.java:258
+Recording · %s,Запись · %s,Grabando · %s,RecordService.java:259 RecordSheet.java:133
+Stop,Стоп,Detener,RecordService.java:269 RecordSettings.java:51 RecordSheet.java:135 RecordSheet.java:179 Strings.java:567
+Recordings: %d,Записи: %d,Grabaciones: %d,RecordService.java:276
+Stop all,Стоп всё,Detener todo,RecordService.java:280
+ReTwitch is waiting for streams,ReTwitch ждёт эфира,ReTwitch está esperando streams,RecordService.java:284
+Turn off,Выключить,Desactivar,RecordService.java:287
+Stream recording,Запись трансляций,Grabación de streams,RecordService.java:304 RecordSettings.java:40 RecordSettings.java:63 Toggles.java:283
 Video download,Скачивание видео,Descarga de vídeo,RecordSettings.java:39
 Recording now: %d,Идёт записей: %d,Grabando ahora: %d,RecordSettings.java:57
 "Stream recording, auto-record, VOD downloads","Запись эфиров, автозапись, скачивание видео","Grabación de streams, grabación automática, descarga de VODs",RecordSettings.java:58
@@ -262,7 +262,7 @@ The file is gone or nothing plays it,Файл удалён или его неч�
 Watch with the chat,Смотреть с чатом,Ver con el chat,RecordSettings.java:324
 Watch,Смотреть,Ver,RecordSettings.java:324
 Open in the phone's player,Открыть в плеере телефона,Abrir en el reproductor del teléfono,RecordSettings.java:327
-Delete,Удалить,Eliminar,RecordSettings.java:329 RecordSettings.java:344 SettingsHook.java:990
+Delete,Удалить,Eliminar,RecordSettings.java:329 RecordSettings.java:344 SettingsHook.java:1000
 Delete the recording?,Удалить запись?,¿Eliminar la grabación?,RecordSettings.java:340
 """%s"", %s. The file and its chat are deleted from the phone.","«%s», %s. Файл и чат удалятся с телефона.","«%s», %s. El archivo y su chat se eliminarán del teléfono.",RecordSettings.java:341
 "Android refused to delete the file: delete it in Files, in Downloads/ReTwitch","Android не дал удалить файл: удалите его в «Файлах», в Загрузки/ReTwitch","Android no permitió eliminar el archivo: elimínalo en Archivos, en Downloads/ReTwitch",RecordSettings.java:346
@@ -475,43 +475,48 @@ Hide banners,Скрыть баннеры,Ocultar banners,SettingsHook.java:848
 Hide,Скрыть,Ocultar,SettingsHook.java:858 Strings.java:1216
 Show,Показать,Mostrar,SettingsHook.java:868 Strings.java:1026 Strings.java:1216
 At launch instead of Live,При запуске вместо «В эфире»,"Al iniciar, en lugar de En directo",SettingsHook.java:876
-Bottom menu: hide,Нижнее меню: скрыть,Ocultar menú inferior,SettingsHook.java:878
-Following,Отслеживаемое,Siguiendo,SettingsHook.java:882 SettingsPreview.java:1456
-Live channel previews,Превью каналов в эфире,Vistas previas de canales en directo,SettingsHook.java:884
-As in Twitch,Как в Twitch,Como en Twitch,SettingsHook.java:885 Strings.java:1117 Strings.java:1174 Strings.java:1248
-Medium,Средние,Medianas,SettingsHook.java:885
-Large,Крупные,Grande,SettingsHook.java:885 Strings.java:1093
-Stream previews,Превью стримов,Vistas previas de streams,SettingsHook.java:897
-Home header: hide,Шапка главной: скрыть,Encabezado de Inicio: ocultar,SettingsHook.java:899
-Live,В эфире,En directo,SettingsHook.java:902 SettingsPreview.java:1456 SettingsPreview.java:1477
-Proxy,Прокси,Proxy,SettingsHook.java:910
-A proxy helps when Twitch is slow or unreachable. It doesn't remove ads: the Ads section does.,"Прокси нужен, когда Twitch медленный или недоступен. Рекламу убирает не он, а блокировка из раздела «Реклама».",Un proxy ayuda cuando Twitch funciona lento o no está disponible. No elimina los anuncios: para eso está la sección Anuncios.,SettingsHook.java:913
-Access,Доступ,Acceso,SettingsHook.java:915
-"A file with all settings, favorites included","Файл со всеми настройками, включая избранное","Un archivo con todos los ajustes, incluidos los favoritos",SettingsHook.java:928
-Replaces the current mod settings,Заменит текущие настройки мода,Sustituye los ajustes actuales del mod,SettingsHook.java:930
-Reset,Сброс,Restablecer,SettingsHook.java:933 Strings.java:352 Strings.java:451
-Favorite emotes and chat offsets stay,Избранные эмоуты и смещения чата останутся,Se conservan los emotes favoritos y los desfases del chat,SettingsHook.java:934
-own files: %d,своих файлов: %d,archivos propios: %d,SettingsHook.java:949
-Mod language,Язык мода,Idioma del mod,SettingsHook.java:963
-Twitch stays in the system language,Twitch остаётся на языке системы,Twitch sigue en el idioma del sistema,SettingsHook.java:963
-Translate on the website,Перевести на сайте,Traducir en la web,SettingsHook.java:972
-"A handy editor: search, string checks, accepted strings go into the next mod version","Удобный редактор: поиск, проверка строк, принятое попадёт в следующую версию мода","Un editor cómodo: búsqueda, revisión de las cadenas; lo aceptado entra en la siguiente versión del mod",SettingsHook.java:973
-Translations in the mod,Переводы в моде,Traducciones del mod,SettingsHook.java:977
-%d of %d strings,%d из %d строк,%d de %d textos,SettingsHook.java:979
-Your files,Ваши файлы,Tus archivos,SettingsHook.java:984
-Strings: %d · on this phone only,Строк: %d · только на этом телефоне,Textos: %d · solo en este teléfono,SettingsHook.java:986
-Share the file,Поделиться файлом,Compartir el archivo,SettingsHook.java:990
-Files,Файлы,Archivos,SettingsHook.java:1002
-Download a file to translate,Скачать файл для перевода,Descargar un archivo para traducir,SettingsHook.java:1003
-"English, Russian and the translation side by side, for Google Sheets or Excel","Английский, русский и перевод рядом, для Google Таблиц или Excel","Inglés, ruso y la traducción uno al lado del otro, para Google Sheets o Excel",SettingsHook.java:1004
-Load your translation,Загрузить свой перевод,Cargar tu traducción,SettingsHook.java:1007
-"A new language or fixes to one, works right away","Новый язык или правки к старому, работает сразу",Un idioma nuevo o correcciones a uno existente; funciona al momento,SettingsHook.java:1008
-"A loaded file works on this phone only and wins over the mod's translation. To get the translation into the mod, upload the file on the website (“Translate on the website” above) or share it with the developer: the button is at your language under “Your files”.","Загруженный файл работает только на этом телефоне и сильнее перевода в моде. Чтобы перевод попал в мод, загрузите файл на сайте («Перевести на сайте» выше) или поделитесь им с разработчиком: кнопка у вашего языка в «Ваших файлах».","Un archivo cargado solo funciona en este teléfono y tiene prioridad sobre la traducción del mod. Para que la traducción llegue al mod, sube el archivo en la web («Traducir en la web», arriba) o compártelo con el desarrollador: el botón está junto a tu idioma en «Tus archivos».",SettingsHook.java:1010
-Logs for reports,Логи для отчётов,Registros para informes,SettingsHook.java:1020
-Checks,Проверки,Comprobaciones,SettingsHook.java:1043
-Firebase registration status,Статус регистрации в Firebase,Estado del registro en Firebase,SettingsHook.java:1044
-Check that crash reports get sent,Проверить отправку отчётов о падениях,Comprobar que se envían los informes de fallos,SettingsHook.java:1045
-For the brave,Для смелых,Para los más atrevidos,SettingsHook.java:1046
+"Twitch keeps the home and other screens outside the player in portrait. Auto-rotate follows the system's auto-rotate (when it's off, the screen stays as you turned it with the system's button). Keep as is leaves the home the way you left the stream and doesn't turn it until you open a stream.","Twitch держит главную и другие экраны вне плеера в портрете. «По автоповороту» - как системный автоповорот (выключен - экран остаётся, как вы его повернули кнопкой системы). «Не менять» - главная остаётся в той ориентации, в которой вы вышли из стрима, и не поворачивается, пока не откроете стрим.",,SettingsHook.java:878
+Home rotation,Поворот главной,,SettingsHook.java:884
+Don't drop landscape after a stream,Не сбрасывать горизонтальный режим после стрима,,SettingsHook.java:885
+As in Twitch,Как в Twitch,Como en Twitch,SettingsHook.java:886 SettingsHook.java:895 Strings.java:1117 Strings.java:1174 Strings.java:1248
+Auto-rotate,По автоповороту,,SettingsHook.java:886
+Keep as is,Не менять,,SettingsHook.java:886
+Bottom menu: hide,Нижнее меню: скрыть,Ocultar menú inferior,SettingsHook.java:888
+Following,Отслеживаемое,Siguiendo,SettingsHook.java:892 SettingsPreview.java:1456
+Live channel previews,Превью каналов в эфире,Vistas previas de canales en directo,SettingsHook.java:894
+Medium,Средние,Medianas,SettingsHook.java:895
+Large,Крупные,Grande,SettingsHook.java:895 Strings.java:1093
+Stream previews,Превью стримов,Vistas previas de streams,SettingsHook.java:907
+Home header: hide,Шапка главной: скрыть,Encabezado de Inicio: ocultar,SettingsHook.java:909
+Live,В эфире,En directo,SettingsHook.java:912 SettingsPreview.java:1456 SettingsPreview.java:1477
+Proxy,Прокси,Proxy,SettingsHook.java:920
+A proxy helps when Twitch is slow or unreachable. It doesn't remove ads: the Ads section does.,"Прокси нужен, когда Twitch медленный или недоступен. Рекламу убирает не он, а блокировка из раздела «Реклама».",Un proxy ayuda cuando Twitch funciona lento o no está disponible. No elimina los anuncios: para eso está la sección Anuncios.,SettingsHook.java:923
+Access,Доступ,Acceso,SettingsHook.java:925
+"A file with all settings, favorites included","Файл со всеми настройками, включая избранное","Un archivo con todos los ajustes, incluidos los favoritos",SettingsHook.java:938
+Replaces the current mod settings,Заменит текущие настройки мода,Sustituye los ajustes actuales del mod,SettingsHook.java:940
+Reset,Сброс,Restablecer,SettingsHook.java:943 Strings.java:352 Strings.java:451
+Favorite emotes and chat offsets stay,Избранные эмоуты и смещения чата останутся,Se conservan los emotes favoritos y los desfases del chat,SettingsHook.java:944
+own files: %d,своих файлов: %d,archivos propios: %d,SettingsHook.java:959
+Mod language,Язык мода,Idioma del mod,SettingsHook.java:973
+Twitch stays in the system language,Twitch остаётся на языке системы,Twitch sigue en el idioma del sistema,SettingsHook.java:973
+Translate on the website,Перевести на сайте,Traducir en la web,SettingsHook.java:982
+"A handy editor: search, string checks, accepted strings go into the next mod version","Удобный редактор: поиск, проверка строк, принятое попадёт в следующую версию мода","Un editor cómodo: búsqueda, revisión de las cadenas; lo aceptado entra en la siguiente versión del mod",SettingsHook.java:983
+Translations in the mod,Переводы в моде,Traducciones del mod,SettingsHook.java:987
+%d of %d strings,%d из %d строк,%d de %d textos,SettingsHook.java:989
+Your files,Ваши файлы,Tus archivos,SettingsHook.java:994
+Strings: %d · on this phone only,Строк: %d · только на этом телефоне,Textos: %d · solo en este teléfono,SettingsHook.java:996
+Share the file,Поделиться файлом,Compartir el archivo,SettingsHook.java:1000
+Files,Файлы,Archivos,SettingsHook.java:1012
+Download a file to translate,Скачать файл для перевода,Descargar un archivo para traducir,SettingsHook.java:1013
+"English, Russian and the translation side by side, for Google Sheets or Excel","Английский, русский и перевод рядом, для Google Таблиц или Excel","Inglés, ruso y la traducción uno al lado del otro, para Google Sheets o Excel",SettingsHook.java:1014
+Load your translation,Загрузить свой перевод,Cargar tu traducción,SettingsHook.java:1017
+"A new language or fixes to one, works right away","Новый язык или правки к старому, работает сразу",Un idioma nuevo o correcciones a uno existente; funciona al momento,SettingsHook.java:1018
+"A loaded file works on this phone only and wins over the mod's translation. To get the translation into the mod, upload the file on the website (“Translate on the website” above) or share it with the developer: the button is at your language under “Your files”.","Загруженный файл работает только на этом телефоне и сильнее перевода в моде. Чтобы перевод попал в мод, загрузите файл на сайте («Перевести на сайте» выше) или поделитесь им с разработчиком: кнопка у вашего языка в «Ваших файлах».","Un archivo cargado solo funciona en este teléfono y tiene prioridad sobre la traducción del mod. Para que la traducción llegue al mod, sube el archivo en la web («Traducir en la web», arriba) o compártelo con el desarrollador: el botón está junto a tu idioma en «Tus archivos».",SettingsHook.java:1020
+Logs for reports,Логи для отчётов,Registros para informes,SettingsHook.java:1030
+Checks,Проверки,Comprobaciones,SettingsHook.java:1053
+Firebase registration status,Статус регистрации в Firebase,Estado del registro en Firebase,SettingsHook.java:1054
+Check that crash reports get sent,Проверить отправку отчётов о падениях,Comprobar que se envían los informes de fallos,SettingsHook.java:1055
+For the brave,Для смелых,Para los más atrevidos,SettingsHook.java:1056
 An ad,Реклама,Un anuncio,SettingsPreview.java:419
 Mature content,Контент для взрослых,Contenido para adultos,SettingsPreview.java:433
 Start watching,Начать просмотр,Empezar a ver,SettingsPreview.java:435

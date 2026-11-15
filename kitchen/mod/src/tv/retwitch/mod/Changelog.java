@@ -13,6 +13,15 @@ import android.text.TextUtils;
 public final class Changelog {
 
     private static final String[][] ENTRIES = {
+            {"0.5.36-beta",
+                    "«Поворот главной» в разделе «Главная»: после стрима главная может остаться в горизонтальном режиме\n"
+                            + "Тап по пустому месту стрима (например, пока грузится чат) больше не открывает канал из ленты под ним\n"
+                            + "Уведомления мода со значком Twitch\n"
+                            + "В логе VAFT видно загрузку каждого куска видео и состояние сети: прикладывайте его к жалобам на зависания",
+                    "Home rotation in the Home section: the home screen can stay in landscape after a stream\n"
+                            + "A tap on an empty spot of a stream (like the chat while it loads) no longer opens a channel from the feed under it\n"
+                            + "Mod notifications use the Twitch icon\n"
+                            + "The VAFT log shows every video chunk download and the network state: attach it to freeze reports"},
             {"0.5.35-beta",
                     "Ответ свайпом: смахните сообщение в чате влево, чтобы ответить на него\n"
                             + "Перезапуск при зависании больше не перезагружает каналы, открытые раньше, и не обрывает стрим, который ещё грузится\n"

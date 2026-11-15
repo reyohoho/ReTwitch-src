@@ -25,6 +25,7 @@ import android.widget.TextView;
 import java.lang.ref.WeakReference;
 import java.util.Locale;
 
+import tv.retwitch.mod.ads.IvsNetLog;
 import tv.retwitch.mod.ads.VaftLog;
 
 /**
@@ -55,6 +56,12 @@ public final class PlayerStats {
     private static WeakReference<Object> buffering;
     private static long bufferingSince;
     private static boolean qualityCheck;
+    /** For the stats lines (main thread): ticks of {@link #QUALITY_CHECK} and the frame counters at the last one. */
+    private static int ticks;
+    private static long lastDropped = -1;
+    private static long lastDecoded;
+    private static long statsDropped;
+    private static long statsDecoded;
 
     private PlayerStats() {
     }
@@ -261,11 +268,13 @@ public final class PlayerStats {
                 if (player == null || !VaftLog.isOn()) {
                     return;
                 }
+                String state = String.valueOf(call(player, "getState"));
                 if (PlayerHook.isAudible(player)) {
                     log(qualityLine(player));
+                    statsTick(player, state);
                 }
                 // A released player reads IDLE: its native getters check the handle.
-                if (isRunning(String.valueOf(call(player, "getState")))) {
+                if (isRunning(state)) {
                     qualityCheck = true;
                     main().postDelayed(this, 1000L);
                 }
@@ -275,6 +284,40 @@ public final class PlayerStats {
             }
         }
     };
+
+    /**
+     * Once a second: a line on every second of a stall (with the IVS requests still open), on a burst of dropped
+     * frames (decoder or a busy device), and every 10 s a summary with the network.
+     */
+    private static void statsTick(Object player, String state) {
+        Object stats = call(player, "getStatistics");
+        long dropped = stats != null ? number(call(stats, "getDroppedFrames")) : 0;
+        long decoded = stats != null ? number(call(stats, "getDecodedFrames")) : 0;
+        if (lastDropped < 0 || dropped < lastDropped || decoded < lastDecoded) { // a new player or a reload
+            lastDropped = dropped;
+            lastDecoded = decoded;
+        }
+        long droppedNow = dropped - lastDropped;
+        long decodedNow = decoded - lastDecoded;
+        lastDropped = dropped;
+        lastDecoded = decoded;
+        statsDropped += droppedNow;
+        statsDecoded += decodedNow;
+        if ("BUFFERING".equals(state) && buffering != null && buffering.get() == player) {
+            log("player still buffering " + (SystemClock.elapsedRealtime() - bufferingSince) + " ms: buffer "
+                    + buffer(player) + ", " + IvsNetLog.pending());
+        }
+        if (droppedNow >= 10) {
+            log("player dropped " + droppedNow + " frames in 1 s (decoded " + decodedNow + ")");
+        }
+        if (++ticks % 10 == 0) {
+            log("player stats: " + snapshot(player) + ", fps " + (stats != null ? number(call(stats, "getFrameRate")) : 0)
+                    + ", frames " + statsDecoded + " decoded / " + statsDropped + " dropped in 10 s, net "
+                    + IvsNetLog.network() + ", " + IvsNetLog.pending());
+            statsDropped = 0;
+            statsDecoded = 0;
+        }
+    }
 
     private static boolean isRunning(String state) {
         return "PLAYING".equals(state) || "BUFFERING".equals(state);

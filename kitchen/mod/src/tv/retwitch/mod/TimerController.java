@@ -249,7 +249,7 @@ public final class TimerController {
 
         builder.setContentTitle(Strings.timerNotifyTitle())
                 .setContentText(formatTime(remainingSeconds))
-                .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
+                .setSmallIcon(AppContext.notificationIcon(context, android.R.drawable.ic_lock_idle_alarm))
                 .setOngoing(true)
                 .setOnlyAlertOnce(true);
         builder.addAction(actionIcon(), Strings.timerCancel(), pendingCancel(context));

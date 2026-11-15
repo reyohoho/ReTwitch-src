@@ -104,7 +104,7 @@ public final class RecordService extends Service {
                     + (rec.problem != null ? " · " + rec.problem : "")
                     : rec.problem != null ? rec.problem : "";
             nm.notify(FINISHED_ID + Math.abs(rec.id.hashCode() % 1000), new Notification.Builder(context, CHANNEL)
-                    .setSmallIcon(android.R.drawable.stat_sys_download_done)
+                    .setSmallIcon(AppContext.notificationIcon(context, android.R.drawable.stat_sys_download_done))
                     .setContentTitle(title)
                     .setContentText(text)
                     .setAutoCancel(true)
@@ -254,8 +254,7 @@ public final class RecordService extends Service {
         List<LiveRecord.Rec> recs = new ArrayList<>(LiveRecord.ACTIVE);
         if (recs.size() == 1) {
             LiveRecord.Rec rec = recs.get(0);
-            b.setSmallIcon(rec.isVod() ? rec.paused ? android.R.drawable.ic_media_pause : android.R.drawable.stat_sys_download
-                    : android.R.drawable.presence_video_online)
+            b.setSmallIcon(AppContext.notificationIcon(this, android.R.drawable.presence_video_online))
                     .setContentTitle(rec.isVod() ? Strings.pickf("Скачивание · %s", "Downloading · %s", rec.display)
                             : Strings.pickf("Запись · %s", "Recording · %s", rec.display))
                     .setContentText(LiveRecord.line(this, rec, false));
@@ -273,7 +272,7 @@ public final class RecordService extends Service {
             for (LiveRecord.Rec rec : recs) {
                 lines.addLine(LiveRecord.line(this, rec, true));
             }
-            b.setSmallIcon(android.R.drawable.presence_video_online)
+            b.setSmallIcon(AppContext.notificationIcon(this, android.R.drawable.presence_video_online))
                     .setContentTitle(Strings.pickf("Записи: %d", "Recordings: %d", recs.size()))
                     .setContentText(LiveRecord.line(this, recs.get(0), true))
                     .setStyle(lines)
@@ -281,7 +280,7 @@ public final class RecordService extends Service {
                             Strings.pick("Стоп всё", "Stop all")));
         } else {
             int channels = AutoRecord.enabledCount();
-            b.setSmallIcon(android.R.drawable.presence_video_away)
+            b.setSmallIcon(AppContext.notificationIcon(this, android.R.drawable.presence_video_away))
                     .setContentTitle(Strings.pick("ReTwitch ждёт эфира", "ReTwitch is waiting for streams"))
                     .setContentText(AutoRecord.waitingLine(this, channels))
                     .addAction(action(ACTION_AUTO_OFF, null, android.R.drawable.ic_menu_close_clear_cancel,

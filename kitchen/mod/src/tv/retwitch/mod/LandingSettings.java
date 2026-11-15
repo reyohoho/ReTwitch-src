@@ -55,6 +55,19 @@ public final class LandingSettings {
         prefs(context).edit().putInt(KEY_CHANNEL_PAGE, mode).apply();
     }
 
+    private static final String KEY_HOME_ORIENTATION = "home_orientation_mode";
+
+    /** Home's rotation (HomeOrientation): 0 portrait as in Twitch, 1 the system's auto-rotate, 2 keeps the current one. */
+    public static int getHomeOrientationMode() {
+        Context context = AppContext.get();
+        int mode = context == null ? 0 : prefs(context).getInt(KEY_HOME_ORIENTATION, 0);
+        return mode >= 0 && mode <= 2 ? mode : 0;
+    }
+
+    public static void setHomeOrientationMode(Context context, int mode) {
+        prefs(context).edit().putInt(KEY_HOME_ORIENTATION, mode).apply();
+    }
+
     private static boolean getBool(String key, boolean fallback) {
         Context context = AppContext.get();
         if (context == null) {

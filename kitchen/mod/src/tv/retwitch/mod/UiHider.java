@@ -102,6 +102,7 @@ public final class UiHider {
             "play_pause_container", "play_pause_fast_seek_view", "message_input",
             "fullscreen_button", "chat_mode_button", "emote_picker", "chat_header_container", "emoticon_picker",
             "chomments_header_container", "mod_dashboard_button", "chat_restrictions_container", "minimized_overlay",
+            "theatre_root_container",
             "seek_forward_button", "seek_rewind_button",
             "community_points_button_container", "right_side_community_points_button_container",
             // An id missing here costs a whole extra tree walk per pass (findAll falls back to collect).
@@ -369,11 +370,21 @@ public final class UiHider {
             restrictionsTouched = restrictions;
             hideWhileAll(activity, decor, restrictions, "chat_restrictions_container");
         }
-        if (Toggles.on(Toggles.NO_MINI_PLAYER)) {
-            for (View overlay : findAll(activity, decor, "minimized_overlay")) {
-                if (overlay.isShown() && overlay.getParent() instanceof View) {
+        boolean mini = false;
+        for (View overlay : findAll(activity, decor, "minimized_overlay")) {
+            if (overlay.isShown() && overlay.getParent() instanceof View) {
+                mini = true;
+                if (Toggles.on(Toggles.NO_MINI_PLAYER)) {
                     closeMiniPlayer((View) overlay.getParent());
                 }
+            }
+        }
+        // ClassicTheatrePatch lays the native theatre over the RN home feed: a tap on a spot no view takes (the chat
+        // while it loads, reyohoho/ReTwitch-src#30) opened the feed row under it. Not on the mini player: its
+        // container expands it only on a tap no child takes.
+        for (View root : findAll(activity, decor, "theatre_root_container")) {
+            if (root.isClickable() == mini) {
+                root.setClickable(!mini);
             }
         }
         if (Toggles.on(Toggles.HIDE_MATURE_WARNING)) {

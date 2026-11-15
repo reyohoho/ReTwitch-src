@@ -196,5 +196,27 @@ val retwitchPlayerTweaksPatch = bytecodePatch(
                 invoke-static/range {p0 .. p0}, Ltv/retwitch/mod/JailChat;->install(Landroid/app/Application;)V
             """.trimIndent(),
         )
+
+        // VAFT log: every IVS request (segments go straight to the CDN). create() is the one factory
+        // behind Platform.createHttpClient(); the mod wraps the client only while the log is on.
+        try {
+            val factory = mutableClassDefByOrNull { it.type == "Lcom/amazonaws/ivs/net/HttpClientFactory;" }
+                ?: throw PatchException("HttpClientFactory not found")
+            val create = factory.methods.single { it.name == "create" && it.parameterTypes.isEmpty() }
+            create.instructions.withIndex().filter { it.value.opcode == Opcode.RETURN_OBJECT }.map { it.index }
+                .sortedDescending().forEach { index ->
+                    val reg = (create.getInstruction(index) as OneRegisterInstruction).registerA
+                    create.addInstructions(
+                        index,
+                        """
+                            invoke-static {v$reg}, Ltv/retwitch/mod/ads/IvsNetLog;->wrap(Ljava/lang/Object;)Ljava/lang/Object;
+                            move-result-object v$reg
+                            check-cast v$reg, Lcom/amazonaws/ivs/net/HttpClient;
+                        """.trimIndent(),
+                    )
+                }
+        } catch (e: Exception) {
+            println("[ReTwitch] player tweaks: IVS request log skipped: $e")
+        }
     }
 }

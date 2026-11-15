@@ -875,6 +875,16 @@ public final class SettingsHook {
         s.look(SettingsPreview.HOME, SettingsPreview.H_FOLLOWING).toggle(t("Открывать «Отслеживаемое»", "Open Following"),
                 t("При запуске вместо «В эфире»", "At launch instead of Live"),
                 LandingSettings.isFollowingDefaultEnabled(), true, on -> LandingSettings.setFollowingDefaultEnabled(c, on));
+        s.markNew("0.5.36-beta").note(t("Twitch держит главную и другие экраны вне плеера в портрете. «По автоповороту» - как "
+                        + "системный автоповорот (выключен - экран остаётся, как вы его повернули кнопкой системы). «Не менять» - "
+                        + "главная остаётся в той ориентации, в которой вы вышли из стрима, и не поворачивается, пока не откроете стрим.",
+                "Twitch keeps the home and other screens outside the player in portrait. Auto-rotate follows the system's "
+                        + "auto-rotate (when it's off, the screen stays as you turned it with the system's button). Keep as is "
+                        + "leaves the home the way you left the stream and doesn't turn it until you open a stream."))
+                .choice(t("Поворот главной", "Home rotation"),
+                        t("Не сбрасывать горизонтальный режим после стрима", "Don't drop landscape after a stream"),
+                        new String[]{t("Как в Twitch", "As in Twitch"), t("По автоповороту", "Auto-rotate"), t("Не менять", "Keep as is")},
+                        LandingSettings.getHomeOrientationMode(), false, i -> LandingSettings.setHomeOrientationMode(c, i));
         s.section(t("Нижнее меню: скрыть", "Bottom menu: hide"));
         s.toggle(Toggles.HIDE_TAB_BROWSE);
         s.toggle(Toggles.HIDE_TAB_ACTIVITY);

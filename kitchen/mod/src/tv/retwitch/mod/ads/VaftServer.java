@@ -207,6 +207,8 @@ public final class VaftServer {
 
     private static void handle(Socket client) {
         boolean head = false;
+        long failedSince = System.currentTimeMillis();
+        String failedTarget = null;
         try {
             client.setSoTimeout(15_000);
             InputStream in = client.getInputStream();
@@ -235,6 +237,7 @@ public final class VaftServer {
                 respond(client, 404, "text/plain", "not found", head);
                 return;
             }
+            failedTarget = kind + " " + VaftLog.describe(target);
 
             Route route = "master".equals(kind) ? routes.get(routeKey(target)) : null;
             long started = System.currentTimeMillis();
@@ -255,10 +258,8 @@ public final class VaftServer {
                 VaftLog.log("master " + VaftLog.describe(target) + " (" + (System.currentTimeMillis() - started) + " ms)");
             } else if ("media".equals(kind)) {
                 out = processMedia(request.getQueryParameter("s"), target, body,
-                        request.getQueryParameter("res"), request.getQueryParameter("c"));
-                if (System.currentTimeMillis() - started > 2000) {
-                    VaftLog.log("slow media poll: " + (System.currentTimeMillis() - started) + " ms");
-                }
+                        request.getQueryParameter("res"), request.getQueryParameter("c"),
+                        System.currentTimeMillis() - started);
             } else if ("vod".equals(kind)) {
                 out = SubVods.fixMedia(target, body);
             } else {
@@ -268,6 +269,8 @@ public final class VaftServer {
             respond(client, 200, "application/vnd.apple.mpegurl", out, head);
         } catch (Throwable t) {
             Log.w(TAG, "request failed", t);
+            VaftLog.log((failedTarget != null ? failedTarget : "request") + " failed after "
+                    + (System.currentTimeMillis() - failedSince) + " ms: " + t);
             if (!(t instanceof IOException)) { // the network (player gone, timeouts, upstream down) isn't a bug: 82% of all reports
                 CrashReporter.report(TAG, "request failed", t);
             }
@@ -472,7 +475,8 @@ public final class VaftServer {
     }
 
     /** The VAFT decision for one media-playlist poll. */
-    static String processMedia(String stream, String variantUrl, String text, String resolution, String codecs) {
+    static String processMedia(String stream, String variantUrl, String text, String resolution, String codecs,
+            long upstreamMs) {
         if (sequencers.size() > MAX_VARIANTS) {
             sequencers.clear();
         }
@@ -502,7 +506,7 @@ public final class VaftServer {
         }
         if (VaftLog.isOn()) {
             VaftLog.log("media " + resolution + " " + decision + ": in " + summary(text) + " -> out "
-                    + (out == null ? "held last" : summary(out)));
+                    + (out == null ? "held last" : summary(out)) + " (" + upstreamMs + " ms)");
         }
         if (out == null) {
             // Nothing new to serve (all ads, or a source still behind what was

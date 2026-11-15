@@ -140,7 +140,20 @@ public final class ChannelTracker {
      * The theatre's player mode is changing (ChatConnectPatch). Minimizing and expanding swap
      * which chat is on screen, so the current channel swaps with them. Injected -- never throws.
      */
+    /** The theatre's last player mode (31.9.0 {@code d3u}), for {@link HomeOrientation}: null before the first theatre. */
+    private static volatile String playerMode;
+
+    static boolean playerMinimized() {
+        String mode = playerMode;
+        return mode != null && mode.startsWith("MINIMIZED");
+    }
+
+    static String playerMode() {
+        return playerMode;
+    }
+
     public static void onPlayerMode(Enum<?> from, Enum<?> to) {
+        playerMode = to != null ? to.name() : null;
         try {
             boolean wasMinimized = from.name().startsWith("MINIMIZED");
             boolean minimized = to.name().startsWith("MINIMIZED");

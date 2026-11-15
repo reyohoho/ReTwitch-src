@@ -39,6 +39,12 @@ public final class AppContext {
         return context;
     }
 
+    /** Twitch's own glitch for the status bar, like its notifications (reyohoho/ReTwitch-src#31); the fallback if it's gone. */
+    public static int notificationIcon(Context context, int fallback) {
+        int id = context.getResources().getIdentifier("ic_glitch_notification", "drawable", context.getPackageName());
+        return id != 0 ? id : fallback;
+    }
+
     private static Context fromActivityThread() {
         try {
             Class<?> clazz = Class.forName("android.app.ActivityThread");

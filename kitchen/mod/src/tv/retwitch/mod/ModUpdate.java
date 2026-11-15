@@ -206,7 +206,7 @@ final class ModUpdate {
                     Strings.pick("Обновления мода", "Mod updates"), NotificationManager.IMPORTANCE_DEFAULT));
             Intent launch = app.getPackageManager().getLaunchIntentForPackage(app.getPackageName());
             Notification.Builder builder = new Notification.Builder(app, CHANNEL)
-                    .setSmallIcon(android.R.drawable.stat_sys_download_done)
+                    .setSmallIcon(AppContext.notificationIcon(app, android.R.drawable.stat_sys_download_done))
                     .setContentTitle(Strings.updateTitle(release.version))
                     .setContentText(Strings.pick("Откройте приложение, чтобы обновить", "Open the app to update"))
                     .setAutoCancel(true);
