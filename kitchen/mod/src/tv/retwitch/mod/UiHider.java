@@ -97,7 +97,8 @@ public final class UiHider {
             "one_chat_message_input_view_container", "split_button", "bit_picker", "bits_button",
             "leaderboards_container", "leaderboards_icon", "paid_pinned_chat_container",
             "custom_create_bottom_nav_button", "chat_mode_snackbar", "view_chat_settings",
-            "chat_banned_replacement_container", "community_points_button_layout", "draggable_container",
+            "chat_banned_replacement_container", "community_points_button_layout", LiveScreenOn.THEATRE,
+            LiveScreenOn.PLAYER_AND_CHAT,
             // PlayerHook.attachLatencyLabels, called from the pass.
             "play_pause_container", "play_pause_fast_seek_view", "message_input",
             "fullscreen_button", "chat_mode_button", "emote_picker", "chat_header_container", "emoticon_picker",
@@ -244,6 +245,11 @@ public final class UiHider {
                 safeApply(activity, decor);
             }
         });
+        decor.getViewTreeObserver().addOnWindowFocusChangeListener(hasFocus -> {
+            if (hasFocus) {
+                LiveScreenOn.observe(activity, decor);
+            }
+        });
     }
 
     /**
@@ -306,6 +312,7 @@ public final class UiHider {
     }
 
     private static void applyPass(Activity activity, View decor) {
+        LiveScreenOn.observe(activity, decor);
         boolean[] player = {
                 Toggles.on(Toggles.HIDE_PLAYER_CAST), Toggles.on(Toggles.HIDE_PLAYER_SHARE),
                 Toggles.on(Toggles.HIDE_PLAYER_CLIP),

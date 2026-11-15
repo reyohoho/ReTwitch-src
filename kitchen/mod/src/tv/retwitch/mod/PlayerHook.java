@@ -201,6 +201,7 @@ public final class PlayerHook {
         }
         try {
             if (player != null) {
+                LiveScreenOn.onPlay(player);
                 PLAYED.remove(player);
                 synchronized (THEATRE_PLAYERS) {
                     ORPHANS.remove(player);

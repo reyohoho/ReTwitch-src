@@ -22,6 +22,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.SystemClock;
 import android.text.TextUtils;
 import android.util.Log;
 import android.util.Rational;
@@ -96,6 +97,7 @@ final class RecordPlayer {
     private final String channelId;
     private final Handler main = new Handler(Looper.getMainLooper());
     private final Records.Index index;
+    private final PlaybackScreenTimeout screenTimeout = new PlaybackScreenTimeout();
     private boolean closed;
     private boolean started;
     private boolean pip;
@@ -226,7 +228,6 @@ final class RecordPlayer {
         window.setBackgroundDrawable(new ColorDrawable(Color.BLACK));
         window.setStatusBarColor(Color.BLACK);
         window.setNavigationBarColor(BG);
-        window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         listenPip();
         arrange();
         start();
@@ -458,12 +459,17 @@ final class RecordPlayer {
         if (closed) {
             return;
         }
-        long position = position();
+        long reportedPosition = reportedPosition();
+        long position = Math.max(0, reportedPosition);
         if (!dragging) {
             seek.setProgress((int) (position / 1000));
             timeView.setText(LiveRecord.clock(position / 1000.0));
         }
-        boolean playing = playing();
+        String state = state();
+        if (started) {
+            keepScreenOn(screenTimeout.update(state, reportedPosition, -1, SystemClock.elapsedRealtime()));
+        }
+        boolean playing = PlaybackScreenTimeout.isActive(state);
         setIcon(playButton, playing ? "ic_pause" : "ic_play_arrow");
         if (!Boolean.valueOf(playing).equals(pipPlaying)) {
             pipPlaying = playing;
@@ -477,13 +483,32 @@ final class RecordPlayer {
     }
 
     private long position() {
+        return Math.max(0, reportedPosition());
+    }
+
+    private long reportedPosition() {
         Object value = call("getPosition", new Class<?>[0]);
-        return value instanceof Long ? (Long) value : 0;
+        return value instanceof Long ? (Long) value : -1;
+    }
+
+    private String state() {
+        Object state = call("getState", new Class<?>[0]);
+        return state != null ? state.toString() : null;
     }
 
     private boolean playing() {
-        Object state = call("getState", new Class<?>[0]);
-        return state != null && ("PLAYING".equals(state.toString()) || "BUFFERING".equals(state.toString()));
+        return PlaybackScreenTimeout.isActive(state());
+    }
+
+    private void keepScreenOn(boolean on) {
+        if (playerView.getKeepScreenOn() != on) {
+            playerView.setKeepScreenOn(on);
+        }
+    }
+
+    private void releaseScreen() {
+        screenTimeout.reset();
+        keepScreenOn(false);
     }
 
     private void togglePlay() {
@@ -556,8 +581,11 @@ final class RecordPlayer {
 
     void onStarted(boolean started) {
         this.started = started;
-        if (!started && !activity.isInPictureInPictureMode()) {
-            call("pause", new Class<?>[0]); // in the background without a picture: nothing to watch
+        if (!started) {
+            releaseScreen();
+            if (!activity.isInPictureInPictureMode()) {
+                call("pause", new Class<?>[0]); // in the background without a picture: nothing to watch
+            }
         }
     }
 
@@ -608,6 +636,7 @@ final class RecordPlayer {
             current = null;
         }
         main.removeCallbacksAndMessages(null);
+        releaseScreen();
         saveWatched(position());
         try {
             activity.unregisterReceiver(pipReceiver);

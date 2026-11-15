@@ -11,9 +11,11 @@ import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
+import com.android.tools.smali.dexlib2.iface.reference.FieldReference
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 
 private const val CORE_PLAYER = "Lcom/amazonaws/ivs/player/CorePlayerImpl;"
+private const val IVS_MEDIA_PLAYER = "Lcom/amazonaws/ivs/player/MediaPlayer;"
 private const val PLAYER_STATE = "Lcom/amazonaws/ivs/player/Player\$State;"
 
 /**
@@ -55,6 +57,81 @@ val retwitchPlayerTweaksPatch = bytecodePatch(
             mapIndex + 2,
             "invoke-static {p0, v$stateReg}, Ltv/retwitch/mod/PlayerHook;->onStateChanged(Ljava/lang/Object;Ljava/lang/Object;)V",
         )
+
+        // Playback commands can arrive before the corresponding state callback.
+        try {
+            val playbackCommands = listOf("pause" to "onPause", "play" to "onPlay").map { (command, hook) ->
+                val method = core.methods.single {
+                    it.name == command && it.parameterTypes.isEmpty() && it.returnType == "V" &&
+                        !AccessFlags.NATIVE.isSet(it.accessFlags) && !AccessFlags.STATIC.isSet(it.accessFlags)
+                }
+                val nativeCall = method.instructions.indexOfFirst { insn ->
+                    if (insn.opcode != Opcode.INVOKE_DIRECT && insn.opcode != Opcode.INVOKE_DIRECT_RANGE) {
+                        false
+                    } else {
+                        val ref = (insn as ReferenceInstruction).reference as MethodReference
+                        ref.definingClass == CORE_PLAYER && ref.name == command && ref.returnType == "V" &&
+                            ref.parameterTypes.map { it.toString() } == listOf("J")
+                    }
+                }
+                if (nativeCall < 0) throw PatchException("native $command call not found")
+                Triple(method, nativeCall + 1, hook)
+            }
+            playbackCommands.forEach { (method, index, hook) ->
+                method.addInstructions(
+                    index,
+                    "invoke-static/range {p0 .. p0}, Ltv/retwitch/mod/LiveScreenOn;->$hook(Ljava/lang/Object;)V",
+                )
+            }
+            println("[ReTwitch] player tweaks: screen timeout playback commands hooked")
+        } catch (e: Exception) {
+            println("[ReTwitch] player tweaks: screen timeout playback commands skipped: $e")
+        }
+
+        // The standard theatre mounts a playback bridge directly in its layout.
+        // Match the Twitch wrapper by the SDK field and where it stores that bridge and reads its surface.
+        try {
+            val candidates = mutableListOf<MethodReference>()
+            classDefForEach { owner ->
+                if (owner.fields.none { it.type == IVS_MEDIA_PLAYER }) return@classDefForEach
+                for (method in owner.methods) {
+                    val bridge = method.parameterTypes.singleOrNull()?.toString() ?: continue
+                    if (method.returnType != "V" || AccessFlags.STATIC.isSet(method.accessFlags)) continue
+                    val code = method.implementation?.instructions?.toList() ?: continue
+                    val storesBridge = code.any { insn ->
+                        insn.opcode == Opcode.IPUT_OBJECT &&
+                            ((insn as ReferenceInstruction).reference as FieldReference).let { ref ->
+                                ref.definingClass == owner.type && ref.type == bridge
+                            }
+                    }
+                    if (!storesBridge) continue
+                    val readsSurface = code.any { insn ->
+                        (insn.opcode == Opcode.INVOKE_INTERFACE || insn.opcode == Opcode.INVOKE_INTERFACE_RANGE) &&
+                            ((insn as ReferenceInstruction).reference as MethodReference).let { ref ->
+                                ref.definingClass == bridge && ref.name == "getSurface" && ref.parameterTypes.isEmpty() &&
+                                    ref.returnType == "Landroid/view/Surface;"
+                            }
+                    }
+                    if (readsSurface) candidates.add(method)
+                }
+            }
+            val candidate = candidates.single()
+            val bridge = candidate.parameterTypes.single().toString()
+            val viewMethod = mutableClassDefBy(bridge).methods.any {
+                it.name == "getView" && it.parameterTypes.isEmpty() && it.returnType == "Landroid/view/View;"
+            }
+            if (!viewMethod) throw PatchException("playback bridge getView not found")
+            val attach = mutableClassDefBy(candidate.definingClass).methods.single {
+                it.name == candidate.name && it.parameterTypes.singleOrNull()?.toString() == bridge && it.returnType == "V"
+            }
+            attach.addInstructions(
+                0,
+                "invoke-static/range {p0 .. p1}, Ltv/retwitch/mod/LiveScreenOn;->bindPlaybackView(Ljava/lang/Object;Ljava/lang/Object;)V",
+            )
+            println("[ReTwitch] player tweaks: screen timeout playback view hooked")
+        } catch (e: Exception) {
+            println("[ReTwitch] player tweaks: screen timeout playback view skipped: $e")
+        }
 
         // Default quality: Twitch re-enables auto quality after load on its own
         // schedule; PlayerHook may apply the default instead (true = skip).
