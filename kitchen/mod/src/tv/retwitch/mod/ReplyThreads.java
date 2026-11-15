@@ -143,6 +143,7 @@ public final class ReplyThreads {
         rowReply = null;
         rowModel = null;
         try {
+            SwipeReply.bind(text, row);
             boolean thread = reply != null && wanted();
             text.setTag(PILL_TAG_KEY, thread ? new Object[]{row, reply} : null);
             if (thread) {
@@ -231,7 +232,7 @@ public final class ReplyThreads {
     }
 
     /** Twitch's thread tray for the row, as its message menu's "Reply" opens it. False if it can't be sent. */
-    private static boolean openTray(Context context, Object row) {
+    static boolean openTray(Context context, Object row) {
         if (row == null) {
             return false;
         }

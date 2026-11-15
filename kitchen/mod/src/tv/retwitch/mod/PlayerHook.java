@@ -44,6 +44,8 @@ public final class PlayerHook {
 
     private static final String TAG = "RTPlayer";
     private static final int MAX_RELOADS = 3;
+    /** A stream's first buffering is its load, not a freeze: 3 s restarted a slow source before it ever came (issue #29). */
+    private static final long FIRST_LOAD_MS = 10_000L;
     private static final Handler MAIN = new Handler(Looper.getMainLooper());
 
     private static int reloadsInARow;
@@ -54,6 +56,9 @@ public final class PlayerHook {
     /** Players loaded in the open theatre, and those of a closed one: both are touched from Twitch's threads. */
     private static final Set<Object> THEATRE_PLAYERS = Collections.newSetFromMap(new WeakHashMap<Object, Boolean>());
     private static final Set<Object> ORPHANS = Collections.newSetFromMap(new WeakHashMap<Object, Boolean>());
+    /** Players that reached PLAYING since their last load. */
+    private static final Set<Object> PLAYED =
+            Collections.synchronizedSet(Collections.newSetFromMap(new WeakHashMap<Object, Boolean>()));
     private static volatile boolean theatreOpen;
     /** The mod's recording player ({@link RecordPlayer}): not Twitch's, none of the hooks here apply to it. */
     private static volatile WeakReference<Object> replay = new WeakReference<>(null);
@@ -129,6 +134,7 @@ public final class PlayerHook {
                 scheduleStallCheck(player);
             } else if ("PLAYING".equals(name)) {
                 reloadsInARow = 0;
+                PLAYED.add(player);
                 AudioCompressor.onPlaying();
                 synchronized (THEATRE_PLAYERS) {
                     if (ORPHANS.contains(player)) {
@@ -195,6 +201,7 @@ public final class PlayerHook {
         }
         try {
             if (player != null) {
+                PLAYED.remove(player);
                 synchronized (THEATRE_PLAYERS) {
                     ORPHANS.remove(player);
                     if (theatreOpen && isAudible(player)) {
@@ -563,7 +570,8 @@ public final class PlayerHook {
             return;
         }
         final WeakReference<Object> ref = new WeakReference<>(player);
-        final long stallMs = PlayerSettings.getStallSeconds() * 1000L;
+        final long stallMs = PLAYED.contains(player) ? PlayerSettings.getStallSeconds() * 1000L
+                : Math.max(FIRST_LOAD_MS, PlayerSettings.getStallSeconds() * 1000L);
         pendingStallCheck = new Runnable() {
             @Override
             public void run() {

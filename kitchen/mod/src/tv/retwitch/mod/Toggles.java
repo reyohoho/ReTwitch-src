@@ -172,7 +172,9 @@ public final class Toggles {
             .compare("Стрим висит на загрузке, пока не перезайдёшь",
                     "Плеер перезагружается сам",
                     "A stream hangs on loading until you reopen it",
-                    "The player reloads by itself");
+                    "The player reloads by itself")
+            .note("Только что открытый стрим ждёт не меньше 10 с: первая загрузка дольше.",
+                    "A stream you just opened gets at least 10 s: the first load takes longer.");
     public static final Toggle NORMAL_LATENCY = new Toggle("normal_latency", "Обычная задержка", "Normal latency", false)
             .about("Стабильнее на слабой сети, но стрим на несколько секунд позже",
                     "Steadier on a weak connection, a few seconds later")
@@ -1048,6 +1050,16 @@ public final class Toggles {
             .note("Открывается ветка самого Twitch, та же, что по долгому нажатию > «Ответить». В горизонтальном режиме ответ - плашка с ником внутри сообщения, нажимать на неё. В оверлее чата не работает",
                     "It opens Twitch's own thread, the same as a long press > Reply. In landscape a reply is a pill with the name inside the message: tap it. Doesn't work in the chat overlay")
             .asNew("0.5.22-beta");
+    public static final Toggle SWIPE_REPLY = new Toggle("swipe_reply", "Ответ свайпом", "Swipe to reply", false)
+            .about("Смахните сообщение влево, чтобы ответить на него",
+                    "Swipe a message left to reply to it")
+            .compare("Ответить можно только через долгое нажатие > «Ответить»",
+                    "Сообщение, смахнутое влево, сразу становится ответом",
+                    "Replying takes a long press > Reply",
+                    "Swiping a message left starts a reply to it")
+            .note("Делает то же, что «Ответить» в меню сообщения: на ответ в ветке откроется ветка. Только чат трансляции, в оверлее чата не работает",
+                    "Does what Reply in the message menu does: on a reply in a thread, the thread opens. Live chat only, not in the chat overlay")
+            .asNew("0.5.35-beta");
     public static final Toggle ROBOTTY_HISTORY = new Toggle("robotty_history", "Больше истории чата", "More chat history", false)
             .about("Сообщения до вашего входа - из сервиса Robotty: в самом чате и в карточке зрителя",
                     "Messages from before you came in, from the Robotty service: in the chat and on a viewer card")

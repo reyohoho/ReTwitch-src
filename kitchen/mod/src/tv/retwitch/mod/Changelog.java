@@ -13,6 +13,19 @@ import android.text.TextUtils;
 public final class Changelog {
 
     private static final String[][] ENTRIES = {
+            {"0.5.35-beta",
+                    "Ответ свайпом: смахните сообщение в чате влево, чтобы ответить на него\n"
+                            + "Перезапуск при зависании больше не перезагружает каналы, открытые раньше, и не обрывает стрим, который ещё грузится\n"
+                            + "Компактный список «В эфире» открывается с начала\n"
+                            + "Ряд избранных каналов на главной листается пальцем\n"
+                            + "Жесты яркости и громкости не срабатывают, когда открываете шторку уведомлений\n"
+                            + "Число зрителей на превью видно в светлой теме",
+                    "Swipe to reply: swipe a chat message left to reply to it\n"
+                            + "Restart when stuck no longer reloads channels opened earlier or cuts off a stream that is still loading\n"
+                            + "The compact Live list opens at the top\n"
+                            + "The favorite channels row on Home scrolls\n"
+                            + "Brightness and volume gestures no longer fire when you pull down the notification shade\n"
+                            + "Viewer counts on previews are readable in the light theme"},
             {"0.5.34-beta",
                     "В окне PiP только видео: уведомления о серии просмотров и другие плашки его больше не закрывают\n"
                             + "Время эфира на превью пишется как «2ч 15м», а не «2:15»\n"

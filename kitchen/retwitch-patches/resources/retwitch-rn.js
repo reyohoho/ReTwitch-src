@@ -12,7 +12,7 @@
         StoriesEmptyState: config.hideStoriesEmpty, useStoriesShelf: config.hideStoriesEmpty || config.hideStories,
         FollowingChannelRow: config.previewSize > 0, CustomTabIndicator: config.tabIndicator,
         StoriesShelf: config.hideStories, CollapsedStoriesIcons: config.hideStories, FeedTabsRow: config.hideTabs,
-        FreeScrollCellRenderer: config.compactLive, ChannelProfileRecapsShelf: config.hideProfileRecaps,
+        FreeScrollCellRenderer: config.compactLive, useFeedData: config.compactLive, ChannelProfileRecapsShelf: config.hideProfileRecaps,
         ChannelProfileClipShelf: config.hideProfileClips || config.hideProfileUserClips,
         ChannelProfileHomeShelf: config.hideProfileCategories || config.hideProfileStreamers,
         ChannelProfileTrackedShelf: config.hideProfileRecaps || config.hideProfileClips || config.hideProfileUserClips};
@@ -57,8 +57,14 @@
         tags: {flexDirection: 'row', marginTop: 4, overflow: 'hidden'},
         tag: {marginRight: 4, paddingHorizontal: 6, borderRadius: 9, backgroundColor: '#35353b'},
         uptime: {position: 'absolute', top: 4, right: 4, borderRadius: 3, backgroundColor: 'rgba(0,0,0,0.6)'},
-        uptimeText: {color: '#ffffff', fontSize: 11, textAlign: 'center'}
+        uptimeText: {color: '#ffffff', fontSize: 11, textAlign: 'center'},
+        countText: {color: '#ffffff', fontSize: 13, fontWeight: '600'}
     };
+
+    // CoreText takes the theme's text colour and no style: black on the dark pill in the light theme (issue #25).
+    function viewerCount(content) {
+        return React.createElement(RN.Text, {numberOfLines: 1, style: styles.countText}, viewers(content));
+    }
 
     // The splash waits for this. The stock card sends it from its own player logic, which isn't mounted here.
     function thumbnailDone() {
@@ -247,7 +253,7 @@
                     onLoad: thumbnailDone, onError: thumbnailDone}),
                 h(RN.View, {style: styles.count},
                     h(RN.View, {style: styles.dot}),
-                    text({}, viewers(content)))),
+                    viewerCount(content))),
             h(RN.View, {style: styles.info},
                 h(RN.View, {style: styles.header},
                     broadcaster.profileImageURL
@@ -318,7 +324,7 @@
                 onLoad: settled(props.onThumbnailSettled), onError: settled(props.onThumbnailSettled)}),
             h(RN.View, {style: styles.count},
                 h(RN.View, {style: styles.dot}),
-                text({}, viewers(stream))));
+                viewerCount(stream)));
         if (medium) {
             return h(RN.Pressable, {style: bigStyles.mediumRow, onPress: open, accessibilityRole: 'button',
                     android_ripple: {color: 'rgba(255,255,255,0.1)'}, testID: props.testID},
@@ -427,7 +433,8 @@
     // From the Following data (useFollowingTabData, rendered before the header and rows): ids of live favorites
     // shown as rows, the last of them, and how many other live rows follow.
     var liveFav = {ids: {}, last: null, rest: 0, edges: null};
-    var LiveHeader = null, liveHeaderProps = null, openMenu = null, stars = {}, sheets = null, overflowItem = null;
+    var LiveHeader = null, liveHeaderProps = null, openMenu = null, stars = {}, sheets = null, overflowItem = null,
+        nestedScroll = null;
     var favUsers = {}, favFetched = 0;
 
     function isFavorite(id) {
@@ -506,7 +513,11 @@
         }, [key, edges]);
         if (!shown.length) return null;
         var h = React.createElement;
-        return h(RN.ScrollView, {horizontal: true, showsHorizontalScrollIndicator: false, contentContainerStyle: favStyles.strip},
+        // The feed tabs pager took a sideways swipe on the strip. Twitch's own Categories shelf sits in this guard, which
+        // keeps the swipe for the inner scroll view while it can still scroll that way.
+        var Guard = nestedScroll && nestedScroll.NestedHorizontalScrollGuard;
+        var strip = h(RN.ScrollView, {horizontal: true, nestedScrollEnabled: true, showsHorizontalScrollIndicator: false,
+                contentContainerStyle: favStyles.strip},
             shown.map(function (f) {
                 var user = favUsers[f.id] || {}, login = user.login || f.login, onAir = !!user.stream;
                 function open() {
@@ -522,6 +533,7 @@
                         user.profileImageURL ? h(RN.Image, {source: {uri: user.profileImageURL}, style: favStyles.image}) : null),
                     label({type: 'caption', muted: !onAir}, user.displayName || f.name));
             }));
+        return Guard ? h(Guard, null, strip) : strip;
     }
 
     // The menu row: BottomSheet.Item as Twitch's own rows, right under "View profile".
@@ -704,6 +716,17 @@
             };
             return cellRenderer;
         },
+        // The feed keeps its place as a card index, and when its reset key changes (the subfeed chips arrive a second
+        // after the tab opens, a refresh) DiscoveryFeedContent scrolls to index x the full-screen card's height. On the
+        // compact list index 1 was row 7, under the chips (issue #26): the live feed starts from its top instead.
+        useFeedData: function (original) {
+            function top() { return 0; }
+            return function () {
+                var data = original.apply(this, arguments);
+                if (!data || String(data.feedLocation).indexOf('LIVE') !== 0 || typeof data.readPersistedIndex !== 'function') return data;
+                return Object.assign({}, data, {readPersistedIndex: top});
+            };
+        },
         FeedAdItem: function (original) {
             return function (props) {
                 return props.freeScroll === true ? null : React.createElement(original, props);
@@ -830,6 +853,7 @@
             if (!stars.off && 'IconStarHollow' in exports) stars.off = exports.IconStarHollow;
             if (!sheets && 'BottomSheet' in exports) sheets = exports;
             if (!overflowItem && 'OverflowMenuItem' in exports) overflowItem = exports.OverflowMenuItem;
+            if (!nestedScroll && 'NestedHorizontalScrollGuard' in exports) nestedScroll = exports;
         }
         // `in`: react-native's exports are lazy getters, reading one would load that module here.
         if (!React && 'memo' in exports && 'useState' in exports) React = exports;

@@ -673,6 +673,7 @@ public final class SettingsHook {
         s.toggle(Toggles.USER_HISTORY);
         s.toggle(Toggles.ROBOTTY_HISTORY);
         s.toggle(Toggles.REPLY_THREADS);
+        s.toggle(Toggles.SWIPE_REPLY);
         s.section(t("Ссылки", "Links"));
         s.toggle(Toggles.NO_LINK_DISCLAIMER);
         s.nav(Strings.linkPreviewMenuItem(), Strings.linkPreviewModes()[LinkPreviewSettings.getMode()],

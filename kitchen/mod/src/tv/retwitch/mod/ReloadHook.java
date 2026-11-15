@@ -271,7 +271,7 @@ public final class ReloadHook {
                 dispatcherTargets = dispatchers.toArray();
             }
             synchronized (playerPresenters) {
-                presenterTargets = playerPresenters.toArray();
+                presenterTargets = activeOnly(playerPresenters.toArray());
             }
             if ((dispatcherTargets.length == 0 && presenterTargets.length == 0)
                     || request == null || method == null) {
@@ -301,6 +301,55 @@ public final class ReloadHook {
         } catch (Throwable t) {
             onFailure(null, t);
         }
+    }
+
+    /** BasePresenter's active flag: the only boolean getter of the unobfuscated LifecycleAware (31.9.0 {@code a()Z}). */
+    private static volatile Method activeFlag;
+    private static volatile boolean activeFlagLooked;
+
+    /**
+     * Presenters of theatres closed earlier stay in the weak set until GC, and restarting them reloaded every channel
+     * opened in the session at once (issue #29: six masters per reload, all of them downloading, the open one starved).
+     * Only the active ones; none found, or no flag, gives all of them as before.
+     */
+    private static Object[] activeOnly(Object[] presenters) {
+        Method flag = activeFlag();
+        if (flag == null) {
+            return presenters;
+        }
+        List<Object> active = new ArrayList<>();
+        for (Object presenter : presenters) {
+            try {
+                if (flag.getDeclaringClass().isInstance(presenter) && Boolean.TRUE.equals(flag.invoke(presenter))) {
+                    active.add(presenter);
+                }
+            } catch (Throwable ignored) {
+                // an unreadable flag is not an active presenter
+            }
+        }
+        Log.i(TAG, "reloadPlayer: " + active.size() + " of " + presenters.length + " presenter(s) active");
+        return active.isEmpty() ? presenters : active.toArray();
+    }
+
+    private static Method activeFlag() {
+        if (!activeFlagLooked) {
+            activeFlagLooked = true;
+            try {
+                Method found = null;
+                for (Method m : Class.forName("tv.twitch.android.core.mvp.lifecycle.LifecycleAware").getMethods()) {
+                    if (m.getReturnType() == boolean.class && m.getParameterTypes().length == 0) {
+                        if (found != null) {
+                            return null; // two flags: can't tell which one is "active"
+                        }
+                        found = m;
+                    }
+                }
+                activeFlag = found;
+            } catch (Throwable t) {
+                Log.w(TAG, "LifecycleAware not found", t);
+            }
+        }
+        return activeFlag;
     }
 
     /**

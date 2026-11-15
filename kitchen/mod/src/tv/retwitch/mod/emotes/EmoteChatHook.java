@@ -446,6 +446,9 @@ public final class EmoteChatHook {
         @Override
         public boolean onTouch(View v, MotionEvent e) {
             try {
+                if (tv.retwitch.mod.SwipeReply.onTouch(v, e)) {
+                    return true;
+                }
                 if (e.getActionMasked() == MotionEvent.ACTION_DOWN) {
                     downX = e.getX();
                     downY = e.getY();

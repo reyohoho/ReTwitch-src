@@ -195,7 +195,8 @@ public final class PlayerGestures {
                             == Configuration.ORIENTATION_LANDSCAPE;
                     boolean sides = Toggles.on(landscape ? Toggles.PLAYER_GESTURES : Toggles.PLAYER_GESTURES_VERTICAL);
                     boolean rotate = Toggles.on(Toggles.PLAYER_SWIPE_FULLSCREEN);
-                    if (!sides && !rotate || sheetAt(activity, ev.getRawX(), ev.getRawY())) {
+                    if (!sides && !rotate || sheetAt(activity, ev.getRawX(), ev.getRawY())
+                            || atSystemEdge(activity, ev.getRawY())) {
                         return false;
                     }
                     surface = findSurfaceAt(activity.getWindow().getDecorView(), ev.getRawX(), ev.getRawY());
@@ -373,6 +374,29 @@ public final class PlayerGestures {
      * Whether an open Twitch bottom sheet (player settings and the like: in
      * the same window, over the video) is under the point.
      */
+    private static int statusBarPx = -1, navBarPx = -1;
+
+    /**
+     * A swipe down from the top edge opens the system's shade in fullscreen, one up from the bottom is gesture
+     * navigation: both changed brightness or volume too (issue #27).
+     */
+    private static boolean atSystemEdge(Activity activity, float rawY) {
+        if (statusBarPx < 0) {
+            statusBarPx = systemDimen(activity, "status_bar_height");
+            navBarPx = systemDimen(activity, "navigation_bar_height");
+        }
+        View decor = activity.getWindow().getDecorView();
+        int[] at = new int[2];
+        decor.getLocationOnScreen(at);
+        float y = rawY - at[1];
+        return y < statusBarPx || y > decor.getHeight() - navBarPx;
+    }
+
+    private static int systemDimen(Context context, String name) {
+        int id = context.getResources().getIdentifier(name, "dimen", "android");
+        return id == 0 ? 0 : context.getResources().getDimensionPixelSize(id);
+    }
+
     private static boolean sheetAt(Activity activity, float x, float y) {
         Rect r = new Rect();
         View decor = activity.getWindow().getDecorView();

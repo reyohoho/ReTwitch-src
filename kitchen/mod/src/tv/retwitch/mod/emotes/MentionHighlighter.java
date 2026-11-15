@@ -252,7 +252,7 @@ public final class MentionHighlighter {
         tv.retwitch.mod.ReplyThreads.onRowBind(null, null);
         try {
             boolean alerts = ChatSettings.isMentionHighlightEnabled() && Toggles.on(Toggles.REPLY_ALERTS);
-            if (row == null || !alerts && !tv.retwitch.mod.ReplyThreads.wanted()) {
+            if (row == null || !alerts && !tv.retwitch.mod.ReplyThreads.wanted() && !Toggles.on(Toggles.SWIPE_REPLY)) {
                 return;
             }
             if (replyField == null) {
