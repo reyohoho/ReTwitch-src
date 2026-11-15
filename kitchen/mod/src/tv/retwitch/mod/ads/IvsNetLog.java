@@ -181,23 +181,28 @@ public final class IvsNetLog {
                 + ": " + error);
     }
 
-    /** For the player's stall and stats lines: IVS requests still open, oldest first. */
+    /**
+     * For the player's stall and stats lines: every IVS request still open, oldest first, with its host. Only the oldest
+     * was there before, and a tester's log showed a hung config request while the hung segments stayed unnamed.
+     */
     public static String pending() {
         long now = SystemClock.elapsedRealtime();
-        Req oldest = null;
-        int open = 0;
+        java.util.List<Req> open = new java.util.ArrayList<>();
         for (Req req : PENDING.keySet()) {
             if (now - req.started > 60_000 || cancelled(req.request)) { // a cancelled body just stops: no callback
                 PENDING.remove(req);
             } else {
-                open++;
-                if (oldest == null || req.started < oldest.started) {
-                    oldest = req;
-                }
+                open.add(req);
             }
         }
-        return oldest == null ? "ivs open 0" : "ivs open " + open + ", oldest " + (now - oldest.started) + " ms "
-                + (oldest.headers > 0 ? "in body " + oldest.bytes / 1024 + " KB" : "before headers") + " " + oldest.what;
+        java.util.Collections.sort(open, (a, b) -> Long.compare(a.started, b.started));
+        StringBuilder out = new StringBuilder("ivs open ").append(open.size());
+        for (int i = 0; i < open.size(); i++) {
+            Req req = open.get(i);
+            out.append(i == 0 ? ": " : "; ").append(now - req.started).append(" ms ")
+                    .append(req.headers > 0 ? "in body " + req.bytes / 1024 + " KB" : "before headers").append(' ').append(req.what);
+        }
+        return out.toString();
     }
 
     private static boolean cancelled(Object request) {

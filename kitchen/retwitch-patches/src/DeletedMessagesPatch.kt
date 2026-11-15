@@ -235,6 +235,59 @@ val retwitchDeletedMessagesPatch = bytecodePatch(
         } catch (e: Exception) {
             println("[ReTwitch] deleted message styles skipped: $e")
         }
+
+        // "Copy" on a deleted message copied nothing: the chat presenter (31.9.0 qw6) and its sibling (quo) skip
+        // CopyMessageEvent(rawMessageString=, isDeleted=) when isDeleted, the text is still there. The mod shows
+        // deleted messages, so the flag read goes through DeletedMessagesHook.copyAsDeleted.
+        try {
+            var event: String? = null
+            classDefForEach { c ->
+                if (c.methods.any { m -> m.implementation?.instructions?.any {
+                        (it as? com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction)?.reference
+                            .let { r -> r is com.android.tools.smali.dexlib2.iface.reference.StringReference && r.string == "CopyMessageEvent(rawMessageString=" }
+                    } == true }) event = c.type
+            }
+            val type = event ?: throw PatchException("CopyMessageEvent not found")
+            val methods = mutableClassDefBy(type).methods
+            val deleted = methods.single { it.parameterTypes.isEmpty() && it.returnType == "Z" }
+            // The text too: a link preview adds "\n" + its image placeholder to the row, which was copied (and sent
+            // by "Copy and send") along with the message.
+            val text = methods.single { it.parameterTypes.isEmpty() && it.returnType == "Ljava/lang/String;" && it.name != "toString" }
+            val hooks = mapOf(
+                deleted.name to Triple("Z", Opcode.MOVE_RESULT, "copyAsDeleted(Z)Z"),
+                text.name to Triple("Ljava/lang/String;", Opcode.MOVE_RESULT_OBJECT, "copyText(Ljava/lang/String;)Ljava/lang/String;"),
+            )
+            var hooked = 0
+            classDefForEach { classDef ->
+                classDef.methods.forEach methods@{ method ->
+                    val code = method.implementation?.instructions?.toList() ?: return@methods
+                    val sites = code.indices.mapNotNull { i ->
+                        val ref = code[i].getReference<MethodReference>() ?: return@mapNotNull null
+                        val hook = hooks[ref.name]
+                        if (ref.definingClass == type && hook != null && ref.returnType == hook.first &&
+                            ref.parameterTypes.isEmpty() && code.getOrNull(i + 1)?.opcode == hook.second
+                        ) i to hook else null
+                    }
+                    if (sites.isEmpty()) return@methods
+                    val mutable = mutableClassDefBy(classDef).findMutableMethodOf(method)
+                    sites.asReversed().forEach { (i, hook) ->
+                        val reg = (code[i + 1] as OneRegisterInstruction).registerA
+                        val move = if (hook.second == Opcode.MOVE_RESULT) "move-result" else "move-result-object"
+                        mutable.addInstructions(
+                            i + 2,
+                            """
+                                invoke-static/range {v$reg .. v$reg}, Ltv/retwitch/mod/DeletedMessagesHook;->${hook.third}
+                                $move v$reg
+                            """.trimIndent(),
+                        )
+                        hooked++
+                    }
+                }
+            }
+            println("[ReTwitch] deleted message copy: $hooked read(s) of $type.${deleted.name}/${text.name}")
+        } catch (e: Exception) {
+            println("[ReTwitch] deleted message copy skipped: $e")
+        }
     }
 }
 

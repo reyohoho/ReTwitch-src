@@ -435,6 +435,12 @@ public final class UiHider {
             hideNavItem(activity, decor, "viewer_bottom_nav_create_placeholder");
             hide(find(activity, decor, "custom_create_bottom_nav_button"));
         }
+        if (Toggles.on(Toggles.HIDE_TAB_PROFILE)) {
+            // Issue #35: the tab was the only way into the mod's settings; a long press on Home opens them.
+            hideNavItem(activity, decor, "viewer_bottom_nav_profile");
+            hideNavItem(activity, decor, "viewer_bottom_nav_profile_rn");
+            settingsOnHomeLongPress(activity, decor);
+        }
         centreCreateButton(activity, decor, browse || activityTab);
         for (View button : findAll(activity, decor, "seek_forward_button")) {
             VodSeek.showStep(button, true);
@@ -1166,6 +1172,30 @@ public final class UiHider {
     private static boolean isRnTurbo(View view) {
         Object tag = view.getTag();
         return tag instanceof String && ((String) tag).contains("turbo-upsell");
+    }
+
+    private static final int HOME_LONG_PRESS_TAG_KEY = 0x7e700d77;
+    private static final String[] HOME_TABS = {"viewer_bottom_nav_home", "viewer_bottom_nav_home_rn", "viewer_bottom_nav_home_portal"};
+
+    /** The Home item views of the bottom bar and the rail: a long press opens the mod's settings. Once per view. */
+    private static void settingsOnHomeLongPress(final Activity activity, View decor) {
+        for (String name : HOME_TABS) {
+            int itemId = id(activity, name);
+            if (itemId == 0) {
+                continue;
+            }
+            for (String navName : NAV_VIEWS) {
+                View nav = find(activity, decor, navName);
+                View item = nav != null ? nav.findViewById(itemId) : null;
+                if (item != null && item.getTag(HOME_LONG_PRESS_TAG_KEY) == null) {
+                    item.setTag(HOME_LONG_PRESS_TAG_KEY, Boolean.TRUE);
+                    item.setOnLongClickListener(v -> {
+                        SettingsHook.showMainMenu(activity);
+                        return true;
+                    });
+                }
+            }
+        }
     }
 
     /**

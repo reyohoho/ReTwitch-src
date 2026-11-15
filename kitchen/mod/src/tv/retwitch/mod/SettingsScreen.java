@@ -146,6 +146,8 @@ final class SettingsScreen {
     private String searchSection;
     private String searchShown;
     private final HashSet<Class<?>> searched = new HashSet<>();
+    /** While searching: the pages (title, page) from the root down to the one being built, for the long press. */
+    private final ArrayList<Object[]> searchTrail = new ArrayList<>();
     /** The unfolded row: one at a time, kept across a page refresh by its key. */
     private String openKey;
     private LinearLayout openArea;
@@ -1466,9 +1468,11 @@ final class SettingsScreen {
             String section = searchSection;
             searchPath = join(join(path, section), rowTitle);
             searchSection = null;
+            searchTrail.add(new Object[]{rowTitle, page});
             try {
                 page.build(this);
             } finally {
+                searchTrail.remove(searchTrail.size() - 1);
                 searchPath = path;
                 searchSection = section;
                 card = null;
@@ -1627,6 +1631,82 @@ final class SettingsScreen {
             target.addView(divider, lp);
         }
         target.addView(row);
+        if (query != null) {
+            goToOnLongPress(row, new ArrayList<>(searchTrail), firstText(row));
+        }
+    }
+
+    /**
+     * A search result's clickable parts open the page it lives on with a long press (reyohoho/ReTwitch-src#37), and
+     * scroll to it there. Only views that already take taps: a long-clickable one would swallow its parent's tap. The
+     * title is the row's: a switch's own zone holds no text.
+     */
+    private void goToOnLongPress(View view, final ArrayList<Object[]> trail, final TextView title) {
+        if (view.isClickable()) {
+            view.setOnLongClickListener(v -> {
+                InputMethodManager imm = (InputMethodManager) context.getSystemService(Context.INPUT_METHOD_SERVICE);
+                if (imm != null) {
+                    imm.hideSoftInputFromWindow(search.getWindowToken(), 0);
+                }
+                search.clearFocus();
+                search.setText("");
+                for (Object[] step : trail) {
+                    open((String) step[0], (Page) step[1]);
+                }
+                CharSequence wanted = title != null ? title.getText() : null;
+                if (wanted != null) {
+                    scroll.post(() -> {
+                        TextView found = findText(list, wanted.toString());
+                        if (found != null) {
+                            int[] at = new int[2];
+                            int[] top = new int[2];
+                            found.getLocationInWindow(at);
+                            list.getLocationInWindow(top);
+                            scroll.smoothScrollTo(0, Math.max(0, at[1] - top[1] - dp(96)));
+                        }
+                    });
+                }
+                return true;
+            });
+        }
+        if (view instanceof ViewGroup) {
+            ViewGroup group = (ViewGroup) view;
+            for (int i = 0; i < group.getChildCount(); i++) {
+                goToOnLongPress(group.getChildAt(i), trail, title);
+            }
+        }
+    }
+
+    private static TextView firstText(View view) {
+        if (view instanceof TextView && ((TextView) view).getText().length() > 0) {
+            return (TextView) view;
+        }
+        if (view instanceof ViewGroup) {
+            ViewGroup group = (ViewGroup) view;
+            for (int i = 0; i < group.getChildCount(); i++) {
+                TextView found = firstText(group.getChildAt(i));
+                if (found != null) {
+                    return found;
+                }
+            }
+        }
+        return null;
+    }
+
+    private static TextView findText(View view, String text) {
+        if (view instanceof TextView && text.equals(((TextView) view).getText().toString())) {
+            return (TextView) view;
+        }
+        if (view instanceof ViewGroup) {
+            ViewGroup group = (ViewGroup) view;
+            for (int i = 0; i < group.getChildCount(); i++) {
+                TextView found = findText(group.getChildAt(i), text);
+                if (found != null) {
+                    return found;
+                }
+            }
+        }
+        return null;
     }
 
     private LinearLayout rowTexts(String rowTitle, String summary, Extra extra, boolean restart) {

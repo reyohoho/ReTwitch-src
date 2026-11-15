@@ -57,6 +57,23 @@ public final class DeletedMessagesHook {
     }
 
     /**
+     * DeletedMessagesPatch: the isDeleted read of Twitch's CopyMessageEvent. Twitch skips the copy of a deleted message
+     * (it never shows one); the mod shows them, so "Copy" copies unless the mode is Twitch's own.
+     */
+    public static boolean copyAsDeleted(boolean deleted) {
+        try {
+            return deleted && ChatSettings.getDeletedMode() == ChatSettings.DELETED_TWITCH;
+        } catch (Throwable t) {
+            return deleted;
+        }
+    }
+
+    /** DeletedMessagesPatch: the text of Twitch's CopyMessageEvent, without the link preview's image line. */
+    public static String copyText(String text) {
+        return text == null ? null : text.replaceAll("\\n?\uFFFC", "");
+    }
+
+    /**
      * Injected at the entry of the deleted-message span's {@code onClick}.
      * Twitch 31.x creates the chat-row span without an EventDispatcher, so its
      * own reveal (dispatching the clicked event) never fires; swap the

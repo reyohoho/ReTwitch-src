@@ -66,6 +66,9 @@ public final class ExperimentHook {
             }
             Map<String, String> o = overrides();
             Object value = o.isEmpty() ? null : parse(o.get(f.key), f.type);
+            if (value == null) {
+                value = pinned(f.key);
+            }
             if (value != null) {
                 f.value = value;
                 return value;
@@ -75,6 +78,11 @@ public final class ExperimentHook {
             Log.w(TAG, "enter failed", t);
         }
         return null;
+    }
+
+    /** Twitch flags a fix keeps at a value unless the user overrode them; read when Twitch evaluates the flag. */
+    private static Object pinned(String key) {
+        return "Android-Media3-Session".equals(key) && Toggles.on(Toggles.NOTIFICATION_SEEK) ? Boolean.FALSE : null;
     }
 
     /** Injected before the evaluator returns: the value Twitch evaluated. Never throws. */

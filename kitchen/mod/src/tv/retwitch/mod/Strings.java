@@ -875,15 +875,6 @@ public final class Strings {
         return pick("Далее", "Up Next");
     }
 
-    public static String[] seekStepLabels(int[] seconds) {
-        String[] labels = new String[seconds.length];
-        for (int i = 0; i < seconds.length; i++) {
-            int s = seconds[i];
-            labels[i] = s < 60 || s % 60 != 0 ? pickf("%d с", "%d s", s) : pickf("%d мин", "%d min", s / 60);
-        }
-        return labels;
-    }
-
     public static String vodChatSyncTitle() {
         return pick("Смещение чата", "Chat offset");
     }

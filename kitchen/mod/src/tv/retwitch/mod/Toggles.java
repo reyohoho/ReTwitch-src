@@ -545,6 +545,12 @@ public final class Toggles {
             .look(SettingsPreview.HOME, SettingsPreview.H_BROWSE);
     public static final Toggle HIDE_TAB_CREATE = new Toggle("hide_tab_create", "Кнопка «Создать» (+)", "Create (+) button", false)
             .look(SettingsPreview.HOME, SettingsPreview.H_CREATE);
+    public static final Toggle HIDE_TAB_PROFILE = new Toggle("hide_tab_profile", "Вкладка «Профиль»", "Profile tab", false)
+            .about("Настройки мода тогда открываются долгим нажатием на «Главную»",
+                    "Mod settings then open with a long press on Home")
+            .note("Вместе с вкладкой уходят и настройки Twitch, инвентарь Drops и ваш канал: на время включите вкладку обратно.",
+                    "Twitch's settings, the Drops inventory and your channel go with the tab: turn it back on for a while.")
+            .look(SettingsPreview.HOME, SettingsPreview.H_PROFILE).asNew("0.5.37-beta");
     public static final Toggle COMPACT_LIVE_TAB = new Toggle("compact_live_tab", "Компактный список", "Compact list", true)
             .about("Превью слева, ник и название справа. Категории остаются",
                     "Preview on the left, nick and title on the right. Categories stay")
@@ -613,6 +619,11 @@ public final class Toggles {
                     "\"Stories from creators you follow will appear here!\" above the tabs",
                     "No card, stories take its place once there are any")
             .asNew("0.5.4-beta");
+    /** Tag pills under live channels in Following (FollowingRowTags) and in the mod's own rows; RnScript. Issue #32. */
+    public static final Toggle HIDE_STREAM_TAGS = new Toggle("hide_stream_tags", "Теги трансляций", "Stream tags", true)
+            .about("«Русский», «Drops» и другие под каналами в «Отслеживаемом»",
+                    "\"English\", \"Drops\" and others under channels in Following")
+            .look(SettingsPreview.HOME, SettingsPreview.H_TAGS).asNew("0.5.37-beta");
     /** Following's live section when nobody is live ("They'll be back!"); RnScript. */
     public static final Toggle HIDE_LIVE_EMPTY = new Toggle("hide_live_empty", "Пустой раздел «В эфире»", "Empty \"Live Now\"", true)
             .about("Когда никто из отслеживаемых не в эфире",
@@ -771,6 +782,19 @@ public final class Toggles {
             .compare("Без звука, включить нечем", "Звук включается вместе с режимом",
                     "Silent, nothing to unmute it with", "Sound comes on with the mode")
             .asNew("0.5.30-beta");
+    /**
+     * Keeps Twitch's Eppo flag Android-Media3-Session off (ExperimentHook): with it on (half the users since 2026-10-26) the
+     * system player in the notification shade comes from a Media3 session without Twitch's back 10 / forward 30 buttons.
+     */
+    public static final Toggle NOTIFICATION_SEEK = new Toggle("notification_seek",
+            "Перемотка в уведомлении плеера", "Seek buttons in the player notification", true, true)
+            .about("Кнопки «назад на 10 секунд» и «вперёд на 30» у видео в шторке",
+                    "Back 10 seconds and forward 30 for videos in the notification shade")
+            .note("Twitch проверяет новый плеер в шторке у половины пользователей, в нём этих кнопок нет. Исправление оставляет "
+                            + "старый. Свой выбор на странице «Эксперименты» (Android-Media3-Session) главнее.",
+                    "Twitch is testing a new notification player on half of the users, and it has no such buttons. The fix keeps "
+                            + "the old one. Your own choice on the Experiments page (Android-Media3-Session) wins.")
+            .asNew("0.5.37-beta");
     /** Overlays over the player go transparent in picture-in-picture (PipOverlays). */
     public static final Toggle PIP_CLEAN_VIDEO = new Toggle("pip_clean_video",
             "Только видео в окне PiP", "Only the video in picture-in-picture", false, true)
@@ -1168,7 +1192,7 @@ public final class Toggles {
 
     /** Bug fixes (on by default), on their own page so they aren't switched off by accident. */
     static final Toggle[] FIXES = {NO_MANIFEST_CACHE, FRESH_RN_PREVIEWS, FEED_TAB_INDICATOR, ALL_FOLLOWED_CATEGORIES, LANDSCAPE_INPUT_VISIBLE, IDLE_INPUT_CURSOR,
-            GLOBAL_BADGES_NOW, BADGES_ON_BASELINE, LAYOUT_PICKER_ICONS, AUDIO_ONLY_UNMUTE, PIP_CLEAN_VIDEO, VOD_CHAT_EMOTES, VAFT_LOW_LATENCY, PICKER_OUTSIDE_TAP, FIX_LOGIN};
+            GLOBAL_BADGES_NOW, BADGES_ON_BASELINE, LAYOUT_PICKER_ICONS, AUDIO_ONLY_UNMUTE, NOTIFICATION_SEEK, PIP_CLEAN_VIDEO, VOD_CHAT_EMOTES, VAFT_LOW_LATENCY, PICKER_OUTSIDE_TAP, FIX_LOGIN};
 
     private Toggles() {
     }

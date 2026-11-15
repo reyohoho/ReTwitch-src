@@ -279,10 +279,51 @@ public final class PlayerHook {
      */
     public static boolean onAutoQualityMode(Object player, boolean auto) {
         try {
-            return auto && player != null && isAudible(player) && applyDefaultQuality(player);
+            if (!auto || player == null || !isAudible(player)) {
+                return false;
+            }
+            if (applyDefaultQuality(player)) {
+                return true;
+            }
+            // Back from background audio (settings, another screen) Twitch turns Auto on while audio_only still
+            // plays, which applyDefaultQuality leaves alone, and no READY follows: the player stayed on real Auto
+            // (1080p60 <-> 720p60 on a thin low-latency buffer, audio underruns). Once video is back, apply it.
+            if (playsAudioOnly(player)) {
+                retryDefaultQuality(new WeakReference<>(player), 3);
+            }
+            return false;
         } catch (Throwable t) {
             return false;
         }
+    }
+
+    private static boolean playsAudioOnly(Object player) throws Exception {
+        Object current = call(player, "getQuality");
+        return current != null && (Integer) call(current, "getHeight") <= 0;
+    }
+
+    /** Every 1.5 s while audio_only still plays (the user may have picked it), up to {@code tries} times. */
+    private static void retryDefaultQuality(final WeakReference<Object> ref, final int tries) {
+        MAIN.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    Object player = ref.get();
+                    if (player == null || !isAudible(player)) {
+                        return;
+                    }
+                    if (playsAudioOnly(player)) {
+                        if (tries > 1) {
+                            retryDefaultQuality(ref, tries - 1);
+                        }
+                    } else if (Boolean.TRUE.equals(call(player, "isAutoQualityMode"))) {
+                        applyDefaultQuality(player);
+                    }
+                } catch (Throwable t) {
+                    Log.w(TAG, "retryDefaultQuality failed", t);
+                }
+            }
+        }, 1500L);
     }
 
     /**

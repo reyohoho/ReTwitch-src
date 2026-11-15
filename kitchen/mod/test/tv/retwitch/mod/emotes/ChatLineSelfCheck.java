@@ -28,6 +28,9 @@ public final class ChatLineSelfCheck {
         assert "hello".equals(DeletedMessagesHook.stripHeader("⁧name: hello⁩", "name: ").toString());
         assert "hello".equals(DeletedMessagesHook.stripHeader("hello", "name: ").toString());
         assert "hello".equals(DeletedMessagesHook.stripHeader("hello", "").toString());
+        assert "hi https://i.imgur.com/a.png".equals(DeletedMessagesHook.copyText("hi https://i.imgur.com/a.png\n\uFFFC"));
+        assert "a b".equals(DeletedMessagesHook.copyText("a\uFFFC b"));
+        assert "multi\nline".equals(DeletedMessagesHook.copyText("multi\nline"));
         assert ChatCosmetics.reformatName("Имя (login_1)", tv.retwitch.mod.ChatSettings.NAME_LOGIN).equals("login_1");
         assert ChatCosmetics.reformatName("Имя (login_1)", tv.retwitch.mod.ChatSettings.NAME_DISPLAY).equals("Имя");
         assert ChatCosmetics.reformatName("Имя (login_1)", tv.retwitch.mod.ChatSettings.NAME_BOTH) == null;

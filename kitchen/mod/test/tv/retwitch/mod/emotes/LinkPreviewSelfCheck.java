@@ -19,7 +19,8 @@ public final class LinkPreviewSelfCheck {
         assert LinkPreview.imageUrl("https://imgur.com/a/AbC123") == null;
         String gifyu = "https://s15.gifyu.com/images/bWAhb.gif";
         assert LinkPreview.useProxy(gifyu, LinkPreview.imageUrl(gifyu));
-        assert !LinkPreview.useProxy("https://gifyu.com/a.gif", "https://gifyu.com/a.gif");
+        assert LinkPreview.useProxy("https://gifyu.com/a.gif", "https://gifyu.com/a.gif");
+        assert !LinkPreview.useProxy("https://ext.rte.net.ru/x.png", "https://ext.rte.net.ru/x.png");
         System.out.println("LinkPreviewSelfCheck OK");
     }
 }

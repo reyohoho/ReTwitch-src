@@ -478,13 +478,11 @@ public final class SettingsHook {
         s.section(t("Просмотр", "Watching"));
         s.toggle(Toggles.SUB_VODS);
         s.toggle(Toggles.NO_AUTOPLAY);
-        String[] steps = Strings.seekStepLabels(PlayerSettings.SEEK_STEPS);
-        s.slider(t("Перемотка назад", "Seek back"), steps,
-                indexOf(PlayerSettings.SEEK_STEPS, PlayerSettings.getSeekBackSeconds()), false,
-                i -> PlayerSettings.setSeekSeconds(c, false, PlayerSettings.SEEK_STEPS[i]));
-        s.slider(t("Перемотка вперёд", "Seek forward"), steps,
-                indexOf(PlayerSettings.SEEK_STEPS, PlayerSettings.getSeekForwardSeconds()), false,
-                i -> PlayerSettings.setSeekSeconds(c, true, PlayerSettings.SEEK_STEPS[i]));
+        // Any number of seconds (reyohoho/ReTwitch-src#38): the buttons draw it as digits.
+        s.markNew("0.5.37-beta").number(t("Перемотка назад, с", "Seek back, s"), PlayerSettings.getSeekBackSeconds(),
+                v -> PlayerSettings.setSeekSeconds(c, false, v));
+        s.markNew("0.5.37-beta").number(t("Перемотка вперёд, с", "Seek forward, s"), PlayerSettings.getSeekForwardSeconds(),
+                v -> PlayerSettings.setSeekSeconds(c, true, v));
         s.section(t("Кнопки на плеере", "Player buttons"));
         s.toggle(Toggles.CHAPTERS_BUTTON);
         s.toggle(Toggles.VOD_CHAT_SYNC);
@@ -782,6 +780,12 @@ public final class SettingsHook {
                 on -> LinkPreviewSettings.save(c, mode, height, width, on, zoom));
         s.toggle(Strings.linkPreviewZoom(), null, zoom, false,
                 on -> LinkPreviewSettings.save(c, mode, height, width, blur, on));
+        s.markNew("0.5.37-beta").note(t("Картинки качает прокси эмоутов RTE. Без него сайт по ссылке из чата видит ваш IP, а часть "
+                        + "сайтов из России не открывается. Если прокси выключен в разделе «Эмоуты», превью идут напрямую.",
+                "Images are fetched by the RTE emote proxy. Without it the site behind a chat link sees your IP, and some "
+                        + "sites don't open from Russia. With the emote proxy off in Emotes, previews go direct."))
+                .toggle(t("Через прокси", "Through the proxy"), t("Не показывать сайтам ваш IP", "Don't show sites your IP"),
+                        LinkPreviewSettings.isProxyEnabled(), false, on -> LinkPreviewSettings.setProxyEnabled(c, on));
     }
 
     /** Everything the mod hides, by where it is on screen; each thing in one place only. */
@@ -889,6 +893,7 @@ public final class SettingsHook {
         s.toggle(Toggles.HIDE_TAB_BROWSE);
         s.toggle(Toggles.HIDE_TAB_ACTIVITY);
         s.toggle(Toggles.HIDE_TAB_CREATE);
+        s.toggle(Toggles.HIDE_TAB_PROFILE);
         s.section(t("Отслеживаемое", "Following"));
         s.markNew("0.5.10-beta").lookEach(SettingsPreview.HOME, SettingsPreview.H_PREVIEW_SIZE, SettingsPreview.VALUE_PREVIEW)
                 .choice(t("Превью каналов в эфире", "Live channel previews"),
@@ -904,6 +909,7 @@ public final class SettingsHook {
         s.toggle(Toggles.HIDE_FOLLOWING_OFFLINE);
         s.toggle(Toggles.HIDE_STORIES_EMPTY);
         s.toggle(Toggles.HIDE_LIVE_EMPTY);
+        s.toggle(Toggles.HIDE_STREAM_TAGS);
         s.section(t("Превью стримов", "Stream previews"));
         s.toggle(Toggles.STREAM_UPTIME);
         s.section(t("Шапка главной: скрыть", "Home header: hide"));

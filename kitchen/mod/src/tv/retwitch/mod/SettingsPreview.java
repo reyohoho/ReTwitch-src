@@ -67,7 +67,8 @@ final class SettingsPreview extends View {
     static final long H_FOLLOWING = 1L, H_BROWSE = 1L << 1, H_ACTIVITY = 1L << 2, H_CREATE = 1L << 3,
             H_CATEGORIES = 1L << 4, H_CONTINUE = 1L << 5, H_OFFLINE = 1L << 6, H_STREAK = 1L << 7,
             H_COMPACT = 1L << 8, H_SHELF_FOLLOWED = 1L << 9, H_SHELF_CLIPS = 1L << 10, H_ADS = 1L << 11,
-            H_PROMO = 1L << 12, H_FRIENDS = 1L << 13, H_PREVIEW_SIZE = 1L << 14, H_FAVORITES = 1L << 15;
+            H_PROMO = 1L << 12, H_FRIENDS = 1L << 13, H_PREVIEW_SIZE = 1L << 14, H_FAVORITES = 1L << 15,
+            H_PROFILE = 1L << 16, H_TAGS = 1L << 17;
 
     static final long K_FAVORITES = 1L, K_FREQUENT = 1L << 1, K_STICKY = 1L << 2, K_FIRST = 1L << 3, K_NO_GLOBAL = 1L << 4;
 
@@ -1588,6 +1589,12 @@ final class SettingsPreview extends View {
         float textX = 12 + thumb * 1.6f + 10;
         label(names[index], textX, top + 14, 13, colors.fg, true);
         label(t("Название трансляции", "Stream title"), textX, top + 30, 11.5f, colors.dim, false);
+        if (focus == H_TAGS && index < 2 && hides(H_TAGS, textX, top + 34, 104, 16, 8)) {
+            box(textX, top + 34, 50, 16, 8, 0xFF35353B);
+            label(t("Русский", "English"), textX + 6, top + 46, 10, colors.fg, false);
+            box(textX + 54, top + 34, 50, 16, 8, 0xFF35353B);
+            label("Drops", textX + 60, top + 46, 10, colors.fg, false);
+        }
         if (streak) {
             box(textX, top + 34, 104, 16, 8, 0xFFFF7F50);
             label("Watch Streak 12", textX + 8, top + 46, 10, 0xFF18181B, true);
@@ -1622,7 +1629,7 @@ final class SettingsPreview extends View {
     }
 
     private void nav() {
-        long[] flags = {0, H_BROWSE, H_CREATE, H_ACTIVITY, 0};
+        long[] flags = {0, H_BROWSE, H_CREATE, H_ACTIVITY, H_PROFILE};
         String[] glyphs = {"home_filled", "ic_search", "ic_add", "ic_notification_inbox", "ic_user"};
         for (int i = 0; i < glyphs.length; i++) {
             float left = 16 + i * 62;

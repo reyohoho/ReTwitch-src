@@ -24,6 +24,7 @@ public final class LinkPreviewSettings {
     private static final String KEY_MAX_WIDTH = "max_width_dp";
     private static final String KEY_BLUR = "blur";
     private static final String KEY_ZOOM = "zoom";
+    private static final String KEY_PROXY = "proxy";
 
     public static final int DEFAULT_MAX_HEIGHT_DP = 150;
     public static final int DEFAULT_MAX_WIDTH_DP = 250;
@@ -49,6 +50,15 @@ public final class LinkPreviewSettings {
 
     public static boolean isZoomEnabled() {
         return getInt(KEY_ZOOM, 0) != 0;
+    }
+
+    /** Images through the emote proxy (LinkPreview.useProxy); on by default. */
+    public static boolean isProxyEnabled() {
+        return getInt(KEY_PROXY, 1) != 0;
+    }
+
+    static void setProxyEnabled(Context context, boolean on) {
+        prefs(context).edit().putInt(KEY_PROXY, on ? 1 : 0).apply();
     }
 
     static void save(Context context, int mode, int maxHeightDp, int maxWidthDp, boolean blur, boolean zoom) {

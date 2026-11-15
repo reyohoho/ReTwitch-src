@@ -84,9 +84,7 @@ public final class PlayerSettings {
         prefs(context).edit().putInt(KEY_STALL_SECONDS, seconds).apply();
     }
 
-    /** VOD seek step choices in seconds; Twitch's own are 10 back, 30 forward. */
-    public static final int[] SEEK_STEPS = {5, 10, 15, 20, 30, 45, 60, 90, 120};
-
+    /** VOD seek steps in seconds, any 1-999 (#38); Twitch's own are 10 back, 30 forward. */
     private static final String KEY_SEEK_BACK = "seek_back_seconds";
     private static final String KEY_SEEK_FORWARD = "seek_forward_seconds";
 
@@ -99,7 +97,7 @@ public final class PlayerSettings {
     }
 
     public static void setSeekSeconds(Context context, boolean forward, int seconds) {
-        prefs(context).edit().putInt(forward ? KEY_SEEK_FORWARD : KEY_SEEK_BACK, seconds).apply();
+        prefs(context).edit().putInt(forward ? KEY_SEEK_FORWARD : KEY_SEEK_BACK, Math.max(1, Math.min(999, seconds))).apply();
     }
 
     private static int getInt(String key, int fallback) {

@@ -8,10 +8,11 @@
     var targets = {FeedStreamItem: config.compactLive, FeedAdItem: config.compactLive, RecapsShelfHeader: config.hideFollowedShelf,
         FeedShelfContainer: config.hideClipsShelf, FollowingTab: !!config.friends || fav, FollowingCategories: !!config.friends,
         useFollowingTabData: fav || config.hideLiveEmpty, FollowingLiveHeader: fav, TrackedFollowingChannelRow: fav, FollowingChannelMenu: fav,
-        ChannelProfileOverflowMenu: fav,
+        ChannelProfileOverflowMenu: fav, FollowingRowTags: config.hideTags,
         StoriesEmptyState: config.hideStoriesEmpty, useStoriesShelf: config.hideStoriesEmpty || config.hideStories,
         FollowingChannelRow: config.previewSize > 0, CustomTabIndicator: config.tabIndicator,
-        StoriesShelf: config.hideStories, CollapsedStoriesIcons: config.hideStories, FeedTabsRow: config.hideTabs,
+        StoriesShelf: config.hideStories || config.hideStoriesEmpty,
+        CollapsedStoriesIcons: config.hideStories || config.hideStoriesEmpty, FeedTabsRow: config.hideTabs,
         FreeScrollCellRenderer: config.compactLive, useFeedData: config.compactLive, ChannelProfileRecapsShelf: config.hideProfileRecaps,
         ChannelProfileClipShelf: config.hideProfileClips || config.hideProfileUserClips,
         ChannelProfileHomeShelf: config.hideProfileCategories || config.hideProfileStreamers,
@@ -62,8 +63,12 @@
     };
 
     // CoreText takes the theme's text colour and no style: black on the dark pill in the light theme (issue #25).
+    // A width of its own, like the uptime badge: measured to fit, "7,7 тыс." still came out "77..." for a tester.
     function viewerCount(content) {
-        return React.createElement(RN.Text, {numberOfLines: 1, style: styles.countText}, viewers(content));
+        var text = viewers(content);
+        var scale = RN.PixelRatio && RN.PixelRatio.getFontScale ? RN.PixelRatio.getFontScale() : 1;
+        return React.createElement(RN.Text, {numberOfLines: 1,
+            style: [styles.countText, {width: Math.ceil((text.length * 8.5 + 2) * scale)}]}, text);
     }
 
     // The splash waits for this. The stock card sends it from its own player logic, which isn't mounted here.
@@ -263,7 +268,7 @@
                         ? h(RN.View, {style: styles.verified}, h(icons.IconVerified, {size: 16, fillColor: '#bf94ff'})) : null),
                 settings && settings.title ? text({}, settings.title) : null,
                 content.game ? text({muted: true}, content.game.displayName) : null,
-                content.freeformTags && content.freeformTags.length
+                !config.hideTags && content.freeformTags && content.freeformTags.length
                     ? h(RN.View, {style: styles.tags}, content.freeformTags.slice(0, 3).map(function (tag) {
                         return h(RN.View, {key: tag.id || tag.name, style: styles.tag}, text({type: 'caption', muted: true}, tag.name));
                     })) : null));
@@ -433,9 +438,31 @@
     // From the Following data (useFollowingTabData, rendered before the header and rows): ids of live favorites
     // shown as rows, the last of them, and how many other live rows follow.
     var liveFav = {ids: {}, last: null, rest: 0, edges: null};
-    var LiveHeader = null, liveHeaderProps = null, openMenu = null, stars = {}, sheets = null, overflowItem = null,
-        nestedScroll = null;
-    var favUsers = {}, favFetched = 0;
+    var LiveHeader = null, liveHeaderProps = null, openMenu = null, openProfile = null, stars = {}, sheets = null,
+        overflowItem = null;
+    // Favorites without a followed live row, from GQL (ids, anonymous): a live one becomes a row of Twitch's own (issue
+    // #39), so its stream carries what MwebFollowingTabSections selects under followedLiveUsers.
+    var favUsers = {}, favFetched = 0, favUserListeners = [];
+    var FAV_STREAM = 'id viewersCount isDualFormat isEncrypted height width previewImageURL(width: 440, height: 248) '
+        + 'verticalPreviewImageURL: previewImageURL(height: 320, width: 180) previewThumbnailProperties { blurReason } '
+        + 'freeformTags { id name } game { id slug name } '
+        + 'costreamDetails { role organizer { id login profileImageURL(width: 50) } } '
+        + 'broadcaster { id login displayName profileImageURL(width: 50) roles { isPartner isParticipatingDJ } '
+        + 'broadcastSettings { id title } channel { id collaboration { id collaborators { id user { id login displayName '
+        + 'profileImageURL(width: 50) } } } } }';
+
+    function loadFavUsers(ids) {
+        fetch('https://gql.twitch.tv/gql', {method: 'POST', headers: {'Client-ID': GQL_CLIENT, 'Content-Type': 'application/json'},
+            body: JSON.stringify({query: 'query($ids:[ID!]){users(ids:$ids){id login displayName profileImageURL(width:70) '
+                + 'roles{isPartner} stream{' + FAV_STREAM + '}}}', variables: {ids: ids}})})
+            .then(function (r) { return r.json(); })
+            .then(function (j) {
+                favFetched = Date.now();
+                (j && j.data && j.data.users || []).forEach(function (u) { if (u) favUsers[u.id] = u; });
+                favUserListeners.slice().forEach(function (listener) { listener(favFetched); });
+            })
+            .catch(function () {});
+    }
 
     function isFavorite(id) {
         return favorites.some(function (f) { return f.id === id; });
@@ -464,16 +491,27 @@
         return b ? String(b.id) : null;
     }
 
-    // Live favorites first, each group in Twitch's order (its sort menu still works on them).
+    // Live favorites first, each group in Twitch's order (its sort menu still works on them), then the live ones nobody
+    // follows, in the favorites' order. Only once Twitch's list is there: before it, the tab shows its placeholder.
     function favoritesFirst(edges, list) {
-        var wanted = {}, front = [], rest = [], ids = {};
+        var wanted = {}, followed = {}, front = [], rest = [], ids = {}, extra = 0;
         list.forEach(function (f) { wanted[f.id] = true; });
         (edges || []).forEach(function (edge) {
             var id = edgeId(edge);
+            if (id) followed[id] = true;
             if (id && wanted[id]) { front.push(edge); ids[id] = true; } else rest.push(edge);
         });
-        return {ids: ids, last: front.length ? edgeId(front[front.length - 1]) : null, rest: rest.length,
-            edges: front.length && edges ? front.concat(rest) : edges};
+        if (edges) {
+            list.forEach(function (f) {
+                var user = favUsers[f.id], stream = user && user.stream;
+                if (followed[f.id] || !stream || !stream.broadcaster) return;
+                front.push({node: {id: user.id, stream: stream}});
+                ids[f.id] = true;
+                extra++;
+            });
+        }
+        return {ids: ids, last: front.length ? edgeId(front[front.length - 1]) : null, rest: rest.length, extra: extra,
+            followed: followed, edges: front.length && edges ? front.concat(rest) : edges};
     }
 
     function FavoritesHeader() {
@@ -488,52 +526,38 @@
         return React.createElement(Label, Object.assign({numberOfLines: 1, style: {color: '#efeff1'}}, props), value);
     }
 
-    // Favorites without a live row: offline, or live but not followed. Avatars from GQL (ids, anonymous).
-    function FavoritesStrip() {
+    // Favorites without a live row, as Twitch's "Your inactive channels" rows (issue #39): avatar 40, name, verified.
+    // A tap opens the channel page like those rows do (a channel opened offline showed an error); still loading ones
+    // stand here by name until GQL says they're live.
+    function FavoritesOffline() {
         var list = useFavorites();
         var loaded = React.useState(0), setLoaded = loaded[1];
-        var shown = list.filter(function (f) { return !liveFav.ids[f.id]; });
-        var key = shown.map(function (f) { return f.id; }).join(',');
-        var edges = liveFav.edges;
         React.useEffect(function () {
-            var missing = shown.some(function (f) { return !favUsers[f.id]; });
-            if (!key || !missing && Date.now() - favFetched < 30000) return;
-            var live = true;
-            fetch('https://gql.twitch.tv/gql', {method: 'POST', headers: {'Client-ID': GQL_CLIENT, 'Content-Type': 'application/json'},
-                body: JSON.stringify({query: 'query($ids:[ID!]){users(ids:$ids){id login displayName profileImageURL(width:70) stream{id}}}',
-                    variables: {ids: key.split(',')}})})
-                .then(function (r) { return r.json(); })
-                .then(function (j) {
-                    favFetched = Date.now();
-                    (j && j.data && j.data.users || []).forEach(function (u) { if (u) favUsers[u.id] = u; });
-                    if (live) setLoaded(favFetched);
-                })
-                .catch(function () {});
-            return function () { live = false; };
-        }, [key, edges]);
+            favUserListeners.push(setLoaded);
+            return function () { favUserListeners.splice(favUserListeners.indexOf(setLoaded), 1); };
+        }, []);
+        var shown = list.filter(function (f) { return !liveFav.ids[f.id]; });
         if (!shown.length) return null;
         var h = React.createElement;
-        // The feed tabs pager took a sideways swipe on the strip. Twitch's own Categories shelf sits in this guard, which
-        // keeps the swipe for the inner scroll view while it can still scroll that way.
-        var Guard = nestedScroll && nestedScroll.NestedHorizontalScrollGuard;
-        var strip = h(RN.ScrollView, {horizontal: true, nestedScrollEnabled: true, showsHorizontalScrollIndicator: false,
-                contentContainerStyle: favStyles.strip},
-            shown.map(function (f) {
-                var user = favUsers[f.id] || {}, login = user.login || f.login, onAir = !!user.stream;
-                function open() {
-                    if (openChannel) openChannel(login, undefined, f.id, false, 0, 0, false);
-                    else RN.Linking.openURL('twitch://stream/' + login);
-                }
-                function menu() {
-                    if (openMenu) openMenu({channelId: f.id, login: login, displayName: user.displayName || f.name, isLive: onAir,
-                        gameName: undefined, isPartner: undefined});
-                }
-                return h(RN.Pressable, {key: f.id, style: favStyles.item, onPress: open, onLongPress: menu, accessibilityRole: 'button'},
-                    h(RN.View, {style: [favStyles.avatar, onAir ? favStyles.onAir : favStyles.offAir]},
-                        user.profileImageURL ? h(RN.Image, {source: {uri: user.profileImageURL}, style: favStyles.image}) : null),
-                    label({type: 'caption', muted: !onAir}, user.displayName || f.name));
-            }));
-        return Guard ? h(Guard, null, strip) : strip;
+        return h(RN.View, {style: favStyles.offline}, shown.map(function (f) {
+            var user = favUsers[f.id] || {}, login = user.login || f.login;
+            function open() {
+                if (openProfile) openProfile(login);
+                else if (openChannel) openChannel(login, undefined, f.id, false, 0, 0, false);
+            }
+            function menu() {
+                if (openMenu) openMenu({channelId: f.id, login: login, displayName: user.displayName || f.name, isLive: false,
+                    gameName: undefined, isPartner: user.roles ? user.roles.isPartner : undefined});
+            }
+            return h(RN.Pressable, {key: f.id, style: favStyles.row, onPress: open, onLongPress: menu, accessibilityRole: 'button',
+                    testID: 'retwitch-favorite-offline-' + login, android_ripple: {color: 'rgba(255,255,255,0.1)'}},
+                h(RN.View, {style: favStyles.avatar},
+                    user.profileImageURL ? h(RN.Image, {source: {uri: user.profileImageURL}, style: favStyles.avatar}) : null),
+                h(RN.View, {style: favStyles.name},
+                    h(RN.View, {style: favStyles.nameText}, label({bold: true}, user.displayName || f.name)),
+                    icons && user.roles && user.roles.isPartner
+                        ? h(RN.View, {style: favStyles.verified}, h(icons.IconVerified, {size: 16, fillColor: '#bf94ff'})) : null));
+        }));
     }
 
     // The menu row: BottomSheet.Item as Twitch's own rows, right under "View profile".
@@ -577,12 +601,12 @@
     var favStyles = {
         header: {flexDirection: 'row', alignItems: 'center', paddingTop: 12, paddingBottom: 8},
         star: {color: '#ffc94d', fontSize: 20, marginRight: 8},
-        strip: {paddingVertical: 6},
-        item: {width: 64, alignItems: 'center', marginHorizontal: 2},
-        avatar: {width: 44, height: 44, borderRadius: 22, marginBottom: 4, overflow: 'hidden', backgroundColor: '#35353b'},
-        image: {width: 44, height: 44},
-        onAir: {borderWidth: 2, borderColor: '#eb0400'},
-        offAir: {opacity: 0.45},
+        offline: {paddingVertical: 4},
+        row: {flexDirection: 'row', alignItems: 'center', paddingVertical: 8},
+        avatar: {width: 40, height: 40, borderRadius: 20, overflow: 'hidden', backgroundColor: '#35353b'},
+        name: {flex: 1, flexDirection: 'row', alignItems: 'center', marginStart: 8},
+        nameText: {flexShrink: 1},
+        verified: {marginLeft: 4},
         divider: {height: 1, marginTop: 6, marginBottom: 2, backgroundColor: '#2f2f35'}
     };
 
@@ -605,10 +629,25 @@
                 if (fav) {
                     list = useFavorites();
                     var edges = data && data.liveEdges;
-                    var sorted = React.useMemo(function () { return favoritesFirst(edges, list); }, [edges, list]);
+                    var loaded = React.useState(0), setLoaded = loaded[1];
+                    React.useEffect(function () {
+                        favUserListeners.push(setLoaded);
+                        return function () { favUserListeners.splice(favUserListeners.indexOf(setLoaded), 1); };
+                    }, []);
+                    var sorted = React.useMemo(function () { return favoritesFirst(edges, list); }, [edges, list, loaded[0]]);
+                    // Who isn't a followed live row: asked again with every new Twitch list (pull to refresh), 30 s apart.
+                    var key = list.filter(function (f) { return !sorted.followed[f.id]; }).map(function (f) { return f.id; }).join(',');
+                    React.useEffect(function () {
+                        var missing = key && key.split(',').some(function (id) { return !favUsers[id]; });
+                        if (key && (missing || Date.now() - favFetched >= 30000)) loadFavUsers(key.split(','));
+                    }, [key, edges]);
                     var source = data;
                     data = React.useMemo(function () {
-                        return sorted.edges === edges ? source : Object.assign({}, source, {liveEdges: sorted.edges});
+                        if (sorted.edges === edges) return source;
+                        // Only live favorites nobody follows: Twitch draws live rows only with live channels of its own.
+                        var change = {liveEdges: sorted.edges};
+                        if (sorted.extra && !source.hasLiveChannels) change.hasLiveChannels = true;
+                        return Object.assign({}, source, change);
                     }, [source, sorted]);
                     liveFav = sorted;
                 }
@@ -631,7 +670,7 @@
                 if (!list.length) return React.createElement(original, props);
                 if (liveFav.last) return React.createElement(FavoritesHeader);
                 return React.createElement(React.Fragment, null, React.createElement(FavoritesHeader),
-                    React.createElement(FavoritesStrip), React.createElement(RN.View, {style: favStyles.divider}),
+                    React.createElement(FavoritesOffline), React.createElement(RN.View, {style: favStyles.divider}),
                     React.createElement(original, props));
             };
         },
@@ -645,7 +684,7 @@
                 if (!broadcaster || String(broadcaster.id) !== liveFav.last || String(props.cellKey).indexOf('live-row-') !== 0) {
                     return row;
                 }
-                return React.createElement(React.Fragment, null, row, React.createElement(FavoritesStrip),
+                return React.createElement(React.Fragment, null, row, React.createElement(FavoritesOffline),
                     liveFav.rest > 0 && LiveHeader && liveHeaderProps ? React.createElement(React.Fragment, null,
                         React.createElement(RN.View, {style: favStyles.divider}),
                         React.createElement(LiveHeader, liveHeaderProps)) : null);
@@ -678,10 +717,11 @@
                 }
             };
         },
-        // Only to keep its channel opener for the friends block and the favorites strip.
+        // Only to keep its openers for the friends block and the favorites (onOpenProfile(login): the channel page).
         FollowingTab: function (original) {
             return function (props) {
                 if (props.onOpenChannel) openChannel = props.onOpenChannel;
+                if (props.onOpenProfile) openProfile = props.onOpenProfile;
                 return React.createElement(original, props);
             };
         },
@@ -769,8 +809,13 @@
         },
         // The top chrome (FeedTopChrome): the shelf above the tabs and the story avatars in the tab row. A hidden
         // shelf counts as an empty one for the pull gesture (useStoriesShelf): it refreshes instead of revealing.
-        StoriesShelf: function () {
-            return function () { return null; };
+        // With only the empty card hidden (issue #33): no loading placeholder either (StoriesShelfPlaceholder, three
+        // grey circles above the tabs at every start), the shelf shows up once there are stories.
+        StoriesShelf: function (original) {
+            return function (props) {
+                if (config.hideStories || props.loading && !(props.stories && props.stories.length)) return null;
+                return React.createElement(original, props);
+            };
         },
         // Channel page, Home tab (ChannelProfileHome). Latest Stream Recaps.
         ChannelProfileRecapsShelf: function (original) {
@@ -805,8 +850,22 @@
                 return React.createElement(original, props);
             };
         },
-        CollapsedStoriesIcons: function () {
+        // The shelf's avatars in the tab row once the feed scrolls: grey circles for an empty shelf (issue #33).
+        // Tag pills under a Following row (issue #32); the watch streak tag is its own component and stays.
+        FollowingRowTags: function () {
             return function () { return null; };
+        },
+        CollapsedStoriesIcons: function (original) {
+            return function (props) {
+                var state = React.useState(storiesEmpty), empty = state[0], setEmpty = state[1];
+                React.useEffect(function () {
+                    shelfListeners.push(setEmpty);
+                    setEmpty(storiesEmpty);
+                    return function () { shelfListeners.splice(shelfListeners.indexOf(setEmpty), 1); };
+                }, []);
+                if (config.hideStories || empty) return null;
+                return React.createElement(original, props);
+            };
         },
         // Following, Live, Clips; the launch cover's placeholder row too. The bar keeps its top inset, so the feed
         // still re-measures it (only heights above 0 count).
@@ -853,7 +912,6 @@
             if (!stars.off && 'IconStarHollow' in exports) stars.off = exports.IconStarHollow;
             if (!sheets && 'BottomSheet' in exports) sheets = exports;
             if (!overflowItem && 'OverflowMenuItem' in exports) overflowItem = exports.OverflowMenuItem;
-            if (!nestedScroll && 'NestedHorizontalScrollGuard' in exports) nestedScroll = exports;
         }
         // `in`: react-native's exports are lazy getters, reading one would load that module here.
         if (!React && 'memo' in exports && 'useState' in exports) React = exports;

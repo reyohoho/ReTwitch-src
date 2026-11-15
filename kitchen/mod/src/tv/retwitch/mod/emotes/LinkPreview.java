@@ -36,10 +36,6 @@ final class LinkPreview {
     private static final Pattern IMAGE_PATH =
             Pattern.compile("\\.(?:jpe?g|png|gif|bmp|webp|jfif)$", Pattern.CASE_INSENSITIVE);
     private static final Pattern ID = Pattern.compile("[A-Za-z0-9]+");
-    /** Image hosts the extension loads through the RTE proxy (often blocked directly). */
-    private static final Pattern PROXIED_IMAGE_HOST = Pattern.compile(
-            "^(cdn\\.discordapp\\.com|media\\.discordapp\\.net|images-ext-\\d+\\.discordapp\\.net"
-                    + "|i\\.ytimg\\.com|i\\.ibb\\.co|s\\d+\\.gifyu\\.com|cdn\\.7tv\\.app)$");
 
     private LinkPreview() {
     }
@@ -136,21 +132,13 @@ final class LinkPreview {
         }
     }
 
-    /** Same hosts the extension routes through its proxy (kappa.lol, 7TV, Discord, ...). */
+    /**
+     * Every preview goes through the emote proxy unless its switch is off (both on by default): a chat link to any
+     * host would otherwise hand that host the viewer's IP, and many are blocked from RU. The extension proxies only a
+     * list of hosts. Our own API is served directly, as the badges are.
+     */
     static boolean useProxy(String link, String image) {
-        if (image.contains(".rte.net.ru")) {
-            return false;
-        }
-        try {
-            String linkHost = new URI(link).getHost().toLowerCase(Locale.ROOT);
-            if (linkHost.equals("kappa.lol") || linkHost.endsWith(".kappa.lol")
-                    || linkHost.equals("7tv.app") || linkHost.equals("www.7tv.app")) {
-                return true;
-            }
-            return PROXIED_IMAGE_HOST.matcher(new URI(image).getHost().toLowerCase(Locale.ROOT)).matches();
-        } catch (Exception e) {
-            return false;
-        }
+        return LinkPreviewSettings.isProxyEnabled() && !image.contains(".rte.net.ru");
     }
 
     /** @return the direct image URL behind a chat link, or null if it isn't previewable. */

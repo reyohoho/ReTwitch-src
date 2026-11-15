@@ -362,7 +362,7 @@ public final class ModLogs {
         return reason == null || reason.trim().isEmpty() ? "" : Strings.pick(", причина: ", ", reason: ") + reason;
     }
 
-    /** "600" -> "10 мин" / "10 min"; unparsable stays as sent. */
+    /** "600" -> "10 мин", "1200000" -> "13 д 21 ч 20 мин" (was "20000 мин"); unparsable stays as sent. */
     static String duration(String seconds) {
         long s;
         try {
@@ -370,15 +370,14 @@ public final class ModLogs {
         } catch (RuntimeException e) {
             return seconds;
         }
-        if (s >= 86400 && s % 86400 == 0) {
-            return s / 86400 + Strings.pick(" д", " d");
+        long[] parts = {s / 86400, s % 86400 / 3600, s % 3600 / 60, s % 60};
+        String[] units = {Strings.pick(" д", " d"), Strings.pick(" ч", " h"), Strings.pick(" мин", " min"), Strings.pick(" с", " s")};
+        StringBuilder out = new StringBuilder();
+        for (int i = 0; i < parts.length; i++) {
+            if (parts[i] != 0) {
+                out.append(out.length() > 0 ? " " : "").append(parts[i]).append(units[i]);
+            }
         }
-        if (s >= 3600 && s % 3600 == 0) {
-            return s / 3600 + Strings.pick(" ч", " h");
-        }
-        if (s >= 60 && s % 60 == 0) {
-            return s / 60 + Strings.pick(" мин", " min");
-        }
-        return s + Strings.pick(" с", " s");
+        return out.length() > 0 ? out.toString() : s + units[3];
     }
 }

@@ -13,6 +13,33 @@ import android.text.TextUtils;
 public final class Changelog {
 
     private static final String[][] ENTRIES = {
+            {"0.5.37-beta",
+                    "«Перемотка в уведомлении плеера» в «Исправлениях»: у видео в шторке снова кнопки «назад на 10» и «вперёд на 30»\n"
+                            + "Шаг перемотки видео можно задать любым числом секунд\n"
+                            + "«Теги трансляций» в разделе «Главная»: скрыть теги под каналами в «Отслеживаемом» и «В эфире»\n"
+                            + "«Вкладка «Профиль»» в разделе «Главная»: без неё настройки мода открываются долгим нажатием на «Главную»\n"
+                            + "Пустая полка историй скрывается вместе с серыми кружками, пока она грузится\n"
+                            + "Долгое нажатие на результат поиска в настройках открывает страницу с этой настройкой\n"
+                            + "Избранное: канал без подписки в эфире показывается строкой с превью, не в эфире - строкой как в неактивных, "
+                            + "нажатие открывает страницу канала\n"
+                            + "В компактном списке «В эфире» число зрителей больше не обрезается\n"
+                            + "«Копировать» работает на удалённых сообщениях и не копирует место под превью ссылки\n"
+                            + "Превью картинок по ссылкам из чата идут через прокси (переключатель - в настройках превью)\n"
+                            + "Срок отстранения в чате пишется в днях, часах и минутах\n"
+                            + "После возврата из настроек Twitch стрим снова в качестве по умолчанию, а не в «Авто»",
+                    "\"Seek buttons in the player notification\" in Fixes: videos in the notification shade have back 10 and forward 30 again\n"
+                            + "The video seek step can be any number of seconds\n"
+                            + "\"Stream tags\" in the Home section: hide the tags under channels in Following and Live\n"
+                            + "\"Profile tab\" in the Home section: without it, a long press on Home opens the mod's settings\n"
+                            + "An empty stories shelf hides together with its grey circles while it loads\n"
+                            + "A long press on a settings search result opens the page with that setting\n"
+                            + "Favorites: a live channel you don't follow gets a row with a preview, an offline one a row like the inactive "
+                            + "channels, and a tap opens the channel page\n"
+                            + "The compact Live list no longer cuts off the viewer count\n"
+                            + "\"Copy\" works on deleted messages and leaves out the link preview's placeholder\n"
+                            + "Image previews of chat links go through the proxy (the switch is in the preview settings)\n"
+                            + "Chat timeouts show in days, hours and minutes\n"
+                            + "Back from Twitch's settings, the stream returns to the default quality instead of Auto"},
             {"0.5.36-beta",
                     "«Поворот главной» в разделе «Главная»: после стрима главная может остаться в горизонтальном режиме\n"
                             + "Тап по пустому месту стрима (например, пока грузится чат) больше не открывает канал из ленты под ним\n"

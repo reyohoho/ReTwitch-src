@@ -41,7 +41,10 @@ public final class ChatEventsSelfCheck {
         Locale.setDefault(Locale.ENGLISH);
         assert "10 min".equals(ModLogs.duration("600"));
         assert "1 d".equals(ModLogs.duration("86400"));
-        assert "90 s".equals(ModLogs.duration("90"));
+        assert "1 min 30 s".equals(ModLogs.duration("90"));
+        assert "13 d 21 h 20 min".equals(ModLogs.duration("1200000"));
+        assert "14 d".equals(ModLogs.duration("1209600"));
+        assert "0 s".equals(ModLogs.duration("0"));
         assert "x".equals(ModLogs.duration("x"));
         assert "⚖ mod timed out bob for 10 min, reason: spam"
                 .equals(ModLogs.describe("timeout", "mod", "bob", Arrays.asList("bob", "600", "spam")));
@@ -63,7 +66,7 @@ public final class ChatEventsSelfCheck {
         assert ModLogs.describeIrc("CLEARMSG", tags("target-msg-id", "abc"), "hi") == null;
         assert ModLogs.describeIrc("PRIVMSG", tags("login", "bob"), "hi") == null;
         Locale.setDefault(new Locale("ru"));
-        assert "⚖ bob отстранён на 90 с".equals(ModLogs.describeIrc(
+        assert "⚖ bob отстранён на 1 мин 30 с".equals(ModLogs.describeIrc(
                 "CLEARCHAT", tags("target-user-id", "42", "ban-duration", "90"), "bob")[2]);
         assert "⚖ Сообщение bob удалено".equals(ModLogs.describeIrc(
                 "CLEARMSG", tags("login", "bob", "target-msg-id", "x"), "")[2]);
