@@ -165,9 +165,25 @@ public final class FavoriteChannels {
         }
     }
 
+    /** The section in Following folded to its header (its header's tap in the script). */
+    private static final String KEY_COLLAPSED = "collapsed";
+
+    static boolean collapsed() {
+        try {
+            return prefs(AppContext.get()).getBoolean(KEY_COLLAPSED, false);
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
     /** The script's save: keeps the list from the URL and returns a URL that fails the request. Never throws. */
     static String fromRn(String url) {
         try {
+            String collapsed = Uri.parse(url).getQueryParameter("collapsed");
+            if (collapsed != null) {
+                prefs(AppContext.get()).edit().putBoolean(KEY_COLLAPSED, "1".equals(collapsed)).apply();
+                return "http://127.0.0.1:0/";
+            }
             JSONArray list = withNative(clean(new JSONArray(Uri.parse(url).getQueryParameter(KEY))));
             prefs(AppContext.get()).edit().putString(KEY, list.toString()).apply();
             Log.i(TAG, "saved " + list.length());

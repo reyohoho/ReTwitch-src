@@ -93,7 +93,7 @@ final class ModUpdate {
     }
 
     private interface Progress {
-        void at(int percent);
+        void at(long done);
     }
 
     private static final Handler MAIN = new Handler(Looper.getMainLooper());
@@ -407,10 +407,16 @@ final class ModUpdate {
         new Thread(() -> {
             boolean ok = false;
             try {
-                ok = fetch(release, file, cancelled, value -> MAIN.post(() -> {
-                    bar.setProgress(value);
-                    percent.setText(value + "%");
-                }));
+                final long started = SystemClock.elapsedRealtime();
+                ok = fetch(release, file, cancelled, done -> {
+                    long elapsed = SystemClock.elapsedRealtime() - started;
+                    // Time left once two seconds of data give a speed.
+                    long left = elapsed > 2000 && done > 0 ? (release.size - done) * elapsed / done / 1000 : -1;
+                    MAIN.post(() -> {
+                        bar.setProgress((int) (done * 100 / release.size));
+                        percent.setText(Strings.updateProgress(done, release.size, left));
+                    });
+                });
             } catch (IOException | java.security.NoSuchAlgorithmException | RuntimeException e) {
                 Log.w(TAG, "download failed", e);
                 if (!cancelled[0]) {
@@ -445,6 +451,7 @@ final class ModUpdate {
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
         long total = 0;
         int shown = -1;
+        long shownAt = 0;
         try (OutputStream out = new FileOutputStream(file)) {
             for (int connections = 1; total < release.size; connections++) {
                 try {
@@ -459,9 +466,11 @@ final class ModUpdate {
                             digest.update(buffer, 0, n);
                             total += n;
                             int percent = (int) (total * 100 / release.size);
-                            if (percent != shown) {
+                            long now = SystemClock.elapsedRealtime();
+                            if (percent != shown || now - shownAt >= 500) {
                                 shown = percent;
-                                progress.at(percent);
+                                shownAt = now;
+                                progress.at(total);
                             }
                         }
                     } finally {

@@ -5,6 +5,11 @@ import app.morphe.patcher.extensions.InstructionExtensions.addInstructionsWithLa
 import app.morphe.patcher.extensions.InstructionExtensions.instructions
 import app.morphe.patcher.fingerprint
 import app.morphe.patcher.patch.bytecodePatch
+import com.android.tools.smali.dexlib2.iface.reference.StringReference
+import com.android.tools.smali.dexlib2.iface.reference.FieldReference
+import com.android.tools.smali.dexlib2.iface.instruction.TwoRegisterInstruction
+import com.android.tools.smali.dexlib2.iface.instruction.FiveRegisterInstruction
+import app.morphe.patcher.patch.PatchException
 import app.morphe.patcher.util.smali.ExternalLabel
 import app.morphe.patcher.extensions.InstructionExtensions.getInstruction
 import app.morphe.patcher.util.proxy.mutableTypes.MutableMethod
@@ -155,6 +160,59 @@ val retwitchVerticalOverlayPatch = bytecodePatch(
             println("[ReTwitch] vertical chat button: ${button.definingClass}->${button.name}")
         } catch (e: Exception) {
             println("[ReTwitch] vertical chat button skipped: $e")
+        }
+        // The highlight row's reducer (31.9.0 r0.emit, a merged lambda) skips an "AddOrUpdateHighlight(highlightId=" whose id
+        // is in the state's set of dismissed ones: `iget-object id, event, .a` then `Set.contains(dismissed, id)`. Before the
+        // contains: dismissed = ChatFilters.verticalDismissed(dismissed, id), a set holding the id when our settings hide it.
+        try {
+            var event: String? = null
+            classDefForEach { c ->
+                if (c.methods.any { m ->
+                        m.name == "toString" && m.implementation?.instructions?.any {
+                            ((it as? ReferenceInstruction)?.reference as? StringReference)?.string == "AddOrUpdateHighlight(highlightId="
+                        } == true
+                    }) event = c.type
+            }
+            val type = event ?: throw PatchException("AddOrUpdateHighlight not found")
+            var hooked = 0
+            val owners = ArrayList<String>()
+            classDefForEach { c ->
+                if (c.methods.any { m -> m.implementation?.instructions?.any {
+                        it.opcode == Opcode.IGET_OBJECT && ((it as ReferenceInstruction).reference as FieldReference).let { f ->
+                            f.definingClass == type && f.type == "Ljava/lang/String;"
+                        }
+                    } == true }) owners += c.type
+            }
+            for (owner in owners) {
+                for (method in mutableClassDefBy(owner).methods) {
+                    val code = method.implementation?.instructions?.toList() ?: continue
+                    for (i in code.indices.reversed()) {
+                        val read = code[i]
+                        if (read.opcode != Opcode.IGET_OBJECT) continue
+                        val field = (read as ReferenceInstruction).reference as FieldReference
+                        if (field.definingClass != type || field.type != "Ljava/lang/String;") continue
+                        val idReg = (read as TwoRegisterInstruction).registerA
+                        val at = (i + 1 until minOf(code.size, i + 4)).firstOrNull { j ->
+                            val ref = (code[j] as? ReferenceInstruction)?.reference as? MethodReference
+                            code[j].opcode == Opcode.INVOKE_INTERFACE && ref?.definingClass == "Ljava/util/Set;" &&
+                                ref.name == "contains" && (code[j] as FiveRegisterInstruction).registerD == idReg
+                        } ?: continue
+                        val setReg = (code[at] as FiveRegisterInstruction).registerC
+                        method.addInstructions(
+                            at,
+                            """
+                                invoke-static {v$setReg, v$idReg}, Ltv/retwitch/mod/ChatFilters;->verticalDismissed(Ljava/util/Set;Ljava/lang/String;)Ljava/util/Set;
+                                move-result-object v$setReg
+                            """.trimIndent(),
+                        )
+                        hooked++
+                    }
+                }
+            }
+            if (hooked == 0) throw PatchException("no dismissed-set check")
+            println("[ReTwitch] vertical highlights filter: $hooked place(s) in $owners")
+        } catch (e: Exception) {
+            println("[ReTwitch] vertical highlights filter skipped: $e")
         }
     }
 }

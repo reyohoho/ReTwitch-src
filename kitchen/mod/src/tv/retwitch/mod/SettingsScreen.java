@@ -1,6 +1,9 @@
 package tv.retwitch.mod;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
 import android.animation.ObjectAnimator;
+import android.animation.ValueAnimator;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Context;
@@ -1663,6 +1666,7 @@ final class SettingsScreen {
                             found.getLocationInWindow(at);
                             list.getLocationInWindow(top);
                             scroll.smoothScrollTo(0, Math.max(0, at[1] - top[1] - dp(96)));
+                            flash(found);
                         }
                     });
                 }
@@ -1675,6 +1679,29 @@ final class SettingsScreen {
                 goToOnLongPress(group.getChildAt(i), trail, title);
             }
         }
+    }
+
+    /** The row a search jump landed on blinks twice once the scroll settles (reyohoho/ReTwitch-src#43). */
+    private void flash(View found) {
+        View row = found;
+        while (row.getParent() instanceof View && row.getParent() != list && ((View) row.getParent()).getParent() != list) {
+            row = (View) row.getParent();
+        }
+        final View target = row;
+        final ColorDrawable glow = new ColorDrawable(ACCENT);
+        glow.setAlpha(0);
+        final Drawable previous = target.getForeground();
+        target.setForeground(glow);
+        ValueAnimator blink = ValueAnimator.ofInt(0, 70, 0, 70, 0).setDuration(1200);
+        blink.setStartDelay(300);
+        blink.addUpdateListener(a -> glow.setAlpha((Integer) a.getAnimatedValue()));
+        blink.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                target.setForeground(previous);
+            }
+        });
+        blink.start();
     }
 
     private static TextView firstText(View view) {

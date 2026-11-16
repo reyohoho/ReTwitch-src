@@ -320,6 +320,7 @@ public final class SettingsHook {
                     i -> PlayerSettings.setStallSeconds(c, PlayerSettings.STALL_SECONDS[i]));
         });
         s.toggle(Toggles.NORMAL_LATENCY);
+        s.toggle(Toggles.SCREEN_OFF_STALLED);
         s.section(t("Разделы", "More"));
         s.nav(t("Кнопки на плеере", "Player buttons"), t("Перезагрузка, таймер, статистика", "Reload, timer, stats"),
                 SettingsHook::playerButtonsPage);
@@ -478,11 +479,17 @@ public final class SettingsHook {
         s.section(t("Просмотр", "Watching"));
         s.toggle(Toggles.SUB_VODS);
         s.toggle(Toggles.NO_AUTOPLAY);
+        s.toggle(Toggles.SKIP_UP_NEXT);
         // Any number of seconds (reyohoho/ReTwitch-src#38): the buttons draw it as digits.
         s.markNew("0.5.37-beta").number(t("Перемотка назад, с", "Seek back, s"), PlayerSettings.getSeekBackSeconds(),
                 v -> PlayerSettings.setSeekSeconds(c, false, v));
         s.markNew("0.5.37-beta").number(t("Перемотка вперёд, с", "Seek forward, s"), PlayerSettings.getSeekForwardSeconds(),
                 v -> PlayerSettings.setSeekSeconds(c, true, v));
+        // The notification and headset buttons (reyohoho/ReTwitch-src#40); unset they follow the two above.
+        s.markNew("0.5.38-beta").number(t("В уведомлении назад, с", "Notification back, s"),
+                PlayerSettings.getNotificationSeekSeconds(false), v -> PlayerSettings.setNotificationSeekSeconds(c, false, v));
+        s.markNew("0.5.38-beta").number(t("В уведомлении вперёд, с", "Notification forward, s"),
+                PlayerSettings.getNotificationSeekSeconds(true), v -> PlayerSettings.setNotificationSeekSeconds(c, true, v));
         s.section(t("Кнопки на плеере", "Player buttons"));
         s.toggle(Toggles.CHAPTERS_BUTTON);
         s.toggle(Toggles.VOD_CHAT_SYNC);
@@ -824,6 +831,9 @@ public final class SettingsHook {
         s.section(t("Вертикальный вид", "Vertical view"));
         s.toggle(Toggles.HIDE_VERTICAL_BUTTONS);
         s.toggle(Toggles.HIDE_VERTICAL_PANEL);
+        s.section(t("Мини-плеер", "Mini player"));
+        s.toggle(Toggles.HIDE_MINI_CLOSE);
+        s.toggle(Toggles.HIDE_MINI_EXPAND);
     }
 
     private static void syncUiHeader(SettingsPreview preview) {

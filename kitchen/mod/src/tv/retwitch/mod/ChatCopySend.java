@@ -4,6 +4,8 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.ContextWrapper;
 import android.graphics.drawable.Drawable;
+import android.os.Build;
+import android.os.SystemClock;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.View;
@@ -54,6 +56,21 @@ public final class ChatCopySend {
         }
     }
 
+    private static volatile long sentAt = -10_000L;
+
+    /**
+     * Before Twitch's "Message Copied!" toast (ChatCopySendPatch): Android 13+ confirms a copy on its own, and after
+     * Copy and send the message is right there in the chat. Never throws.
+     */
+    public static boolean copiedToast() {
+        try {
+            return !Toggles.on(Toggles.NO_COPY_TOAST)
+                    || Build.VERSION.SDK_INT < 33 && SystemClock.elapsedRealtime() - sentAt > 2_000L;
+        } catch (Throwable t) {
+            return true;
+        }
+    }
+
     /** Wires our row to the message {@code text} Copy uses. Never throws. */
     public static void bind(Object copy, final String text) {
         try {
@@ -70,6 +87,7 @@ public final class ChatCopySend {
                             // Twitch's own copy, which also closes the menu (the row keeps
                             // its click listener on its inner text view).
                             View copyText = textView(copyRow);
+                            sentAt = SystemClock.elapsedRealtime();
                             (copyText != null ? copyText : copyRow).performClick();
                             send(copyRow.getContext(), text);
                         } catch (Throwable t) {

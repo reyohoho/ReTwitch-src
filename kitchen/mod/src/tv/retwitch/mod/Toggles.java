@@ -175,6 +175,15 @@ public final class Toggles {
                     "The player reloads by itself")
             .note("Только что открытый стрим ждёт не меньше 10 с: первая загрузка дольше.",
                     "A stream you just opened gets at least 10 s: the first load takes longer.");
+    /** LiveScreenOn: the theatre lets the screen go once nothing has played for 30 s (PR #50). */
+    public static final Toggle SCREEN_OFF_STALLED = new Toggle("screen_off_stalled",
+            "Экран гаснет при зависании", "Screen turns off when stuck", false)
+            .about("Если стрим грузится дольше 30 секунд", "If a stream has been loading for over 30 seconds")
+            .compare("Зависший стрим держит экран включённым", "Экран гаснет по тайм-ауту Android",
+                    "A stuck stream keeps the screen on", "The screen turns off on the Android timeout")
+            .note("Когда стрим оживёт, экран сам не включится. Перезапуск плеера время не сбрасывает.",
+                    "When the stream recovers, the screen won't turn back on by itself. A player restart doesn't reset the time.")
+            .asNew("0.5.38-beta");
     public static final Toggle NORMAL_LATENCY = new Toggle("normal_latency", "Обычная задержка", "Normal latency", false)
             .about("Стабильнее на слабой сети, но стрим на несколько секунд позже",
                     "Steadier on a weak connection, a few seconds later")
@@ -208,6 +217,13 @@ public final class Toggles {
             .about("Не запускать следующую запись или клип после обратного отсчёта",
                     "Don't start the next VOD or clip after the countdown")
             .look(SettingsPreview.PLAYER, SettingsPreview.P_UP_NEXT);
+    /** Issue #49: the "Up next" card's Cancel is pressed as soon as it shows (PlayerHook.onUpNextCountdown). */
+    public static final Toggle SKIP_UP_NEXT = new Toggle("skip_up_next", "Без экрана «Далее»", "No \"Up next\" screen", false)
+            .about("В конце записи сразу кнопка повтора, без карточки следующего видео",
+                    "At the end of a VOD the replay button right away, no card for the next video")
+            .compare("В конце видео карточка «Далее» с кнопкой «Отмена»", "Карточка закрывается сама, ничего не запускается",
+                    "An \"Up next\" card with Cancel at the end of a video", "The card closes by itself, nothing starts")
+            .asNew("0.5.38-beta");
     public static final Toggle VOD_CATEGORY_FILTER = new Toggle("vod_category_filter", "Фильтр по категории", "Category filter", false)
             .about("Кнопка над видео на странице канала",
                     "A button above a channel's videos")
@@ -449,6 +465,19 @@ public final class Toggles {
             .about("Стрелка в левом верхнем углу плеера. Свернуть можно и свайпом вниз",
                     "The arrow in the player's top left corner. Swiping down still minimizes")
             .look(SettingsPreview.PLAYER, SettingsPreview.P_MINIMIZE).asNew("0.5.30-beta");
+    /** The mini player's buttons, shown after a tap on it (issues #47, #48): INVISIBLE, the others keep their places. */
+    public static final Toggle HIDE_MINI_CLOSE = new Toggle("hide_mini_close", "Закрыть (✕)", "Close (✕)", false)
+            .about("Крестик мини-плеера. Закрыть можно и смахнув его, если это включено в жестах",
+                    "The mini player's cross. Swiping it away still closes it if that's on in Gestures")
+            .compare("После нажатия на мини-плеер в углу ✕", "Без ✕", "A tap on the mini player shows ✕ in its corner",
+                    "No ✕")
+            .asNew("0.5.38-beta");
+    public static final Toggle HIDE_MINI_EXPAND = new Toggle("hide_mini_expand", "Развернуть", "Expand",  false)
+            .about("Стрелки в углу мини-плеера. Развернуть можно и нажатием на видео",
+                    "The arrows in the mini player's corner. A tap on the video still expands it")
+            .compare("После нажатия на мини-плеер в углу кнопка «развернуть»", "Без кнопки",
+                    "A tap on the mini player shows the expand button in its corner", "No button")
+            .asNew("0.5.38-beta");
     /** Player metadata, theatre overlay and One Chat; the chat header strip is ChatHeaderSetting. */
     public static final Toggle HIDE_FOLLOW_SUB = new Toggle("hide_follow_sub", "Отслеживать и Подписаться", "Follow and Subscribe", false)
             .look(SettingsPreview.PLAYER, SettingsPreview.P_FOLLOW);
@@ -795,6 +824,27 @@ public final class Toggles {
                     "Twitch is testing a new notification player on half of the users, and it has no such buttons. The fix keeps "
                             + "the old one. Your own choice on the Experiments page (Android-Media3-Session) wins.")
             .asNew("0.5.37-beta");
+    /** Twitch's "Message Copied!" toast after Copy (ChatCopySend.copiedToast). */
+    public static final Toggle NO_COPY_TOAST = new Toggle("no_copy_toast",
+            "Без «Сообщение скопировано»", "No \"Message Copied!\"", false, true)
+            .about("Не показывать уведомление после «Копировать» и «Копировать и отправить»",
+                    "No toast after Copy and Copy and send")
+            .compare("После копирования всплывает «Сообщение скопировано»", "Без уведомления",
+                    "\"Message Copied!\" pops up after a copy", "No toast")
+            .note("На Android 13 и новее система сама показывает, что скопировано. На Android 12 и старше уведомление "
+                            + "остаётся после «Копировать», но не после «Копировать и отправить».",
+                    "Android 13 and newer shows its own confirmation of a copy. On Android 12 and older the toast stays after "
+                            + "Copy, but not after Copy and send.")
+            .asNew("0.5.38-beta");
+    /** Twitch's layouts keep the screen on while the theatre is open, paused or not (LiveScreenOn, PR #50). */
+    public static final Toggle SCREEN_OFF_PAUSED = new Toggle("screen_off_paused",
+            "Экран гаснет на паузе", "Screen turns off when paused", false, true)
+            .about("По тайм-ауту экрана Android, если стрим или видео на паузе или закончилось",
+                    "On the Android screen timeout when a stream or video is paused or over")
+            .compare("Пока открыт плеер, экран не гаснет никогда", "Экран гаснет, когда видео стоит",
+                    "The screen never turns off while the player is open", "The screen turns off when the video stops")
+            .note("Стрим без звука держит экран, как в Twitch.", "A muted stream keeps the screen on, as in Twitch.")
+            .asNew("0.5.38-beta");
     /** Overlays over the player go transparent in picture-in-picture (PipOverlays). */
     public static final Toggle PIP_CLEAN_VIDEO = new Toggle("pip_clean_video",
             "Только видео в окне PiP", "Only the video in picture-in-picture", false, true)
@@ -1192,7 +1242,7 @@ public final class Toggles {
 
     /** Bug fixes (on by default), on their own page so they aren't switched off by accident. */
     static final Toggle[] FIXES = {NO_MANIFEST_CACHE, FRESH_RN_PREVIEWS, FEED_TAB_INDICATOR, ALL_FOLLOWED_CATEGORIES, LANDSCAPE_INPUT_VISIBLE, IDLE_INPUT_CURSOR,
-            GLOBAL_BADGES_NOW, BADGES_ON_BASELINE, LAYOUT_PICKER_ICONS, AUDIO_ONLY_UNMUTE, NOTIFICATION_SEEK, PIP_CLEAN_VIDEO, VOD_CHAT_EMOTES, VAFT_LOW_LATENCY, PICKER_OUTSIDE_TAP, FIX_LOGIN};
+            GLOBAL_BADGES_NOW, BADGES_ON_BASELINE, LAYOUT_PICKER_ICONS, AUDIO_ONLY_UNMUTE, NOTIFICATION_SEEK, SCREEN_OFF_PAUSED, NO_COPY_TOAST, PIP_CLEAN_VIDEO, VOD_CHAT_EMOTES, VAFT_LOW_LATENCY, PICKER_OUTSIDE_TAP, FIX_LOGIN};
 
     private Toggles() {
     }

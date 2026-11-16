@@ -971,6 +971,16 @@ public final class Strings {
         return pick("Скачивание ", "Downloading ") + version;
     }
 
+    /** "45.2 of 203.1 MB · ~3 min left" under the update download bar (issue #42); {@code left} -1 while unknown. */
+    public static String updateProgress(long done, long size, long left) {
+        String mb = pickf("%.1f из %.1f МБ", "%.1f of %.1f MB", done / 1048576.0, size / 1048576.0);
+        if (left < 0) {
+            return mb;
+        }
+        return left < 60 ? pickf("%s · осталось ~%d с", "%s · ~%d s left", mb, left)
+                : pickf("%s · осталось ~%d мин", "%s · ~%d min left", mb, (left + 59) / 60);
+    }
+
     public static String updateLatest() {
         return pick("У вас последняя версия", "You have the latest version");
     }

@@ -50,9 +50,64 @@ public final class VodChapters {
     private VodChapters() {
     }
 
+    /** VOD id -> whether it has chapters; a failed lookup counts as yes, the tap then says what's wrong. */
+    private static final java.util.Map<String, Boolean> HAS =
+            java.util.Collections.synchronizedMap(new java.util.HashMap<String, Boolean>());
+
+    /** Shown only for a VOD with chapters (reyohoho/ReTwitch-src#45); checks the playing VOD once a second while attached. */
+    private static final class Button extends ImageView {
+        private final Runnable check = new Runnable() {
+            @Override
+            public void run() {
+                sync();
+                postDelayed(this, 1000);
+            }
+        };
+
+        Button(Context context) {
+            super(context);
+        }
+
+        @Override
+        protected void onAttachedToWindow() {
+            super.onAttachedToWindow();
+            post(check);
+        }
+
+        @Override
+        protected void onDetachedFromWindow() {
+            removeCallbacks(check);
+            super.onDetachedFromWindow();
+        }
+
+        private void sync() {
+            final String vodId = ChannelTracker.getCurrentVodId();
+            Boolean has = vodId == null ? Boolean.TRUE : HAS.get(vodId);
+            if (has == null) {
+                HAS.put(vodId, Boolean.FALSE); // asked: hidden until the answer
+                new Thread(() -> {
+                    boolean any = true;
+                    try {
+                        List<String> titles = new ArrayList<>();
+                        parse(fetch(vodId), new ArrayList<long[]>(), titles, new ArrayList<String>());
+                        any = !titles.isEmpty();
+                    } catch (Throwable t) {
+                        Log.w(TAG, "chapters lookup failed", t);
+                    }
+                    HAS.put(vodId, any);
+                }, "RTChaptersCheck").start();
+                has = Boolean.FALSE;
+            }
+            int visibility = has ? View.VISIBLE : View.GONE;
+            if (getVisibility() != visibility) {
+                setVisibility(visibility);
+            }
+        }
+    }
+
     /** The player-strip button (see {@link ReloadHook}). */
     static View createButton(Context context) {
-        ImageView button = new ImageView(context);
+        ImageView button = new Button(context);
         int px = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 24,
                 context.getResources().getDisplayMetrics());
         button.setImageDrawable(new ListIcon(px));

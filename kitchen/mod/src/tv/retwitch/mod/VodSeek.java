@@ -37,9 +37,49 @@ public final class VodSeek {
         }
     }
 
-    /** Injected after the media session's -10000 / +30000 ms literals. Never throws. */
+    /** Injected after the media session's -10000 / +30000 ms literals (notification, headset): their own steps. Never throws. */
     public static int stepMillis(int twitchMillis) {
-        return stepSeconds(twitchMillis) * 1000;
+        try {
+            int seconds = PlayerSettings.getNotificationSeekSeconds(twitchMillis > 0);
+            return (twitchMillis < 0 ? -seconds : seconds) * 1000;
+        } catch (Throwable t) {
+            return twitchMillis;
+        }
+    }
+
+    private static int notificationStep(String action) {
+        boolean forward = "fast_forward".equals(action);
+        return forward || "rewind".equals(action) ? PlayerSettings.getNotificationSeekSeconds(forward) : 0;
+    }
+
+    /** Before the shade's seek actions (VodPlayerPatch): the label says the step. Never throws. */
+    public static String notificationLabel(String action, String label) {
+        try {
+            int seconds = notificationStep(action);
+            return seconds > 0 ? Strings.seekStep("fast_forward".equals(action), seconds) : label;
+        } catch (Throwable t) {
+            return label;
+        }
+    }
+
+    /**
+     * Before the shade's seek actions: a step other than Twitch's 10 / 30 gets the icon without digits. The shade takes
+     * an icon resource, so the step itself can't be drawn there. Never throws.
+     */
+    public static int notificationIcon(String action, int icon) {
+        try {
+            boolean forward = "fast_forward".equals(action);
+            int seconds = notificationStep(action);
+            if (seconds == 0 || seconds == (forward ? 30 : 10)) {
+                return icon;
+            }
+            Context context = AppContext.get();
+            int plain = context == null ? 0 : context.getResources().getIdentifier(
+                    forward ? "rt_seek_forward" : "rt_seek_rewind", "drawable", context.getPackageName());
+            return plain != 0 ? plain : icon;
+        } catch (Throwable t) {
+            return icon;
+        }
     }
 
     /** For {@code seek_forward_button} / {@code seek_rewind_button} on every {@link UiHider} pass; the stock step keeps Twitch's icon. */

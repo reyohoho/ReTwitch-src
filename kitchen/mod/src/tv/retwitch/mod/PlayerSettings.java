@@ -96,6 +96,20 @@ public final class PlayerSettings {
         return getInt(KEY_SEEK_FORWARD, 30);
     }
 
+    /** The notification's and headset's steps (#40); unset follows the player's. */
+    private static final String KEY_NOTIFICATION_SEEK_BACK = "notification_seek_back_seconds";
+    private static final String KEY_NOTIFICATION_SEEK_FORWARD = "notification_seek_forward_seconds";
+
+    public static int getNotificationSeekSeconds(boolean forward) {
+        int seconds = getInt(forward ? KEY_NOTIFICATION_SEEK_FORWARD : KEY_NOTIFICATION_SEEK_BACK, 0);
+        return seconds > 0 ? seconds : forward ? getSeekForwardSeconds() : getSeekBackSeconds();
+    }
+
+    public static void setNotificationSeekSeconds(Context context, boolean forward, int seconds) {
+        prefs(context).edit().putInt(forward ? KEY_NOTIFICATION_SEEK_FORWARD : KEY_NOTIFICATION_SEEK_BACK,
+                Math.max(1, Math.min(999, seconds))).apply();
+    }
+
     public static void setSeekSeconds(Context context, boolean forward, int seconds) {
         prefs(context).edit().putInt(forward ? KEY_SEEK_FORWARD : KEY_SEEK_BACK, Math.max(1, Math.min(999, seconds))).apply();
     }

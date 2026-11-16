@@ -13,6 +13,37 @@ import android.text.TextUtils;
 public final class Changelog {
 
     private static final String[][] ENTRIES = {
+            {"0.5.38-beta",
+                    "«Экран гаснет на паузе» в «Исправлениях»: на паузе и в конце видео экран гаснет по тайм-ауту Android, "
+                            + "а не горит, пока открыт плеер\n"
+                            + "«Экран гаснет при зависании» в настройках плеера: если стрим грузится дольше 30 секунд\n"
+                            + "«Без «Сообщение скопировано»» в «Исправлениях»: без уведомления после «Копировать» и «Копировать и отправить»\n"
+                            + "Кнопки «Закрыть» и «Развернуть» мини-плеера можно скрыть: «Интерфейс» > «Плеер»\n"
+                            + "«Без экрана «Далее»» в разделе «Видео и клипы»: в конце видео сразу кнопка повтора\n"
+                            + "Перемотку в уведомлении можно настроить отдельно от плеера\n"
+                            + "Кнопка глав видна только у видео, где они есть\n"
+                            + "Строка, к которой перешли из поиска настроек, подсвечивается\n"
+                            + "При скачивании обновления видно, сколько скачано и сколько осталось ждать\n"
+                            + "Со скрытой полкой историй первая прокрутка «Отслеживаемого» больше не возвращается наверх\n"
+                            + "Уведомление «ReYohoho прокси недоступен» больше не всплывает, когда приложение закрыто\n"
+                            + "Настройки «Закрепы и баннеры» действуют и в «Вертикальном виде»\n"
+                            + "Долгое нажатие на крупных и средних превью «Отслеживаемого» открывает меню канала, аватар - страницу канала\n"
+                            + "Раздел «Избранное» сворачивается нажатием на заголовок",
+                    "\"Screen turns off when paused\" in Fixes: when a video is paused or over, the screen turns off on the Android "
+                            + "timeout instead of staying on while the player is open\n"
+                            + "\"Screen turns off when stuck\" in the player settings: if a stream has been loading for over 30 seconds\n"
+                            + "No \"Message Copied!\" toast after Copy and Copy and send (a switch in Fixes)\n"
+                            + "The mini player's Close and Expand buttons can be hidden: Interface > Player\n"
+                            + "No \"Up next\" screen at the end of a video, the replay button right away (a switch in Videos and clips)\n"
+                            + "The notification's seek steps can be set apart from the player's\n"
+                            + "The chapters button shows only on videos that have chapters\n"
+                            + "The row a settings search jump lands on is highlighted\n"
+                            + "An update download shows how much is done and how long is left\n"
+                            + "With the stories shelf hidden, the first scroll in Following no longer jumps back to the top\n"
+                            + "The \"ReYohoho proxy unavailable\" toast no longer pops up while the app is closed\n"
+                            + "The Pins and banners settings work in Vertical view too\n"
+                            + "A long press on large and medium Following previews opens the channel menu, the avatar opens the channel page\n"
+                            + "The Favorites section folds with a tap on its header"},
             {"0.5.37-beta",
                     "«Перемотка в уведомлении плеера» в «Исправлениях»: у видео в шторке снова кнопки «назад на 10» и «вперёд на 30»\n"
                             + "Шаг перемотки видео можно задать любым числом секунд\n"

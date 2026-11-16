@@ -188,6 +188,29 @@ public final class ChatFilters {
         }
     }
 
+    /**
+     * Vertical view's highlight row (VerticalOverlayPatch): its own view model, apart from the banners above the classic
+     * chat. A highlight the settings above hide comes back as already dismissed. Ids are "Type_id"
+     * (31.9.0 w880.e2). shortcut: "hide after 30 s" keeps the pin here, it would need a timed remove like blockPinned.
+     */
+    public static java.util.Set<?> verticalDismissed(java.util.Set<?> dismissed, String id) {
+        try {
+            if (id != null && (id.startsWith("PinnedChat_") && pinnedMode() == 1
+                    || id.startsWith("Drops_") && Toggles.on(Toggles.HIDE_DROPS_BANNER)
+                    || id.startsWith("Shoutout_") && Toggles.on(Toggles.HIDE_SHOUTOUT)
+                    || (id.startsWith("SharedChat_") || id.startsWith("RequestToJoin_")) && Toggles.on(Toggles.HIDE_SHARED_CHAT)
+                    || id.startsWith("Raid_") && Toggles.on(Toggles.HIDE_RAID_BANNER)
+                    || (id.startsWith("Poll") || id.startsWith("Prediction")) && Toggles.on(Toggles.HIDE_PREDICTIONS)
+                    || id.startsWith("MassGift_") && Toggles.on(Toggles.HIDE_GIFT_BANNERS))) {
+                Log.d(TAG, "vertical highlight hidden: " + id);
+                return java.util.Collections.singleton(id);
+            }
+        } catch (Throwable t) {
+            Log.w(TAG, "verticalDismissed failed", t);
+        }
+        return dismissed;
+    }
+
     private static boolean blockPinned(Object presenter, Object event) throws IllegalAccessException {
         int mode = pinnedMode();
         if (mode == 2 && presenter != null) {

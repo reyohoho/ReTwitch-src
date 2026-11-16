@@ -320,8 +320,21 @@
             props.onOpenChannel(broadcaster.login, undefined, broadcaster.id, stream.isDualFormat === true,
                 stream.height || 0, stream.width || 0, stream.isEncrypted === true);
         }
+        // The stock row's long press: Twitch's channel menu (View profile, Unfollow, our star).
+        function menu() {
+            if (props.onOpenMenu) props.onOpenMenu({channelId: broadcaster.id, login: broadcaster.login,
+                displayName: broadcaster.displayName, isLive: true, gameName: stream.game ? stream.game.name : undefined,
+                isPartner: !!(broadcaster.roles && broadcaster.roles.isPartner)});
+        }
         function text(props, value) {
             return h(Label, Object.assign({numberOfLines: 1, style: {color: '#efeff1'}}, props), value);
+        }
+        // The stock row's avatar and name open the channel page (onOpenProfile), the rest the stream.
+        function profile(style, children) {
+            var box = props.onOpenProfile ? RN.Pressable : RN.View;
+            var boxProps = props.onOpenProfile ? {style: style, onPress: function () { props.onOpenProfile(broadcaster.login); },
+                onLongPress: menu, accessibilityRole: 'button'} : {style: style};
+            return h.apply(null, [box, boxProps].concat(children));
         }
         var preview = h(RN.View, {style: medium ? bigStyles.mediumPreview : bigStyles.preview},
             h(RN.Image, {source: {uri: bigPreview(stream.previewImageURL)}, style: bigStyles.image, resizeMode: 'cover',
@@ -331,32 +344,32 @@
                 h(RN.View, {style: styles.dot}),
                 viewerCount(stream)));
         if (medium) {
-            return h(RN.Pressable, {style: bigStyles.mediumRow, onPress: open, accessibilityRole: 'button',
+            return h(RN.Pressable, {style: bigStyles.mediumRow, onPress: open, onLongPress: menu, accessibilityRole: 'button',
                     android_ripple: {color: 'rgba(255,255,255,0.1)'}, testID: props.testID},
                 preview,
                 h(RN.View, {style: bigStyles.mediumInfo},
-                    h(RN.View, {style: styles.header},
+                    profile(styles.header, [
                         broadcaster.profileImageURL ? h(RN.Image, {source: {uri: broadcaster.profileImageURL}, style: styles.avatar,
                             onLoad: avatarSettled, onError: avatarSettled}) : null,
                         h(RN.View, {style: styles.name}, text({bold: true}, broadcaster.displayName || broadcaster.login)),
                         icons && broadcaster.roles && broadcaster.roles.isPartner
-                            ? h(RN.View, {style: styles.verified}, h(icons.IconVerified, {size: 16, fillColor: '#bf94ff'})) : null),
+                            ? h(RN.View, {style: styles.verified}, h(icons.IconVerified, {size: 16, fillColor: '#bf94ff'})) : null]),
                     settings && settings.title ? h(Label, {numberOfLines: 2, style: {color: '#efeff1'}}, settings.title) : null,
                     stream.game ? text({muted: true}, stream.game.displayName || stream.game.name) : null));
         }
-        return h(RN.Pressable, {style: bigStyles.card, onPress: open, accessibilityRole: 'button',
+        return h(RN.Pressable, {style: bigStyles.card, onPress: open, onLongPress: menu, accessibilityRole: 'button',
                 android_ripple: {color: 'rgba(255,255,255,0.1)'}, testID: props.testID},
             preview,
             h(RN.View, {style: bigStyles.info},
-                broadcaster.profileImageURL
+                profile(null, [broadcaster.profileImageURL
                     ? h(RN.Image, {source: {uri: broadcaster.profileImageURL}, style: bigStyles.avatar,
                         onLoad: avatarSettled, onError: avatarSettled})
-                    : h(RN.View, {style: bigStyles.avatar}),
+                    : h(RN.View, {style: bigStyles.avatar})]),
                 h(RN.View, {style: bigStyles.text},
-                    h(RN.View, {style: styles.header},
+                    profile(styles.header, [
                         h(RN.View, {style: styles.name}, text({bold: true}, broadcaster.displayName || broadcaster.login)),
                         icons && broadcaster.roles && broadcaster.roles.isPartner
-                            ? h(RN.View, {style: styles.verified}, h(icons.IconVerified, {size: 16, fillColor: '#bf94ff'})) : null),
+                            ? h(RN.View, {style: styles.verified}, h(icons.IconVerified, {size: 16, fillColor: '#bf94ff'})) : null]),
                     settings && settings.title ? text({}, settings.title) : null,
                     stream.game ? text({muted: true}, stream.game.displayName || stream.game.name) : null)));
     }
@@ -514,11 +527,33 @@
             followed: followed, edges: front.length && edges ? front.concat(rest) : edges};
     }
 
+    // The header folds the offline rows away and back; live favorites stay rows (a tester's 13 offline ones filled the
+    // screen). Kept in native prefs like the list (FavoriteChannels.fromRn).
+    var favCollapsed = !!config.favoritesCollapsed, collapseListeners = [];
+
+    function useCollapsed() {
+        var state = React.useState(favCollapsed), set = state[1];
+        React.useEffect(function () {
+            collapseListeners.push(set);
+            set(favCollapsed);
+            return function () { collapseListeners.splice(collapseListeners.indexOf(set), 1); };
+        }, []);
+        return favCollapsed;
+    }
+
     function FavoritesHeader() {
-        var list = useFavorites();
-        return React.createElement(RN.View, {style: favStyles.header},
+        var list = useFavorites(), collapsed = useCollapsed();
+        function toggle() {
+            favCollapsed = !favCollapsed;
+            collapseListeners.slice().forEach(function (listener) { listener(favCollapsed); });
+            fetch(FAVORITES_URL.replace('list=', 'collapsed=') + (favCollapsed ? '1' : '0')).catch(function () {});
+        }
+        return React.createElement(RN.Pressable, {style: favStyles.header, onPress: toggle, accessibilityRole: 'button',
+                accessibilityState: {expanded: !collapsed}, testID: 'retwitch-favorites-header'},
             React.createElement(RN.Text, {style: favStyles.star}, '★'),
-            label({type: 'heading', family: 'body', bold: true}, config.text.favorites + ' · ' + list.length));
+            React.createElement(RN.View, {style: favStyles.nameText},
+                label({type: 'heading', family: 'body', bold: true}, config.text.favorites + ' · ' + list.length)),
+            React.createElement(RN.Text, {style: favStyles.chevron}, collapsed ? '▸' : '▾'));
     }
 
     function label(props, value) {
@@ -530,14 +565,14 @@
     // A tap opens the channel page like those rows do (a channel opened offline showed an error); still loading ones
     // stand here by name until GQL says they're live.
     function FavoritesOffline() {
-        var list = useFavorites();
+        var list = useFavorites(), collapsed = useCollapsed();
         var loaded = React.useState(0), setLoaded = loaded[1];
         React.useEffect(function () {
             favUserListeners.push(setLoaded);
             return function () { favUserListeners.splice(favUserListeners.indexOf(setLoaded), 1); };
         }, []);
         var shown = list.filter(function (f) { return !liveFav.ids[f.id]; });
-        if (!shown.length) return null;
+        if (!shown.length || collapsed) return null;
         var h = React.createElement;
         return h(RN.View, {style: favStyles.offline}, shown.map(function (f) {
             var user = favUsers[f.id] || {}, login = user.login || f.login;
@@ -601,6 +636,7 @@
     var favStyles = {
         header: {flexDirection: 'row', alignItems: 'center', paddingTop: 12, paddingBottom: 8},
         star: {color: '#ffc94d', fontSize: 20, marginRight: 8},
+        chevron: {color: '#adadb8', fontSize: 18, marginLeft: 8},
         offline: {paddingVertical: 4},
         row: {flexDirection: 'row', alignItems: 'center', paddingVertical: 8},
         avatar: {width: 40, height: 40, borderRadius: 20, overflow: 'hidden', backgroundColor: '#35353b'},
@@ -810,10 +846,18 @@
         // The top chrome (FeedTopChrome): the shelf above the tabs and the story avatars in the tab row. A hidden
         // shelf counts as an empty one for the pull gesture (useStoriesShelf): it refreshes instead of revealing.
         // With only the empty card hidden (issue #33): no loading placeholder either (StoriesShelfPlaceholder, three
-        // grey circles above the tabs at every start), the shelf shows up once there are stories.
+        // grey circles above the tabs at every start), the shelf shows up once there are stories. While hidden it counts
+        // as empty too: a pull at the top of the feed otherwise starts a reveal of the hidden shelf, which pins the feed,
+        // and Following scrolls back to the pin on every scroll (issue #44: the first scroll down jumped to the top).
         StoriesShelf: function (original) {
             return function (props) {
-                if (config.hideStories || props.loading && !(props.stories && props.stories.length)) return null;
+                var hidden = !!config.hideStories || !!props.loading && !(props.stories && props.stories.length);
+                React.useEffect(function () {
+                    if (!hidden) return undefined;
+                    setStoriesEmpty(true);
+                    return function () { setStoriesEmpty(!!config.hideStories); };
+                }, [hidden]);
+                if (hidden) return null;
                 return React.createElement(original, props);
             };
         },

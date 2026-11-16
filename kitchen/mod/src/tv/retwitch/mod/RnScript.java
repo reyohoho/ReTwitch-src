@@ -73,6 +73,7 @@ public final class RnScript {
                     .put("hideProfileStreamers", profileStreamers)
                     .put("friends", friends ? me : "")
                     .put("favorites", favorites ? FavoriteChannels.list() : null)
+                    .put("favoritesCollapsed", favorites && FavoriteChannels.collapsed())
                     .put("text", new JSONObject()
                             .put("favorites", Strings.pick("Избранное", "Favorites"))
                             .put("favorite", Strings.pick("Добавить в избранное", "Add to favorites"))

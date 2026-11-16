@@ -97,8 +97,9 @@ public final class UiHider {
             "one_chat_message_input_view_container", "split_button", "bit_picker", "bits_button",
             "leaderboards_container", "leaderboards_icon", "paid_pinned_chat_container",
             "custom_create_bottom_nav_button", "chat_mode_snackbar", "view_chat_settings",
-            "chat_banned_replacement_container", "community_points_button_layout", LiveScreenOn.THEATRE,
-            LiveScreenOn.PLAYER_AND_CHAT,
+            "chat_banned_replacement_container", "community_points_button_layout", "draggable_container",
+            // LiveScreenOn.HOLDERS
+            "player_and_chat_vertical_container", "discovery_feed_pager_container",
             // PlayerHook.attachLatencyLabels, called from the pass.
             "play_pause_container", "play_pause_fast_seek_view", "message_input",
             "fullscreen_button", "chat_mode_button", "emote_picker", "chat_header_container", "emoticon_picker",
@@ -133,6 +134,7 @@ public final class UiHider {
     private static boolean pointsTouched;
     private static boolean replayHeaderTouched;
     private static boolean streamManagerTouched;
+    private static boolean miniTouched;
     private static boolean restrictionsTouched;
     private static boolean overlayCalloutMarked;
     /** On draggable_layout: when we last pressed the mini player's ✕ (one press per close). */
@@ -245,11 +247,6 @@ public final class UiHider {
                 safeApply(activity, decor);
             }
         });
-        decor.getViewTreeObserver().addOnWindowFocusChangeListener(hasFocus -> {
-            if (hasFocus) {
-                LiveScreenOn.observe(activity, decor);
-            }
-        });
     }
 
     /**
@@ -312,7 +309,6 @@ public final class UiHider {
     }
 
     private static void applyPass(Activity activity, View decor) {
-        LiveScreenOn.observe(activity, decor);
         boolean[] player = {
                 Toggles.on(Toggles.HIDE_PLAYER_CAST), Toggles.on(Toggles.HIDE_PLAYER_SHARE),
                 Toggles.on(Toggles.HIDE_PLAYER_CLIP),
@@ -378,6 +374,7 @@ public final class UiHider {
             hideWhileAll(activity, decor, restrictions, "chat_restrictions_container");
         }
         boolean mini = false;
+        boolean miniClose = Toggles.on(Toggles.HIDE_MINI_CLOSE), miniExpand = Toggles.on(Toggles.HIDE_MINI_EXPAND);
         for (View overlay : findAll(activity, decor, "minimized_overlay")) {
             if (overlay.isShown() && overlay.getParent() instanceof View) {
                 mini = true;
@@ -385,7 +382,15 @@ public final class UiHider {
                     closeMiniPlayer((View) overlay.getParent());
                 }
             }
+            // closeMiniPlayer finds and clicks the ✕ hidden too.
+            if (miniClose || miniTouched) {
+                hideWhile(miniClose, overlay.findViewById(id(activity, "minimized_overlay_close")), View.INVISIBLE);
+            }
+            if (miniExpand || miniTouched) {
+                hideWhile(miniExpand, overlay.findViewById(id(activity, "minimized_overlay_expand")), View.INVISIBLE);
+            }
         }
+        miniTouched = miniClose || miniExpand;
         // ClassicTheatrePatch lays the native theatre over the RN home feed: a tap on a spot no view takes (the chat
         // while it loads, reyohoho/ReTwitch-src#30) opened the feed row under it. Not on the mini player: its
         // container expands it only on a tap no child takes.
@@ -887,6 +892,7 @@ public final class UiHider {
         if ("ViewerLandingActivity".equals(activity.getClass().getSimpleName())) {
             List<View> theatres = findAll(activity, decor, "draggable_container");
             PlayerHook.onTheatre(!theatres.isEmpty());
+            LiveScreenOn.apply(activity, decor);
             for (View theatre : theatres) {
                 PlayerGestures.wrapDragArea(theatre);
                 ChatOff.apply(theatre);

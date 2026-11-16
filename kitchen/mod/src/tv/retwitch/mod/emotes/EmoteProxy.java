@@ -303,7 +303,10 @@ public final class EmoteProxy {
     }
 
     private static void notifyUnavailable() {
-        if (unavailableNotified) {
+        android.app.ActivityManager.RunningAppProcessInfo app = new android.app.ActivityManager.RunningAppProcessInfo();
+        android.app.ActivityManager.getMyMemoryState(app);
+        // The twice-a-day update check runs with no screen of ours: its toast landed on the home screen (issue #51).
+        if (unavailableNotified || app.importance > android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND) {
             return;
         }
         unavailableNotified = true;

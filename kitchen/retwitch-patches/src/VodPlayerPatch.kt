@@ -10,6 +10,7 @@ import app.morphe.patcher.patch.resourcePatch
 import app.morphe.patcher.util.proxy.mutableTypes.MutableMethod
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.Method
+import com.android.tools.smali.dexlib2.iface.instruction.FiveRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.NarrowLiteralInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
@@ -156,6 +157,53 @@ val retwitchVodPlayerPatch = bytecodePatch(
                 patched += sites.size
             }
             if (patched == 0) throw PatchException("no SeekTrigger button literal found")
+        }
+
+        // The shade's seek buttons (31.9.0 fi70.r): new CustomAction("rewind" | "fast_forward", getString(...),
+        // ic_rewind_10 | ic_forward_30, null). Their icons have 10 and 30 drawn in (reyohoho/ReTwitch-src#40).
+        vodPart("notification seek icons") {
+            var patched = 0
+            for (m in methods) {
+                val code = m.implementation?.instructions?.toList() ?: continue
+                val sites = code.indices.filter { i ->
+                    val ref = (code[i] as? ReferenceInstruction)?.reference as? MethodReference
+                    code[i].opcode == Opcode.INVOKE_DIRECT && ref?.name == "<init>" &&
+                        ref.definingClass == "Landroid/support/v4/media/session/PlaybackStateCompat\$CustomAction;" &&
+                        ref.parameterTypes.map(Any::toString) ==
+                        listOf("Ljava/lang/String;", "Ljava/lang/CharSequence;", "I", "Landroid/os/Bundle;") &&
+                        (code[i] as FiveRegisterInstruction).let { call ->
+                            fun lastWrite(reg: Int) = (i - 1 downTo 0).firstOrNull {
+                                code[it].opcode.setsRegister() && (code[it] as? OneRegisterInstruction)?.registerA == reg
+                            }
+                            // Twitch's own two (Cast builds its actions with other ids); the label a String from getString.
+                            val action = lastWrite(call.registerD)
+                            val label = lastWrite(call.registerE)
+                            action != null && code[action].opcode == Opcode.CONST_STRING &&
+                                ((code[action] as ReferenceInstruction).reference as StringReference).string in
+                                setOf("rewind", "fast_forward") &&
+                                label != null && code[label].opcode == Opcode.MOVE_RESULT_OBJECT &&
+                                ((code[label - 1] as? ReferenceInstruction)?.reference as? MethodReference)?.let {
+                                    it.name == "getString" && it.returnType == "Ljava/lang/String;"
+                                } == true
+                        }
+                }
+                if (sites.isEmpty()) continue
+                val target = mutableOf(m)
+                sites.sortedDescending().forEach { i ->
+                    val call = code[i] as FiveRegisterInstruction
+                    target.addInstructions(
+                        i,
+                        """
+                            invoke-static {v${call.registerD}, v${call.registerE}}, Ltv/retwitch/mod/VodSeek;->notificationLabel(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+                            move-result-object v${call.registerE}
+                            invoke-static {v${call.registerD}, v${call.registerF}}, Ltv/retwitch/mod/VodSeek;->notificationIcon(Ljava/lang/String;I)I
+                            move-result v${call.registerF}
+                        """.trimIndent(),
+                    )
+                }
+                patched += sites.size
+            }
+            if (patched == 0) throw PatchException("no media session seek action")
         }
 
         vodPart("up next autoplay") {

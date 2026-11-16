@@ -1,14 +1,21 @@
 package tv.retwitch.patches
 
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
+import app.morphe.patcher.extensions.InstructionExtensions.addInstructionsWithLabels
+import app.morphe.patcher.extensions.InstructionExtensions.getInstruction
 import app.morphe.patcher.extensions.InstructionExtensions.instructions
 import app.morphe.patcher.patch.PatchException
 import app.morphe.patcher.patch.bytecodePatch
+import app.morphe.patcher.util.smali.ExternalLabel
+import app.morphe.patches.all.misc.resources.ResourceType
+import app.morphe.patches.all.misc.resources.getResourceId
+import app.morphe.patches.all.misc.resources.resourceMappingPatch
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.Method
 import com.android.tools.smali.dexlib2.iface.instruction.FiveRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
+import com.android.tools.smali.dexlib2.iface.instruction.WideLiteralInstruction
 import com.android.tools.smali.dexlib2.iface.reference.FieldReference
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 import com.android.tools.smali.dexlib2.iface.reference.StringReference
@@ -32,7 +39,7 @@ val retwitchChatCopySendPatch = bytecodePatch(
 ) {
     compatibleWith(twitchCompatibility)
 
-    dependsOn(retwitchExtensionPatch)
+    dependsOn(retwitchExtensionPatch, resourceMappingPatch)
 
     execute {
         try {
@@ -113,6 +120,49 @@ val retwitchChatCopySendPatch = bytecodePatch(
             println("[ReTwitch] copy and send: menu ${copyField.definingClass}, shown in ${show.definingClass}")
         } catch (throwable: Throwable) {
             println("[ReTwitch] copy and send skipped: $throwable")
+        }
+        // Twitch's "Message Copied!" toast (live chat, vertical theatre, reply threads): `const vX, message_copied` a few
+        // instructions before `ToastUtil.(II)V`. Before the const: `ChatCopySend.copiedToast()`, false jumps past the toast.
+        try {
+            val copied = getResourceId(ResourceType.STRING, "message_copied")
+            val owners = ArrayList<String>()
+            classDefForEach { c ->
+                if (c.methods.any { m -> m.implementation?.instructions?.any { (it as? WideLiteralInstruction)?.wideLiteral == copied } == true }) {
+                    owners += c.type
+                }
+            }
+            var hooked = 0
+            for (owner in owners) {
+                for (method in mutableClassDefBy(owner).methods) {
+                    val code = method.implementation?.instructions?.toList() ?: continue
+                    val loads = code.indices.filter {
+                        (code[it].opcode == Opcode.CONST || code[it].opcode == Opcode.CONST_HIGH16) &&
+                            (code[it] as WideLiteralInstruction).wideLiteral == copied
+                    }
+                    for (load in loads.reversed()) {
+                        val toast = (load + 1 until minOf(code.size - 1, load + 8)).firstOrNull { i ->
+                            val ref = (code[i] as? ReferenceInstruction)?.reference as? MethodReference
+                            ref?.definingClass == "Ltv/twitch/android/util/ToastUtil;" && ref.returnType == "V" &&
+                                ref.parameterTypes.map(Any::toString) == listOf("I", "I")
+                        } ?: continue
+                        val reg = (code[load] as OneRegisterInstruction).registerA
+                        method.addInstructionsWithLabels(
+                            load,
+                            """
+                                invoke-static {}, $HOOK->copiedToast()Z
+                                move-result v$reg
+                                if-eqz v$reg, :rt_no_copied_toast
+                            """.trimIndent(),
+                            ExternalLabel("rt_no_copied_toast", method.getInstruction(toast + 1)),
+                        )
+                        hooked++
+                    }
+                }
+            }
+            if (hooked == 0) throw PatchException("no message_copied toast")
+            println("[ReTwitch] copied toast: $hooked place(s) in $owners")
+        } catch (e: Exception) {
+            println("[ReTwitch] copied toast skipped: $e")
         }
     }
 }

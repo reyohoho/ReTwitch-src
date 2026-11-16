@@ -87,6 +87,9 @@ public final class PlayerHook {
     }
 
     static void onTheatre(boolean open) {
+        if (open && !theatreOpen) {
+            LiveScreenOn.onTheatreOpened();
+        }
         if (theatreOpen && !open) {
             synchronized (THEATRE_PLAYERS) {
                 ORPHANS.addAll(THEATRE_PLAYERS);
@@ -120,6 +123,7 @@ public final class PlayerHook {
             lastPlayer = new WeakReference<>(player);
             String name = state.toString();
             PlayerStats.logState(player, name);
+            LiveScreenOn.onState(name);
             cancelStallCheck();
             if ("READY".equals(name)) {
                 final WeakReference<Object> ref = new WeakReference<>(player);
@@ -201,7 +205,6 @@ public final class PlayerHook {
         }
         try {
             if (player != null) {
-                LiveScreenOn.onPlay(player);
                 PLAYED.remove(player);
                 synchronized (THEATRE_PLAYERS) {
                     ORPHANS.remove(player);
@@ -225,12 +228,14 @@ public final class PlayerHook {
      */
     public static void onUpNextCountdown(Object card, Object countdown) {
         try {
-            if (card == null || countdown == null || !Toggles.on(Toggles.NO_AUTOPLAY)) {
+            boolean skip = Toggles.on(Toggles.SKIP_UP_NEXT);
+            if (card == null || countdown == null || !skip && !Toggles.on(Toggles.NO_AUTOPLAY)) {
                 return;
             }
             Method dispose = countdown.getClass().getMethod("dispose");
             dispose.setAccessible(true);
             dispose.invoke(countdown);
+            View cancel = null;
             for (Class<?> k = card.getClass(); k != null && k != Object.class; k = k.getSuperclass()) {
                 for (Field f : k.getDeclaredFields()) {
                     if (!View.class.isAssignableFrom(f.getType())) {
@@ -238,15 +243,26 @@ public final class PlayerHook {
                     }
                     f.setAccessible(true);
                     View v = (View) f.get(card);
+                    if (v == null) {
+                        continue;
+                    }
+                    if (cancel == null) {
+                        cancel = v.getRootView().findViewById(UiHider.id(v.getContext(), "cancel_autoplay"));
+                    }
                     if (v instanceof ProgressBar) {
                         v.setVisibility(View.INVISIBLE);
-                    } else if (v instanceof TextView && v.getId() == v.getResources().getIdentifier(
-                            "autoplay_time_remaining", "id", v.getContext().getPackageName())) {
+                    } else if (v instanceof TextView && v.getId() == UiHider.id(v.getContext(), "autoplay_time_remaining")) {
                         ((TextView) v).setText(Strings.upNext());
                     }
                 }
             }
-            Log.i(TAG, "up next countdown cancelled");
+            if (skip && cancel != null) {
+                final View button = cancel;
+                button.post(button::performClick); // Twitch's own Cancel: the card goes, the replay button stays
+                Log.i(TAG, "up next card skipped");
+            } else {
+                Log.i(TAG, "up next countdown cancelled");
+            }
         } catch (Throwable t) {
             Log.w(TAG, "onUpNextCountdown failed", t);
             CrashReporter.report(TAG, "onUpNextCountdown failed", t);
