@@ -10,9 +10,11 @@
         useFollowingTabData: fav || config.hideLiveEmpty, FollowingLiveHeader: fav, TrackedFollowingChannelRow: fav, FollowingChannelMenu: fav,
         ChannelProfileOverflowMenu: fav, FollowingRowTags: config.hideTags,
         StoriesEmptyState: config.hideStoriesEmpty, useStoriesShelf: config.hideStoriesEmpty || config.hideStories,
-        FollowingChannelRow: config.previewSize > 0, CustomTabIndicator: config.tabIndicator,
+        FollowingChannelRow: config.previewSize > 0 || config.categoryTap || config.hideCategory,
+        CustomTabIndicator: config.tabIndicator,
         StoriesShelf: config.hideStories || config.hideStoriesEmpty,
         CollapsedStoriesIcons: config.hideStories || config.hideStoriesEmpty, FeedTabsRow: config.hideTabs,
+        HomeTabsPager: config.noHomeSwipe,
         FreeScrollCellRenderer: config.compactLive, useFeedData: config.compactLive, ChannelProfileRecapsShelf: config.hideProfileRecaps,
         ChannelProfileClipShelf: config.hideProfileClips || config.hideProfileUserClips,
         ChannelProfileHomeShelf: config.hideProfileCategories || config.hideProfileStreamers,
@@ -355,7 +357,7 @@
                         icons && broadcaster.roles && broadcaster.roles.isPartner
                             ? h(RN.View, {style: styles.verified}, h(icons.IconVerified, {size: 16, fillColor: '#bf94ff'})) : null]),
                     settings && settings.title ? h(Label, {numberOfLines: 2, style: {color: '#efeff1'}}, settings.title) : null,
-                    stream.game ? text({muted: true}, stream.game.displayName || stream.game.name) : null));
+                    stream.game && !config.hideCategory ? text({muted: true}, stream.game.displayName || stream.game.name) : null));
         }
         return h(RN.Pressable, {style: bigStyles.card, onPress: open, onLongPress: menu, accessibilityRole: 'button',
                 android_ripple: {color: 'rgba(255,255,255,0.1)'}, testID: props.testID},
@@ -371,7 +373,7 @@
                         icons && broadcaster.roles && broadcaster.roles.isPartner
                             ? h(RN.View, {style: styles.verified}, h(icons.IconVerified, {size: 16, fillColor: '#bf94ff'})) : null]),
                     settings && settings.title ? text({}, settings.title) : null,
-                    stream.game ? text({muted: true}, stream.game.displayName || stream.game.name) : null)));
+                    stream.game && !config.hideCategory ? text({muted: true}, stream.game.displayName || stream.game.name) : null)));
     }
 
     // RTE friends: who is online and where (as the settings list and Frosty show them), under Live in Following.
@@ -614,6 +616,31 @@
         }
     }
 
+    // A Following row's category: a Pressable (testID "<row>-category") the width of the row, so a tap right of the
+    // name opened the category, not the stream (issue #71). It takes the name's width now, or goes.
+    var categoryStyle = {alignSelf: 'flex-start'};
+
+    function categoryLine(node) {
+        if (Array.isArray(node)) {
+            var changed = false;
+            var out = node.map(function (kid) {
+                var mapped = categoryLine(kid);
+                changed = changed || mapped !== kid;
+                return mapped;
+            });
+            return changed ? out : node;
+        }
+        if (!React.isValidElement(node) || !node.props) return node;
+        var id = node.props.testID;
+        if (typeof id === 'string' && id.slice(-9) === '-category') {
+            return config.hideCategory ? null : React.cloneElement(node, {style: [node.props.style, categoryStyle]});
+        }
+        var kids = node.props.children;
+        if (kids == null || typeof kids !== 'object') return node;
+        var mapped = categoryLine(kids);
+        return mapped === kids ? node : React.cloneElement(node, {children: mapped});
+    }
+
     function insertAfterProfile(element, item) {
         if (!React.isValidElement(element)) return null;
         var kids = React.Children.toArray(element.props.children);
@@ -808,8 +835,28 @@
                 return props.freeScroll === true ? null : React.createElement(original, props);
             };
         },
-        FollowingChannelRow: function () {
-            return BigCard;
+        FollowingChannelRow: function (original) {
+            if (config.previewSize > 0) return BigCard;
+            return function (props) {
+                return categoryLine(original(props));
+            };
+        },
+        // The horizontal paging ScrollView of Following, Live and Clips (issue #56): taps on the tab row still
+        // switch it (scrollTo works with scrolling off). With scrolling off nothing took a sideways swipe, and the row
+        // under the finger opened its stream: a View over it takes sideways moves and drops them.
+        HomeTabsPager: function (original) {
+            return function (props) {
+                var swipes = React.useMemo(function () {
+                    return RN.PanResponder.create({
+                        onMoveShouldSetPanResponderCapture: function (e, g) {
+                            return Math.abs(g.dx) > 12 && Math.abs(g.dx) > Math.abs(g.dy) * 1.5;
+                        },
+                        onPanResponderTerminationRequest: function () { return true; }
+                    });
+                }, []);
+                var pager = original(Object.assign({}, props, {scrollEnabled: false}));
+                return React.createElement(RN.View, Object.assign({style: {flex: 1}}, swipes.panHandlers), pager);
+            };
         },
         RecapsShelfHeader: function () {
             return function () { return null; };

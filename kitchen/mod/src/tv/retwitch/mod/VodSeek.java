@@ -1,6 +1,12 @@
 package tv.retwitch.mod;
 
+import android.app.PendingIntent;
+import android.app.RemoteAction;
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.ColorFilter;
@@ -9,9 +15,15 @@ import android.graphics.PixelFormat;
 import android.graphics.Rect;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
+import android.graphics.drawable.Icon;
 import android.graphics.drawable.LayerDrawable;
+import android.os.Build;
+import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * VOD seek step (ReVive's VodSeek): Twitch's VOD buttons jump -10 / +30 s.
@@ -79,6 +91,82 @@ public final class VodSeek {
             return plain != 0 ? plain : icon;
         } catch (Throwable t) {
             return icon;
+        }
+    }
+
+    private static final String PIP_BACK = "tv.retwitch.mod.PIP_SEEK_BACK";
+    private static final String PIP_FORWARD = "tv.retwitch.mod.PIP_SEEK_FORWARD";
+    private static volatile boolean pipListening;
+
+    /**
+     * The native theatre's picture-in-picture actions (VodPlayerPatch, before {@code setActions}): Twitch's play/pause
+     * alone. A VOD gets back and forward around it, the notification's steps drawn on them (#58). Never throws.
+     */
+    public static List<Object> pipActions(List<Object> actions) {
+        try {
+            Context context = AppContext.get();
+            if (actions == null || actions.size() != 1 || context == null || !Toggles.on(Toggles.PIP_SEEK)
+                    || ChannelTracker.getCurrentVodId() == null || LiveRecord.playerLogin() != null) {
+                return actions;
+            }
+            listenPip(context);
+            List<Object> out = new ArrayList<>(3);
+            out.add(pipAction(context, false));
+            out.add(actions.get(0));
+            out.add(pipAction(context, true));
+            return out;
+        } catch (Throwable t) {
+            Log.w("RTVodSeek", "pipActions failed", t);
+            return actions;
+        }
+    }
+
+    private static RemoteAction pipAction(Context context, boolean forward) {
+        int seconds = PlayerSettings.getNotificationSeekSeconds(forward);
+        int size = 96;
+        Bitmap bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
+        int arrow = context.getResources().getIdentifier(forward ? "rt_seek_forward" : "rt_seek_rewind", "drawable",
+                context.getPackageName());
+        Drawable icon = new LayerDrawable(arrow != 0
+                ? new Drawable[]{context.getDrawable(arrow), new Digits(String.valueOf(seconds))}
+                : new Drawable[]{new Digits(String.valueOf(seconds))});
+        icon.setBounds(0, 0, size, size);
+        icon.draw(new Canvas(bitmap));
+        String label = Strings.seekStep(forward, seconds);
+        PendingIntent intent = PendingIntent.getBroadcast(context, forward ? 2 : 1,
+                new Intent(forward ? PIP_FORWARD : PIP_BACK).setPackage(context.getPackageName()),
+                PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
+        return new RemoteAction(Icon.createWithBitmap(bitmap), label, label, intent);
+    }
+
+    private static void listenPip(Context context) {
+        if (pipListening) {
+            return;
+        }
+        pipListening = true;
+        BroadcastReceiver receiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context c, Intent intent) {
+                boolean forward = PIP_FORWARD.equals(intent.getAction());
+                try {
+                    Object player = PlayerHook.currentPlayer();
+                    if (player == null) {
+                        return;
+                    }
+                    long position = (Long) player.getClass().getMethod("getPosition").invoke(player);
+                    long step = PlayerSettings.getNotificationSeekSeconds(forward) * 1000L;
+                    PlayerHook.seekCurrent(Math.max(0, position + (forward ? step : -step)));
+                } catch (Throwable t) {
+                    Log.w("RTVodSeek", "pip seek failed", t);
+                }
+            }
+        };
+        IntentFilter filter = new IntentFilter(PIP_BACK);
+        filter.addAction(PIP_FORWARD);
+        if (Build.VERSION.SDK_INT >= 33) {
+            context.registerReceiver(receiver, filter, Context.RECEIVER_NOT_EXPORTED);
+        } else {
+            context.registerReceiver(receiver, filter);
         }
     }
 

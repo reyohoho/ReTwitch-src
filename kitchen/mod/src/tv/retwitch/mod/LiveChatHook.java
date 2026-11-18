@@ -142,6 +142,11 @@ public final class LiveChatHook {
         return batch && !Toggles.on(Toggles.CHAT_REALTIME);
     }
 
+    /** ChatRulesPatch: whether the "Chat rules" sheet comes before the first message on a channel (#60). */
+    public static boolean chatRules(boolean willShow) {
+        return willShow && !Toggles.on(Toggles.SKIP_CHAT_RULES);
+    }
+
     /**
      * Smooth message appearance. Twitch calls {@code setItemAnimator(null)} on
      * the chat {@code RecyclerView}, so inserted messages just pop in (and on

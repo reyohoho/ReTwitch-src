@@ -152,6 +152,13 @@ public final class ChannelTracker {
         return playerMode;
     }
 
+    /** Uptime of the mini player's last expansion, for {@link HomeOrientation}. */
+    private static volatile long expandedAt;
+
+    static long expandedAt() {
+        return expandedAt;
+    }
+
     public static void onPlayerMode(Enum<?> from, Enum<?> to) {
         playerMode = to != null ? to.name() : null;
         try {
@@ -159,6 +166,9 @@ public final class ChannelTracker {
             boolean minimized = to.name().startsWith("MINIMIZED");
             if (wasMinimized == minimized) {
                 return;
+            }
+            if (!minimized) {
+                expandedAt = android.os.SystemClock.uptimeMillis();
             }
             String back;
             if (minimized) {

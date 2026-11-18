@@ -332,9 +332,13 @@ public final class ChatSettings {
         return context == null ? 100 : prefs(context).getInt(KEY_FONT_SCALE, 100);
     }
 
+    /** Any whole percent from {@link #MIN_FONT_SCALE} to {@link #MAX_FONT_SCALE} (#66: typed, not only the steps). */
     public static void setFontScale(Context context, int percent) {
-        prefs(context).edit().putInt(KEY_FONT_SCALE, percent).apply();
+        prefs(context).edit().putInt(KEY_FONT_SCALE, Math.max(MIN_FONT_SCALE, Math.min(MAX_FONT_SCALE, percent))).apply();
     }
+
+    static final int MIN_FONT_SCALE = 50;
+    static final int MAX_FONT_SCALE = 300;
 
     private static boolean getBool(String key, boolean fallback) {
         Context context = AppContext.get();

@@ -66,6 +66,7 @@ public final class VodChapters {
 
         Button(Context context) {
             super(context);
+            setVisibility(View.GONE); // shown once the playing VOD is known to have chapters (#55)
         }
 
         @Override
@@ -82,7 +83,7 @@ public final class VodChapters {
 
         private void sync() {
             final String vodId = ChannelTracker.getCurrentVodId();
-            Boolean has = vodId == null ? Boolean.TRUE : HAS.get(vodId);
+            Boolean has = vodId == null ? Boolean.FALSE : HAS.get(vodId);
             if (has == null) {
                 HAS.put(vodId, Boolean.FALSE); // asked: hidden until the answer
                 new Thread(() -> {

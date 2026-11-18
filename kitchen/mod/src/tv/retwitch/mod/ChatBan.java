@@ -86,6 +86,11 @@ public final class ChatBan {
         return channel.isEmpty() ? null : channel.toLowerCase(Locale.ROOT);
     }
 
+    /** Whether the chat logged in anonymously: the open channel banned the account (#61: its field says so). */
+    static boolean anonymous() {
+        return anonymous;
+    }
+
     private static boolean wanted() {
         String login = ChannelTracker.getCurrentChannelLogin();
         return login != null && CHANNELS.contains(login) && Toggles.on(Toggles.BAN_BYPASS);

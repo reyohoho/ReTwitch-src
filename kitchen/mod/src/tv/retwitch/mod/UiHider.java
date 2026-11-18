@@ -104,6 +104,7 @@ public final class UiHider {
             "play_pause_container", "play_pause_fast_seek_view", "message_input",
             "fullscreen_button", "chat_mode_button", "emote_picker", "chat_header_container", "emoticon_picker",
             "chomments_header_container", "mod_dashboard_button", "chat_restrictions_container", "minimized_overlay",
+            "pinch_to_zoom_layout", "options_scrollview",
             "theatre_root_container",
             "seek_forward_button", "seek_rewind_button",
             "community_points_button_container", "right_side_community_points_button_container",
@@ -335,6 +336,14 @@ public final class UiHider {
                 hideWhile(minimize, find(activity, overlay, "back_button"));
             }
         }
+        applyOptionsSheet(activity, decor);
+        boolean gear = Toggles.on(Toggles.HIDE_PLAYER_SETTINGS) || allOn(Toggles.UI_OPTIONS);
+        if (gear || gearTouched) {
+            gearTouched = gear;
+            for (View overlay : findAll(activity, decor, PLAYER_OVERLAY)) {
+                hideWhile(gear, find(activity, overlay, "settings_button"));
+            }
+        }
         if (Toggles.on(Toggles.AUDIO_ONLY_UNMUTE)) {
             for (View toggle : findAll(activity, decor, "toggle_player_mode")) {
                 unmuteAudioOnly(activity, toggle);
@@ -391,6 +400,14 @@ public final class UiHider {
             }
         }
         miniTouched = miniClose || miniExpand;
+        for (View vertical : findAll(activity, decor, "pinch_to_zoom_layout")) {
+            if (vertical.isShown() && verticalMini(vertical)) {
+                mini = true;
+                if (Toggles.on(Toggles.NO_MINI_PLAYER)) {
+                    closeMiniPlayer(vertical);
+                }
+            }
+        }
         // ClassicTheatrePatch lays the native theatre over the RN home feed: a tap on a spot no view takes (the chat
         // while it loads, reyohoho/ReTwitch-src#30) opened the feed row under it. Not on the mini player: its
         // container expands it only on a tap no child takes.
@@ -413,6 +430,7 @@ public final class UiHider {
             // "You are banned from Chat" covers the message list; IRC keeps delivering the messages.
             hideAll(activity, decor, "chat_banned_replacement_container");
         }
+        applyBannedInput(activity, decor);
         if (Toggles.on(Toggles.HIDE_ONE_CHAT_INPUT)) {
             hideOneChatInput(activity, decor);
         }
@@ -492,6 +510,7 @@ public final class UiHider {
 
     private static boolean squashTouched;
     private static boolean minimizeTouched;
+    private static boolean gearTouched;
 
     /** From the chat adapter's bind (AutoModChat.onRowBound): the ⋮ of a video's chat line, which Twitch never hides. */
     static void bindChatRow(View row) {
@@ -708,13 +727,47 @@ public final class UiHider {
     static void closeMiniPlayer(View mini) {
         View close = mini.findViewById(id(mini.getContext(), "minimized_overlay_close"));
         final View target = close != null ? clickableIn(close) : null;
+        View overlay = target == null ? mini.findViewById(id(mini.getContext(), "player_overlay_container")) : null;
+        final View host = overlay instanceof ViewGroup && ((ViewGroup) overlay).getChildCount() > 0
+                ? ((ViewGroup) overlay).getChildAt(0) : null;
         Object last = mini.getTag(MINI_CLOSE_TAG_KEY);
         long now = android.os.SystemClock.uptimeMillis();
-        if (target == null || last instanceof Long && now - (Long) last < 1000) {
+        if (target == null && host == null || last instanceof Long && now - (Long) last < 1000) {
             return;
         }
         mini.setTag(MINI_CLOSE_TAG_KEY, now);
-        target.post(target::performClick);
+        if (target != null) {
+            target.post(target::performClick);
+        } else {
+            host.post(() -> closeVerticalMini(host));
+        }
+    }
+
+    /** "Vertical view" minimized: the dragged view is pinch_to_zoom_layout, narrower than its draggable_container. */
+    static boolean verticalMini(View pinch) {
+        View parent = pinch.getParent() instanceof View ? (View) pinch.getParent() : null;
+        return parent != null && parent.getId() == id(pinch.getContext(), "draggable_container")
+                && pinch.getWidth() > 0 && pinch.getWidth() < parent.getWidth() - 2;
+    }
+
+    /**
+     * The vertical view's mini player has no ✕ view: its buttons are Compose nodes, the close one shows after a tap on
+     * the player (#59). Clicked through the accessibility provider by Twitch's own description of it.
+     */
+    private static void closeVerticalMini(final View host) {
+        try {
+            final String close = host.getContext().getString(res(host.getContext(), "dismiss_mini_player_talkback", "string"));
+            if (!ComposeNodes.click(host, close)) {
+                ComposeNodes.click(host, null); // the player: shows the buttons
+                host.postDelayed(() -> {
+                    if (!ComposeNodes.click(host, close)) {
+                        Log.w(TAG, "vertical mini player: no close button");
+                    }
+                }, 300);
+            }
+        } catch (Throwable t) {
+            Log.w(TAG, "closeVerticalMini failed", t);
+        }
     }
 
     private static View clickableIn(View view) {
@@ -795,6 +848,116 @@ public final class UiHider {
      * {@code emote_picker} and {@code message_input} exist elsewhere too (the expanded chat
      * inside One Chat), hence only the pill's children and siblings.
      */
+    private static boolean optionsTouched;
+
+    private static boolean allOn(Toggles.Toggle[] toggles) {
+        for (Toggles.Toggle toggle : toggles) {
+            if (!Toggles.on(toggle)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * The player's Options sheet (stream_settings_fragment in the bottom sheet), section by section (#70). The
+     * broadcaster section is its header and everything after it: Twitch adds "Block" in code.
+     */
+    private static void applyOptionsSheet(Activity activity, View decor) {
+        boolean quality = Toggles.on(Toggles.HIDE_OPTIONS_QUALITY), viewing = Toggles.on(Toggles.HIDE_OPTIONS_VIEWING),
+                speed = Toggles.on(Toggles.HIDE_OPTIONS_SPEED), external = Toggles.on(Toggles.HIDE_OPTIONS_EXTERNAL),
+                broadcaster = Toggles.on(Toggles.HIDE_OPTIONS_BROADCASTER);
+        boolean any = quality || viewing || speed || external || broadcaster;
+        if (!any && !optionsTouched) {
+            return;
+        }
+        optionsTouched = any;
+        for (View sheet : findAll(activity, decor, "options_scrollview")) {
+            hideWhile(quality, find(activity, sheet, "quality_options_header"));
+            hideWhile(quality, find(activity, sheet, "quality_options"));
+            hideWhile(quality, find(activity, sheet, "unavailable_qualities_footnote"));
+            hideWhile(viewing, find(activity, sheet, "viewing_options_header"));
+            hideWhile(viewing, find(activity, sheet, "viewing_options"));
+            hideWhile(speed, find(activity, sheet, "playback_rate_options_container"));
+            hideWhile(external, find(activity, sheet, "external_playback_options_header"));
+            hideWhile(external, find(activity, sheet, "external_playback_options"));
+            View header = find(activity, sheet, "broadcaster_options_header");
+            if (header != null && header.getParent() instanceof ViewGroup) {
+                ViewGroup list = (ViewGroup) header.getParent();
+                for (int i = list.indexOfChild(header); i >= 0 && i < list.getChildCount(); i++) {
+                    hideWhile(broadcaster, list.getChildAt(i));
+                }
+            }
+        }
+    }
+
+    private static final int BANNED_INPUT_TAG_KEY = 0x7e700d78;
+
+    /**
+     * BAN_BYPASS: the chat of a channel that banned the account is read anonymously, a message typed there was sent
+     * and refused (#61). The field is off and says so meanwhile; Twitch's hint comes back after.
+     */
+    private static void applyBannedInput(Activity activity, View decor) {
+        boolean banned = ChatBan.anonymous();
+        for (View view : findAll(activity, decor, "message_input")) {
+            if (!(view instanceof TextView)) {
+                continue;
+            }
+            Object guard = view.getTag(BANNED_INPUT_TAG_KEY);
+            if (banned && guard == null) {
+                new BannedInput((TextView) view);
+            } else if (guard instanceof BannedInput) {
+                if (banned) {
+                    ((BannedInput) guard).enforce();
+                } else {
+                    ((BannedInput) guard).release();
+                }
+            }
+        }
+    }
+
+    /** Twitch sets the field's hint again when the chat (re)connects, after the pass: kept on every frame. */
+    private static final class BannedInput implements ViewTreeObserver.OnPreDrawListener {
+        private final TextView field;
+        private final CharSequence hint;
+
+        BannedInput(TextView field) {
+            this.field = field;
+            this.hint = field.getHint();
+            field.setTag(BANNED_INPUT_TAG_KEY, this);
+            field.setText(null);
+            field.getViewTreeObserver().addOnPreDrawListener(this);
+            enforce();
+        }
+
+        @Override
+        public boolean onPreDraw() {
+            if (ChatBan.anonymous()) {
+                enforce();
+            } else {
+                release();
+            }
+            return true;
+        }
+
+        void enforce() {
+            String banned = Strings.pick("Вы забанены в этом чате", "You're banned in this chat");
+            if (!banned.contentEquals(field.getHint() == null ? "" : field.getHint())) {
+                field.setHint(banned);
+            }
+            if (field.isEnabled()) {
+                field.setEnabled(false);
+            }
+        }
+
+        void release() {
+            field.getViewTreeObserver().removeOnPreDrawListener(this);
+            field.setTag(BANNED_INPUT_TAG_KEY, null);
+            field.setHint(hint);
+            field.setEnabled(true);
+        }
+    }
+
     private static void hideOneChatInput(Activity activity, View decor) {
         hideAll(activity, decor, "one_chat_message_input_view_container");
         for (View pill : findAll(activity, decor, "split_button")) {

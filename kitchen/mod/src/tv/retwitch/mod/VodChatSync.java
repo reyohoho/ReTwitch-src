@@ -9,9 +9,13 @@ import android.graphics.Paint;
 import android.graphics.PixelFormat;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
+import android.text.Editable;
+import android.text.InputType;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.SeekBar;
@@ -25,7 +29,7 @@ import java.lang.reflect.Field;
  * ChommentsFetcherImpl for the comments at the player's second once a second
  * ({@code VodPlayerPatch} hooks that call); {@link #shift} moves the second by
  * the offset saved for this VOD, so +N shows chat N seconds ahead. Set from a
- * VOD player-strip button (see {@link ReloadHook}), -30..+90 s like PurpleTV.
+ * VOD player-strip button (see {@link ReloadHook}): a slider over -30..+90 s like PurpleTV, any number typed (#63).
  */
 public final class VodChatSync {
 
@@ -33,6 +37,8 @@ public final class VodChatSync {
     private static final String PREFS_NAME = "retwitch_vod_chat_offset";
     static final int MIN = -30;
     static final int MAX = 90;
+    /** A typed offset: any, within ten hours. */
+    private static final int LIMIT = 36000;
 
     private static volatile Field vodField;
 
@@ -93,7 +99,7 @@ public final class VodChatSync {
     }
 
     static int clamp(int seconds) {
-        return Math.max(MIN, Math.min(MAX, seconds));
+        return Math.max(-LIMIT, Math.min(LIMIT, seconds));
     }
 
     private static SharedPreferences prefs(Context context) {
@@ -135,20 +141,29 @@ public final class VodChatSync {
         LinearLayout layout = new LinearLayout(context);
         layout.setOrientation(LinearLayout.VERTICAL);
         layout.setPadding(pad, pad / 2, pad, 0);
-        final TextView value = new TextView(context);
+        final int original = offset(vodId);
+        // The value is applied as it changes, the chat moves while the dialog is open; Cancel puts it back.
+        final EditText value = new EditText(context);
         value.setGravity(Gravity.CENTER_HORIZONTAL);
         value.setTextSize(18);
+        value.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_SIGNED);
+        value.setText(String.valueOf(original));
+        value.setSelectAllOnFocus(true);
+        final TextView unit = new TextView(context);
+        unit.setGravity(Gravity.CENTER_HORIZONTAL);
+        unit.setText(Strings.vodChatSyncValue(original));
         final SeekBar bar = new SeekBar(context);
         bar.setMax(MAX - MIN);
-        int current = offset(vodId);
-        bar.setProgress(current - MIN);
-        value.setText(Strings.vodChatSyncValue(current));
+        bar.setProgress(Math.max(MIN, Math.min(MAX, original)) - MIN);
+        final boolean[] fromBar = {false};
         bar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                int seconds = progress + MIN;
-                value.setText(Strings.vodChatSyncValue(seconds));
-                setOffset(context, vodId, seconds);
+                if (fromUser) {
+                    fromBar[0] = true;
+                    value.setText(String.valueOf(progress + MIN));
+                    fromBar[0] = false;
+                }
             }
 
             @Override
@@ -159,18 +174,45 @@ public final class VodChatSync {
             public void onStopTrackingTouch(SeekBar seekBar) {
             }
         });
+        value.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence text, int start, int count, int after) {
+            }
+
+            @Override
+            public void onTextChanged(CharSequence text, int start, int before, int count) {
+            }
+
+            @Override
+            public void afterTextChanged(Editable text) {
+                Integer typed = SettingsScreen.parseInt(value);
+                if (typed == null) {
+                    return;
+                }
+                int seconds = clamp(typed);
+                unit.setText(Strings.vodChatSyncValue(seconds));
+                if (!fromBar[0]) {
+                    bar.setProgress(Math.max(MIN, Math.min(MAX, seconds)) - MIN);
+                }
+                setOffset(context, vodId, seconds);
+            }
+        });
         TextView hint = new TextView(context);
         hint.setText(Strings.vodChatSyncHint());
         hint.setPadding(0, pad / 2, 0, 0);
         layout.addView(value);
+        layout.addView(unit);
         layout.addView(bar);
         layout.addView(hint);
-        new AlertDialog.Builder(context)
+        AlertDialog dialog = new AlertDialog.Builder(context)
                 .setTitle(Strings.vodChatSyncTitle())
                 .setView(layout)
-                .setPositiveButton(android.R.string.ok, null)
+                .setPositiveButton(Strings.save(), null)
+                .setNegativeButton(Strings.cancel(), (d, w) -> setOffset(context, vodId, original))
+                .setOnCancelListener(d -> setOffset(context, vodId, original))
                 .setNeutralButton(Strings.reset(), (d, w) -> setOffset(context, vodId, 0))
                 .show();
+        SettingsScreen.resetWhileChanged(dialog, value, 0);
     }
 
     /** Two opposite arrows: "move chat in time". */

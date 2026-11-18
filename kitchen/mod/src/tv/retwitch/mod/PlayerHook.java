@@ -91,6 +91,7 @@ public final class PlayerHook {
             LiveScreenOn.onTheatreOpened();
         }
         if (theatreOpen && !open) {
+            ChannelTracker.noteVod(null); // the next VOD's chapters button doesn't show the last one's answer (#55)
             synchronized (THEATRE_PLAYERS) {
                 ORPHANS.addAll(THEATRE_PLAYERS);
                 for (Object player : THEATRE_PLAYERS) {
@@ -235,6 +236,7 @@ public final class PlayerHook {
             Method dispose = countdown.getClass().getMethod("dispose");
             dispose.setAccessible(true);
             dispose.invoke(countdown);
+            View container = null;
             View cancel = null;
             for (Class<?> k = card.getClass(); k != null && k != Object.class; k = k.getSuperclass()) {
                 for (Field f : k.getDeclaredFields()) {
@@ -246,19 +248,36 @@ public final class PlayerHook {
                     if (v == null) {
                         continue;
                     }
-                    if (cancel == null) {
-                        cancel = v.getRootView().findViewById(UiHider.id(v.getContext(), "cancel_autoplay"));
+                    int id = v.getId();
+                    if (id == UiHider.id(v.getContext(), "autoplay_container")) {
+                        container = v;
+                    } else if (id == UiHider.id(v.getContext(), "cancel_autoplay")) {
+                        cancel = v;
                     }
                     if (v instanceof ProgressBar) {
                         v.setVisibility(View.INVISIBLE);
-                    } else if (v instanceof TextView && v.getId() == UiHider.id(v.getContext(), "autoplay_time_remaining")) {
+                    } else if (v instanceof TextView && id == UiHider.id(v.getContext(), "autoplay_time_remaining")) {
                         ((TextView) v).setText(Strings.upNext());
                     }
                 }
             }
-            if (skip && cancel != null) {
+            if (container != null) {
+                // The card turns VISIBLE right after this hook: see-through, so not a frame of it shows (#53). It
+                // stays see-through while gone: a fade of the player overlay draws it on its way out (screen
+                // recording, Pixel 7). Back to opaque the next time it shows without the toggle.
+                container.setAlpha(skip ? 0f : 1f);
+            }
+            if (skip && container != null) {
+                // Twitch shows it again when the mini player expands and ignores a second Cancel there (#54), so it's
+                // also hidden here: its invisible play-next button would sit over the replay button.
+                final View box = container;
                 final View button = cancel;
-                button.post(button::performClick); // Twitch's own Cancel: the card goes, the replay button stays
+                box.post(() -> {
+                    if (button != null) {
+                        button.performClick(); // Twitch's own Cancel: the replay button shows
+                    }
+                    box.setVisibility(View.GONE);
+                });
                 Log.i(TAG, "up next card skipped");
             } else {
                 Log.i(TAG, "up next countdown cancelled");

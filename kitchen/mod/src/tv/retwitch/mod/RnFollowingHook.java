@@ -29,6 +29,9 @@ public final class RnFollowingHook {
     private static final String STREAK_FLAGS = "{\"ultralight_following_ws_tag\":true,\"ws-following-tab\":\"treatment\"}";
     private static final String SECTIONS_QUERY = "query MwebFollowingTabSections";
     private static final String CATEGORIES_FIELD = "followedGames {";
+    private static final String VIEWED_FIELD = "viewedVideos(first: 1,";
+    /** Viewed videos asked for while finished ones are skipped (#57): Continue watching shows one. */
+    private static final int VIEWED_ASKED = 10;
 
     private RnFollowingHook() {
     }
@@ -42,6 +45,55 @@ public final class RnFollowingHook {
         int field = query >= 0 ? body.indexOf(CATEGORIES_FIELD, query) : -1;
         return field < 0 ? body : body.substring(0, field) + "followedGames(first: 100) {"
                 + body.substring(field + CATEGORIES_FIELD.length());
+    }
+
+    /**
+     * ResumeWatchingPatch (#57): the native Continue Watching list (31.9.0 {@code jsx}, the shelf under the VOD
+     * player) without videos watched to the end. {@code history} maps each VodModel to its saved place, whose
+     * only int field is the position in seconds.
+     */
+    public static List<?> resumeWatching(List<?> vods, java.util.Map<?, ?> history) {
+        if (vods == null || history == null || vods.isEmpty() || !Toggles.on(Toggles.HIDE_FINISHED_CONTINUE)) {
+            return vods;
+        }
+        try {
+            List<Object> kept = new ArrayList<>(vods.size());
+            for (Object vod : vods) {
+                Object place = history.get(vod);
+                int length = (Integer) vod.getClass().getMethod("getLength").invoke(vod);
+                if (!finished(length, place == null ? -1 : intField(place))) {
+                    kept.add(vod);
+                }
+            }
+            Log.i(TAG, "resume watching: " + kept.size() + " of " + vods.size() + " kept");
+            return kept.size() == vods.size() ? vods : kept;
+        } catch (Throwable t) {
+            Log.w(TAG, "resumeWatching failed", t);
+            return vods;
+        }
+    }
+
+    private static int intField(Object o) throws IllegalAccessException {
+        for (java.lang.reflect.Field f : o.getClass().getDeclaredFields()) {
+            if (f.getType() == int.class && !java.lang.reflect.Modifier.isStatic(f.getModifiers())) {
+                f.setAccessible(true);
+                return f.getInt(o);
+            }
+        }
+        return -1;
+    }
+
+    /** Watched to the end: the saved place reached the length, not a second before. */
+    static boolean finished(long length, long position) {
+        return length > 0 && position >= length;
+    }
+
+    /** Continue watching asks for one video (#57): more, so one not finished is left after {@link #strip}. */
+    static String withMoreViewed(String body) {
+        int query = body != null ? body.indexOf(SECTIONS_QUERY) : -1;
+        int field = query >= 0 ? body.indexOf(VIEWED_FIELD, query) : -1;
+        return field < 0 ? body : body.substring(0, field) + "viewedVideos(first: " + VIEWED_ASKED + ","
+                + body.substring(field + VIEWED_FIELD.length());
     }
 
     /**
@@ -71,11 +123,12 @@ public final class RnFollowingHook {
             boolean offline = Toggles.on(Toggles.HIDE_FOLLOWING_OFFLINE);
             boolean sort = Toggles.on(Toggles.SORT_FOLLOWED_CATEGORIES);
             boolean arrows = Toggles.on(Toggles.STREAM_ARROWS);
-            if (body == null || !categories && !vods && !offline && !sort && !arrows) {
+            boolean finished = Toggles.on(Toggles.HIDE_FINISHED_CONTINUE);
+            if (body == null || !categories && !vods && !offline && !sort && !arrows && !finished) {
                 return body;
             }
             String text = new String(body, StandardCharsets.UTF_8);
-            String kept = strip(text, categories, vods, offline, sort);
+            String kept = strip(text, categories, vods, offline, sort, finished);
             return kept == text ? body : kept.getBytes(StandardCharsets.UTF_8);
         } catch (Throwable t) {
             Log.w(TAG, "onResponse failed", t);
@@ -89,6 +142,12 @@ public final class RnFollowingHook {
      */
     static String strip(String json, boolean categories, boolean vods, boolean offline, boolean sort)
             throws JSONException {
+        return strip(json, categories, vods, offline, sort, false);
+    }
+
+    /** With {@code finished}: Continue watching keeps its first video not watched to the end (#57). */
+    static String strip(String json, boolean categories, boolean vods, boolean offline, boolean sort, boolean finished)
+            throws JSONException {
         if (!json.contains("\"followedLiveUsers\"") && !json.contains("\"followedVideos\"")) {
             return json;
         }
@@ -97,16 +156,16 @@ public final class RnFollowingHook {
         if (root instanceof JSONArray) {
             JSONArray batch = (JSONArray) root;
             for (int i = 0; i < batch.length(); i++) {
-                changed |= stripOne(batch.optJSONObject(i), categories, vods, offline, sort);
+                changed |= stripOne(batch.optJSONObject(i), categories, vods, offline, sort, finished);
             }
         } else if (root instanceof JSONObject) {
-            changed = stripOne((JSONObject) root, categories, vods, offline, sort);
+            changed = stripOne((JSONObject) root, categories, vods, offline, sort, finished);
         }
         return changed ? root.toString() : json;
     }
 
     private static boolean stripOne(JSONObject answer, boolean categories, boolean vods, boolean offline,
-            boolean sort) throws JSONException {
+            boolean sort, boolean finished) throws JSONException {
         JSONObject data = answer == null ? null : answer.optJSONObject("data");
         JSONObject user = data == null ? null : data.optJSONObject("user");
         if (user == null) {
@@ -117,7 +176,8 @@ public final class RnFollowingHook {
             StreamHistory.noteFollowing(user);
             changed |= categories ? empty(user.optJSONObject("followedGames"), "nodes")
                     : sort && sortByName(user.optJSONObject("followedGames"));
-            changed |= vods && empty(user.optJSONObject("viewedVideos"), "edges");
+            changed |= vods ? empty(user.optJSONObject("viewedVideos"), "edges")
+                    : finished && firstUnfinished(user.optJSONObject("viewedVideos"));
         } else if (offline) {
             // Only this query has currentUser.followedVideos next to follows: others need their follows.
             JSONObject me = data.optJSONObject("currentUser");
@@ -131,6 +191,34 @@ public final class RnFollowingHook {
             }
         }
         return changed;
+    }
+
+    /**
+     * Continue watching: the first edge whose saved place is before the video's end, alone (the query asked for
+     * more, the section shows one); none left, the section is gone. Finished means the place reached the length.
+     */
+    private static boolean firstUnfinished(JSONObject viewed) throws JSONException {
+        JSONArray edges = viewed == null ? null : viewed.optJSONArray("edges");
+        if (edges == null) {
+            return false;
+        }
+        JSONArray kept = new JSONArray();
+        for (int i = 0; i < edges.length() && kept.length() == 0; i++) {
+            JSONObject edge = edges.optJSONObject(i);
+            JSONObject node = edge == null ? null : edge.optJSONObject("node");
+            JSONObject self = node == null ? null : node.optJSONObject("self");
+            JSONObject history = self == null ? null : self.optJSONObject("viewingHistory");
+            long length = node == null ? 0 : node.optLong("lengthSeconds", 0);
+            long position = history == null ? -1 : history.optLong("position", -1);
+            if (edge != null && !finished(length, position)) {
+                kept.put(edge);
+            }
+        }
+        if (kept.length() == edges.length() && edges.length() <= 1) {
+            return false;
+        }
+        viewed.put("edges", kept);
+        return true;
     }
 
     /** Categories by their shown name, in the device's language order. */

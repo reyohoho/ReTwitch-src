@@ -54,7 +54,8 @@ public final class PromoHook {
         try {
             boolean promos = blocked();
             boolean categories = Toggles.on(Toggles.ALL_FOLLOWED_CATEGORIES);
-            if (data == null || !promos && !categories) {
+            boolean viewed = Toggles.on(Toggles.HIDE_FINISHED_CONTINUE);
+            if (data == null || !promos && !categories && !viewed) {
                 return data;
             }
             if (hasKey == null) {
@@ -72,6 +73,9 @@ public final class PromoHook {
             String rewritten = promos ? withoutTurboOffers(body) : body;
             if (categories) {
                 rewritten = RnFollowingHook.withAllCategories(rewritten);
+            }
+            if (viewed) {
+                rewritten = RnFollowingHook.withMoreViewed(rewritten);
             }
             if (rewritten == body) {
                 return data;

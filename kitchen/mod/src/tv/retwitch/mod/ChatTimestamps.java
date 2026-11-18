@@ -51,6 +51,11 @@ public final class ChatTimestamps {
         }
     }
 
+    /** The row's send time, null (no timestamp) for 0: VOD replay rows have no send time, Twitch passes 0 (#64). */
+    public static Long sentAt(Long seconds) {
+        return seconds != null && seconds == 0L ? null : seconds;
+    }
+
     /**
      * The message model's send time (seconds), read where the model is built: the local echo of
      * one's own message has no server time, so it got no timestamp. It is being built now.

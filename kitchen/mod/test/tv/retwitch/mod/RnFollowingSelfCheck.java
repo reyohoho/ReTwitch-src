@@ -84,6 +84,23 @@ public final class RnFollowingSelfCheck {
         String unrelated = "{\"query\":\"query Other { followedGames { id } }\"}";
         assert RnFollowingHook.withAllCategories(unrelated) == unrelated;
         assert RnFollowingHook.withAllCategories(null) == null;
+        // Continue watching (#57): ten asked for, the first one not at its end kept alone.
+        String viewedQuery = "{\"query\":\"query MwebFollowingTabSections {\\n viewedVideos(first: 1, sort: RECOMMENDED) {\"}";
+        String more = RnFollowingHook.withMoreViewed(viewedQuery);
+        assert more.contains("viewedVideos(first: 10, sort: RECOMMENDED)") : more;
+        assert RnFollowingHook.withMoreViewed(more) == more;
+        String viewed = "{\"data\":{\"user\":{\"followedLiveUsers\":{\"edges\":[]},\"viewedVideos\":{\"edges\":["
+                + "{\"node\":{\"id\":\"done\",\"lengthSeconds\":3600,\"self\":{\"viewingHistory\":{\"position\":3600}}}},"
+                + "{\"node\":{\"id\":\"almost\",\"lengthSeconds\":3600,\"self\":{\"viewingHistory\":{\"position\":3599}}}},"
+                + "{\"node\":{\"id\":\"next\",\"lengthSeconds\":3600,\"self\":{\"viewingHistory\":{\"position\":10}}}}]}}}}";
+        JSONArray left = user(RnFollowingHook.strip(viewed, false, false, false, false, true))
+                .getJSONObject("viewedVideos").getJSONArray("edges");
+        assert left.length() == 1 && left.getJSONObject(0).getJSONObject("node").getString("id").equals("almost") : left;
+        assert RnFollowingHook.strip(viewed, false, false, false, false, false) == viewed;
+        String allDone = "{\"data\":{\"user\":{\"followedLiveUsers\":{\"edges\":[]},\"viewedVideos\":{\"edges\":["
+                + "{\"node\":{\"id\":\"done\",\"lengthSeconds\":60,\"self\":{\"viewingHistory\":{\"position\":61}}}}]}}}}";
+        assert user(RnFollowingHook.strip(allDone, false, false, false, false, true))
+                .getJSONObject("viewedVideos").getJSONArray("edges").length() == 0;
         // Favorites from the script: well-formed entries once each, a missing or long name falls back to the login.
         JSONArray favorites = FavoriteChannels.clean(new JSONArray("[{\"id\":\"12\",\"login\":\"lasqa\",\"name\":\"Lasqa\"},"
                 + "{\"id\":\"12\",\"login\":\"again\"},{\"id\":\"x1\",\"login\":\"bad\"},"

@@ -35,6 +35,9 @@ public final class RnScript {
             boolean hideStoriesEmpty = Toggles.on(Toggles.HIDE_STORIES_EMPTY);
             boolean hideLiveEmpty = Toggles.on(Toggles.HIDE_LIVE_EMPTY);
             boolean hideTags = Toggles.on(Toggles.HIDE_STREAM_TAGS);
+            boolean hideCategory = Toggles.on(Toggles.HIDE_FOLLOWING_CATEGORY);
+            boolean categoryTap = Toggles.on(Toggles.FOLLOWING_CATEGORY_TAP);
+            boolean noHomeSwipe = Toggles.on(Toggles.NO_HOME_SWIPE);
             String me = TwitchAuth.getUserId();
             boolean friends = Toggles.on(Toggles.FRIENDS_HOME) && !me.isEmpty();
             int previewSize = LandingSettings.getFollowingPreviewSize();
@@ -49,6 +52,7 @@ public final class RnScript {
             boolean profileCategories = Toggles.on(Toggles.HIDE_PROFILE_CATEGORIES);
             boolean profileStreamers = Toggles.on(Toggles.HIDE_PROFILE_STREAMERS);
             if (!compactLive && !hideFollowedShelf && !hideClipsShelf && !hideStoriesEmpty && !hideLiveEmpty && !hideTags && !friends
+                    && !hideCategory && !categoryTap && !noHomeSwipe
                     && previewSize == 0
                     && !tabIndicator && !hideStories && !hideTabs && !favorites && !uptime
                     && !profileRecaps && !profileClips && !profileUserClips && !profileCategories && !profileStreamers) {
@@ -61,6 +65,9 @@ public final class RnScript {
                     .put("hideStoriesEmpty", hideStoriesEmpty)
                     .put("hideLiveEmpty", hideLiveEmpty)
                     .put("hideTags", hideTags)
+                    .put("hideCategory", hideCategory)
+                    .put("categoryTap", categoryTap)
+                    .put("noHomeSwipe", noHomeSwipe)
                     .put("previewSize", previewSize)
                     .put("tabIndicator", tabIndicator)
                     .put("hideStories", hideStories)

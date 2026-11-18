@@ -482,14 +482,17 @@ public final class SettingsHook {
         s.toggle(Toggles.SKIP_UP_NEXT);
         // Any number of seconds (reyohoho/ReTwitch-src#38): the buttons draw it as digits.
         s.markNew("0.5.37-beta").number(t("Перемотка назад, с", "Seek back, s"), PlayerSettings.getSeekBackSeconds(),
-                v -> PlayerSettings.setSeekSeconds(c, false, v));
+                PlayerSettings.DEFAULT_SEEK_BACK, v -> PlayerSettings.setSeekSeconds(c, false, v));
         s.markNew("0.5.37-beta").number(t("Перемотка вперёд, с", "Seek forward, s"), PlayerSettings.getSeekForwardSeconds(),
-                v -> PlayerSettings.setSeekSeconds(c, true, v));
+                PlayerSettings.DEFAULT_SEEK_FORWARD, v -> PlayerSettings.setSeekSeconds(c, true, v));
         // The notification and headset buttons (reyohoho/ReTwitch-src#40); unset they follow the two above.
         s.markNew("0.5.38-beta").number(t("В уведомлении назад, с", "Notification back, s"),
-                PlayerSettings.getNotificationSeekSeconds(false), v -> PlayerSettings.setNotificationSeekSeconds(c, false, v));
+                PlayerSettings.getNotificationSeekSeconds(false), PlayerSettings.getSeekBackSeconds(),
+                v -> PlayerSettings.setNotificationSeekSeconds(c, false, v));
         s.markNew("0.5.38-beta").number(t("В уведомлении вперёд, с", "Notification forward, s"),
-                PlayerSettings.getNotificationSeekSeconds(true), v -> PlayerSettings.setNotificationSeekSeconds(c, true, v));
+                PlayerSettings.getNotificationSeekSeconds(true), PlayerSettings.getSeekForwardSeconds(),
+                v -> PlayerSettings.setNotificationSeekSeconds(c, true, v));
+        s.toggle(Toggles.PIP_SEEK);
         s.section(t("Кнопки на плеере", "Player buttons"));
         s.toggle(Toggles.CHAPTERS_BUTTON);
         s.toggle(Toggles.VOD_CHAT_SYNC);
@@ -548,8 +551,22 @@ public final class SettingsHook {
         for (int i = 0; i < scales.length; i++) {
             scaleLabels[i] = scales[i] == 100 ? Strings.timestampDefault() : scales[i] + "%";
         }
-        s.slider(t("Размер текста", "Text size"), scaleLabels, Math.max(0, indexOf(scales, ChatSettings.getFontScale())), false,
-                i -> ChatSettings.setFontScale(c, scales[i]));
+        int font = ChatSettings.getFontScale();
+        int step = 0;
+        for (int i = 1; i < scales.length; i++) {
+            if (Math.abs(scales[i] - font) < Math.abs(scales[step] - font)) {
+                step = i;
+            }
+        }
+        final int typedStep = step;
+        final String stepLabel = scaleLabels[step];
+        scaleLabels[step] = font == 100 ? Strings.timestampDefault() : font + "%"; // a typed size between the steps (#66)
+        s.slider(t("Размер текста", "Text size"), scaleLabels, step, false, i -> {
+            scaleLabels[typedStep] = stepLabel; // once moved, that step is its own size again
+            ChatSettings.setFontScale(c, scales[i]);
+        });
+        s.markNew("0.5.39-beta").number(t("Точный размер, %", "Exact size, %"), ChatSettings::getFontScale, 100,
+                v -> ChatSettings.setFontScale(c, v));
         s.toggle(Toggles.CHAT_PINCH_TEXT);
         s.strip(t("Время сообщений", "Message time"), null, ChatTimestamps.samples(), ChatSettings.getTimestampFormat(), false,
                 i -> ChatSettings.setTimestampFormat(c, i));
@@ -679,6 +696,7 @@ public final class SettingsHook {
         s.toggle(Toggles.ROBOTTY_HISTORY);
         s.toggle(Toggles.REPLY_THREADS);
         s.toggle(Toggles.SWIPE_REPLY);
+        s.toggle(Toggles.SKIP_CHAT_RULES);
         s.section(t("Ссылки", "Links"));
         s.toggle(Toggles.NO_LINK_DISCLAIMER);
         s.nav(Strings.linkPreviewMenuItem(), Strings.linkPreviewModes()[LinkPreviewSettings.getMode()],
@@ -779,9 +797,9 @@ public final class SettingsHook {
                 .choice(Strings.linkPreviewModeTitle(), Strings.linkPreviewModes(), mode, false,
                         i -> LinkPreviewSettings.save(c, i, height, width, blur, zoom));
         s.section(t("Картинка", "Image"));
-        s.number(Strings.linkPreviewMaxHeight(), height,
+        s.number(Strings.linkPreviewMaxHeight(), height, LinkPreviewSettings.DEFAULT_MAX_HEIGHT_DP,
                 v -> LinkPreviewSettings.save(c, mode, v, width, blur, zoom));
-        s.number(Strings.linkPreviewMaxWidth(), width,
+        s.number(Strings.linkPreviewMaxWidth(), width, LinkPreviewSettings.DEFAULT_MAX_WIDTH_DP,
                 v -> LinkPreviewSettings.save(c, mode, height, v, blur, zoom));
         s.toggle(Strings.linkPreviewBlur(), null, blur, false,
                 on -> LinkPreviewSettings.save(c, mode, height, width, on, zoom));
@@ -828,6 +846,9 @@ public final class SettingsHook {
     private static void uiPlayerPage(SettingsScreen s) {
         s.stage(SettingsPreview.PLAYER, SettingsHook::syncUiPlayer);
         s.toggles(Toggles.UI_PLAYER);
+        s.section(t("Шторка «Параметры» (шестерёнка)", "Options sheet (the gear)"));
+        s.toggles(Toggles.UI_OPTIONS);
+        s.hint(t("Если скрыть всё, пропадёт и шестерёнка", "With all of them hidden, the gear goes too"));
         s.section(t("Вертикальный вид", "Vertical view"));
         s.toggle(Toggles.HIDE_VERTICAL_BUTTONS);
         s.toggle(Toggles.HIDE_VERTICAL_PANEL);
@@ -916,15 +937,18 @@ public final class SettingsHook {
         s.toggle(Toggles.SEPARATE_DRAWER_SORT);
         s.toggle(Toggles.HIDE_FOLLOWING_CATEGORIES);
         s.toggle(Toggles.HIDE_FOLLOWING_CONTINUE);
+        s.toggle(Toggles.HIDE_FINISHED_CONTINUE);
         s.toggle(Toggles.HIDE_FOLLOWING_OFFLINE);
         s.toggle(Toggles.HIDE_STORIES_EMPTY);
         s.toggle(Toggles.HIDE_LIVE_EMPTY);
         s.toggle(Toggles.HIDE_STREAM_TAGS);
+        s.toggle(Toggles.HIDE_FOLLOWING_CATEGORY);
         s.section(t("Превью стримов", "Stream previews"));
         s.toggle(Toggles.STREAM_UPTIME);
         s.section(t("Шапка главной: скрыть", "Home header: hide"));
         s.toggle(Toggles.HIDE_HOME_STORIES);
         s.toggle(Toggles.HIDE_FEED_TABS);
+        s.toggle(Toggles.NO_HOME_SWIPE);
         s.section(t("В эфире", "Live"));
         s.toggle(Toggles.COMPACT_LIVE_TAB);
         s.toggle(Toggles.HIDE_LIVE_FOLLOWED_SHELF);

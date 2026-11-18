@@ -41,10 +41,28 @@ public final class HomeOrientation {
      */
     static int map(Activity activity, int requested) {
         int mode = LandingSettings.getHomeOrientationMode();
-        if (mode == 0 || !activity.getClass().getName().endsWith(".ViewerLandingActivity") || theatreExpanded(activity)) {
+        if (mode == 0 || !activity.getClass().getName().endsWith(".ViewerLandingActivity")) {
+            return requested;
+        }
+        if (theatreExpanded(activity) && (!justExpanded() || !isPortraitLock(requested) && autoRotate(activity))) {
             return requested;
         }
         return mapOutsideTheatre(mode, requested);
+    }
+
+    /**
+     * Expanding the mini player Twitch asks for SENSOR_PORTRAIT, then USER ~110 ms later (logged on a Pixel 7): over a
+     * landscape home the theatre went portrait and back (#62). Those two go as on home; the rotate button sends the
+     * same 6/7, so only by time. With auto-rotate on the USER passes: as LOCKED it held the theatre still until the
+     * rotate button.
+     */
+    private static boolean justExpanded() {
+        return android.os.SystemClock.uptimeMillis() - ChannelTracker.expandedAt() < 700;
+    }
+
+    private static boolean autoRotate(Activity activity) {
+        return android.provider.Settings.System.getInt(activity.getContentResolver(),
+                android.provider.Settings.System.ACCELEROMETER_ROTATION, 0) == 1;
     }
 
     /** What the landing activity asks for outside the expanded theatre, by the mode (1 auto-rotate, 2 keep). */

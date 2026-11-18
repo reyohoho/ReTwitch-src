@@ -215,8 +215,8 @@ final class RecordSheet {
                     long stopAt = STOP_AFTER_MS[stop[0]] == 0 ? 0 : System.currentTimeMillis() + STOP_AFTER_MS[stop[0]];
                     LiveRecord.start(context, new LiveRecord.Rec(login, label,
                             info.vodId != null && fromStart.isChecked(), stopAt, false));
-                    Toast.makeText(context, Strings.pick("Запись пошла: Загрузки/ReTwitch",
-                            "Recording to Downloads/ReTwitch"), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(context, Strings.pickf("Запись пошла: Загрузки/%s", "Recording to Downloads/%s",
+                            RecordSettings.folder(RecordSettings.FOLDER_RECORDS)), Toast.LENGTH_SHORT).show();
                 })
                 .setNegativeButton(android.R.string.cancel, null)
                 .show();

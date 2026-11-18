@@ -192,8 +192,9 @@ public final class Strings {
         return pick("Нечего скачивать: плеер ещё не загрузил видео", "Nothing to download: the player hasn't loaded a video yet");
     }
 
-    public static String downloadStarted() {
-        return pick("Скачивание началось (Загрузки/ReTwitch)", "Download started (Downloads/ReTwitch)");
+    /** {@code folder}: under Download/, see {@code RecordSettings.folder}. */
+    public static String downloadStarted(String folder) {
+        return pickf("Скачивание началось (Загрузки/%s)", "Download started (Downloads/%s)", folder);
     }
 
     public static String downloadQuality() {

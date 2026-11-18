@@ -28,6 +28,7 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -165,7 +166,10 @@ public final class PlayerGestures {
             if (ev.getActionMasked() != MotionEvent.ACTION_UP || !Toggles.on(Toggles.MINI_PLAYER_SWIPE_CLOSE)) {
                 return;
             }
-            for (View mini : UiHider.findAll(activity, activity.getWindow().getDecorView(), "draggable_layout")) {
+            View decor = activity.getWindow().getDecorView();
+            List<View> minis = new ArrayList<>(UiHider.findAll(activity, decor, "draggable_layout"));
+            minis.addAll(UiHider.findAll(activity, decor, "pinch_to_zoom_layout")); // the vertical view's (#59)
+            for (View mini : minis) {
                 View container = mini.getParent() instanceof View ? (View) mini.getParent() : null;
                 int width = mini.getWidth();
                 if (container == null || width <= 0 || width >= container.getWidth() - 2) {

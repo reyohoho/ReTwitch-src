@@ -185,7 +185,8 @@ final class VodDownload {
                             rec.clipFrom = from;
                             rec.clipTo = to;
                             LiveRecord.start(context, rec);
-                            Toast.makeText(context, Strings.downloadStarted(), Toast.LENGTH_SHORT).show();
+                            Toast.makeText(context, Strings.downloadStarted(RecordSettings.folder(RecordSettings.FOLDER_VODS)),
+                                    Toast.LENGTH_SHORT).show();
                         });
                         return;
                     }
@@ -193,9 +194,10 @@ final class VodDownload {
                             .setTitle(name + ".mp4")
                             .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
                             .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS,
-                                    "ReTwitch/" + name + ".mp4");
+                                    RecordSettings.folder(RecordSettings.FOLDER_CLIPS) + "/" + name + ".mp4");
                     ((DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE)).enqueue(request);
-                    Toast.makeText(context, Strings.downloadStarted(), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(context, Strings.downloadStarted(RecordSettings.folder(RecordSettings.FOLDER_CLIPS)),
+                            Toast.LENGTH_SHORT).show();
                 })
                 .setNegativeButton(android.R.string.cancel, null)
                 .show();

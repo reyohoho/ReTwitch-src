@@ -545,7 +545,8 @@ final class LiveRecord {
                 }
                 String init = initOf(url, first);
                 rec.file = VodDownload.fileName(new String[]{rec.display, rec.title}) + (init != null ? ".mp4" : ".ts");
-                created = createFile(app, rec.file);
+                created = createFile(app, rec.file,
+                        RecordSettings.folder(rec.isVod() ? RecordSettings.FOLDER_VODS : RecordSettings.FOLDER_RECORDS));
                 rec.uri = created.toString();
                 out = Records.openAt(app, created, 0);
                 rec.dir = Records.dir(app, rec.id);
@@ -610,18 +611,20 @@ final class LiveRecord {
         }
     }
 
-    private static Uri createFile(Context app, String name) throws IOException {
+    /** {@code folder}: under Download/, see {@link RecordSettings#folder}. */
+    private static Uri createFile(Context app, String name, String folder) throws IOException {
         if (Build.VERSION.SDK_INT >= 29) {
             ContentValues values = new ContentValues();
             values.put(MediaStore.MediaColumns.DISPLAY_NAME, name);
-            values.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + "/ReTwitch");
+            values.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + "/" + folder);
             Uri item = app.getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values);
             if (item == null) {
                 throw new IOException("MediaStore refused " + name);
             }
             return item;
         }
-        File target = new File(app.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), name);
+        File target = new File(new File(app.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), folder), name);
+        target.getParentFile().mkdirs();
         if (!target.exists() && !target.createNewFile()) {
             throw new IOException("can't create " + target);
         }

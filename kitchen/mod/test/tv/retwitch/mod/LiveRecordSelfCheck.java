@@ -100,6 +100,15 @@ public final class LiveRecordSelfCheck {
         assert RecordSettings.login("twitch.tv/lofigirl?x=1") == null;
         assert RecordSettings.login("") == null;
 
+        // Download folders (#67): under Download/, nothing escapes it.
+        assert "ReTwitch/VODs".equals(RecordSettings.cleanFolder(" ReTwitch / VODs/ "));
+        assert "ReTwitch".equals(RecordSettings.cleanFolder(""));
+        assert "ReTwitch".equals(RecordSettings.cleanFolder("/.././/"));
+        assert "a/b".equals(RecordSettings.cleanFolder("../a/../b"));
+        assert "Clips".equals(RecordSettings.cleanFolder("Download/Clips"));
+        assert "x/Download".equals(RecordSettings.cleanFolder("x\\Download"));
+        assert "a_b_".equals(RecordSettings.cleanFolder("a:b?"));
+
         System.out.println("LiveRecordSelfCheck OK");
     }
 }

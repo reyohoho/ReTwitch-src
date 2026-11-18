@@ -88,12 +88,15 @@ public final class PlayerSettings {
     private static final String KEY_SEEK_BACK = "seek_back_seconds";
     private static final String KEY_SEEK_FORWARD = "seek_forward_seconds";
 
+    static final int DEFAULT_SEEK_BACK = 10;
+    static final int DEFAULT_SEEK_FORWARD = 30;
+
     public static int getSeekBackSeconds() {
-        return getInt(KEY_SEEK_BACK, 10);
+        return getInt(KEY_SEEK_BACK, DEFAULT_SEEK_BACK);
     }
 
     public static int getSeekForwardSeconds() {
-        return getInt(KEY_SEEK_FORWARD, 30);
+        return getInt(KEY_SEEK_FORWARD, DEFAULT_SEEK_FORWARD);
     }
 
     /** The notification's and headset's steps (#40); unset follows the player's. */
@@ -105,9 +108,14 @@ public final class PlayerSettings {
         return seconds > 0 ? seconds : forward ? getSeekForwardSeconds() : getSeekBackSeconds();
     }
 
+    /** The player's step itself (what Reset sets) is stored as "unset": it follows the player's again. */
     public static void setNotificationSeekSeconds(Context context, boolean forward, int seconds) {
-        prefs(context).edit().putInt(forward ? KEY_NOTIFICATION_SEEK_FORWARD : KEY_NOTIFICATION_SEEK_BACK,
-                Math.max(1, Math.min(999, seconds))).apply();
+        String key = forward ? KEY_NOTIFICATION_SEEK_FORWARD : KEY_NOTIFICATION_SEEK_BACK;
+        if (seconds == (forward ? getSeekForwardSeconds() : getSeekBackSeconds())) {
+            prefs(context).edit().remove(key).apply();
+        } else {
+            prefs(context).edit().putInt(key, Math.max(1, Math.min(999, seconds))).apply();
+        }
     }
 
     public static void setSeekSeconds(Context context, boolean forward, int seconds) {

@@ -136,6 +136,11 @@ final class RecordSettings {
         s.section(t("Скачивание видео и клипов", "VOD and clip downloads"));
         s.toggle(Toggles.DOWNLOAD_BUTTON);
 
+        s.section(t("Папки", "Folders"));
+        folderRow(s, t("Записи эфиров", "Stream recordings"), FOLDER_RECORDS);
+        folderRow(s, t("Видео (VOD)", "Videos (VODs)"), FOLDER_VODS);
+        folderRow(s, t("Клипы", "Clips"), FOLDER_CLIPS);
+
         s.section(t("Записи", "Recordings"));
         s.toggle(Toggles.LIVE_RECORD_CHAT);
         s.markNew(NEW).nav(t("Записи", "Recordings"), recordsSummary(c), RecordSettings::recordsPage);
@@ -219,7 +224,7 @@ final class RecordSettings {
         for (JSONObject meta : done) {
             doneRow(s, meta);
         }
-        s.hint(Strings.pickf("Файлы - Загрузки/ReTwitch · занято %s", "Files are in Downloads/ReTwitch · %s used",
+        s.hint(Strings.pickf("Файлы - в Загрузках · занято %s", "Files are in Downloads · %s used",
                 Formatter.formatShortFileSize(c, bytes)));
     }
 
@@ -343,8 +348,8 @@ final class RecordSettings {
                         Formatter.formatShortFileSize(c, meta.optLong("bytes"))))
                 .setPositiveButton(t("Удалить", "Delete"), (d, w) -> {
                     if (!Records.delete(c, meta)) {
-                        Toast.makeText(c, t("Android не дал удалить файл: удалите его в «Файлах», в Загрузки/ReTwitch",
-                                "Android refused to delete the file: delete it in Files, in Downloads/ReTwitch"),
+                        Toast.makeText(c, t("Android не дал удалить файл: удалите его в «Файлах», в Загрузках",
+                                "Android refused to delete the file: delete it in Files, in Downloads"),
                                 Toast.LENGTH_LONG).show();
                     }
                 })
@@ -389,5 +394,50 @@ final class RecordSettings {
     static String login(String text) {
         Matcher m = LOGIN.matcher(text.trim());
         return m.matches() ? m.group(1).toLowerCase(Locale.ROOT) : null;
+    }
+
+    // ---- download folders (#67) ----
+
+    static final String FOLDER_RECORDS = "records";
+    static final String FOLDER_VODS = "vods";
+    static final String FOLDER_CLIPS = "clips";
+    static final String DEFAULT_FOLDER = "ReTwitch";
+    private static final String FOLDERS = "retwitch_downloads";
+
+    /** The folder under Download/ that files of {@code kind} go to; all in ReTwitch until one is set. */
+    static String folder(String kind) {
+        Context c = AppContext.get();
+        return c == null ? DEFAULT_FOLDER
+                : c.getSharedPreferences(FOLDERS, Context.MODE_PRIVATE).getString(kind, DEFAULT_FOLDER);
+    }
+
+    static void setFolder(Context c, String kind, String typed) {
+        String folder = cleanFolder(typed);
+        android.content.SharedPreferences.Editor editor = c.getSharedPreferences(FOLDERS, Context.MODE_PRIVATE).edit();
+        (DEFAULT_FOLDER.equals(folder) ? editor.remove(kind) : editor.putString(kind, folder)).apply();
+    }
+
+    /**
+     * A typed folder made safe under Download/: no empty, "." or ".." parts, no characters a file name can't hold, no
+     * leading "Download/" (the row already says it); nothing left is the default.
+     */
+    static String cleanFolder(String typed) {
+        StringBuilder out = new StringBuilder();
+        String[] parts = (typed == null ? "" : typed).split("[/\\\\]");
+        for (int i = 0; i < parts.length; i++) {
+            String name = parts[i].trim().replaceAll("[:*?\"<>|\\p{Cntrl}]", "_");
+            if (name.isEmpty() || name.equals(".") || name.equals("..")
+                    || out.length() == 0 && name.equalsIgnoreCase(android.os.Environment.DIRECTORY_DOWNLOADS)) {
+                continue;
+            }
+            out.append(out.length() > 0 ? "/" : "").append(name);
+        }
+        return out.length() == 0 ? DEFAULT_FOLDER : out.toString();
+    }
+
+    private static void folderRow(SettingsScreen s, String title, final String kind) {
+        final Context c = s.context;
+        s.markNew("0.5.39-beta").textValue(title, t("Внутри Download/", "Inside Download/"), () -> folder(kind),
+                DEFAULT_FOLDER, typed -> setFolder(c, kind, typed));
     }
 }

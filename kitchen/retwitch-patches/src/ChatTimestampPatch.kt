@@ -87,9 +87,13 @@ val retwitchChatTimestampPatch = bytecodePatch(
             val code = wrapper.instructions.toList()
             val longRead = gateIndex(code)!!
             val flagReg = (code[longRead + 1] as OneRegisterInstruction).registerA
+            val timeReg = (code[longRead] as TwoRegisterInstruction).registerA
+            // VOD replay rows (31.9.0 m67) come with time 0 and the flag off: forced on, every row said 1:00:00 (#64).
             wrapper.addInstructions(
                 longRead + 1,
                 """
+                    invoke-static/range {v$timeReg .. v$timeReg}, Ltv/retwitch/mod/ChatTimestamps;->sentAt(Ljava/lang/Long;)Ljava/lang/Long;
+                    move-result-object v$timeReg
                     invoke-static/range {v$flagReg .. v$flagReg}, Ltv/retwitch/mod/ChatTimestamps;->forceShow(Z)Z
                     move-result v$flagReg
                 """.trimIndent(),

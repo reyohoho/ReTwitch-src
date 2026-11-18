@@ -41,7 +41,7 @@ final class SettingsPreview extends View {
             P_AD_LABEL = 1L << 19, P_UP_NEXT = 1L << 20, P_DANMAKU = 1L << 21, P_DANMAKU_NICKS = 1L << 22,
             P_GESTURES = 1L << 23, P_CUTOUT = 1L << 24, P_DIVIDER = 1L << 25, P_WIDE_PANEL = 1L << 26,
             P_CHATTERS = 1L << 27, P_LAYOUT = 1L << 28, P_RECORD = 1L << 29, P_REC_LABEL = 1L << 30, P_ROTATE = 1L << 31,
-            P_MUTE = 1L << 32, P_BATTERY = 1L << 33, P_MINIMIZE = 1L << 34;
+            P_MUTE = 1L << 32, P_BATTERY = 1L << 33, P_MINIMIZE = 1L << 34, P_SETTINGS = 1L << 35;
 
     static final long C_ALT = 1L, C_ME = 1L << 1, C_FIRST = 1L << 2, C_PAINT = 1L << 3, C_RTE = 1L << 4,
             C_BADGE_FFZ = 1L << 5, C_BADGE_CHATTERINO = 1L << 6, C_BADGE_DANKCHAT = 1L << 7, C_BADGE_CHATSEN = 1L << 8,
@@ -68,7 +68,7 @@ final class SettingsPreview extends View {
             H_CATEGORIES = 1L << 4, H_CONTINUE = 1L << 5, H_OFFLINE = 1L << 6, H_STREAK = 1L << 7,
             H_COMPACT = 1L << 8, H_SHELF_FOLLOWED = 1L << 9, H_SHELF_CLIPS = 1L << 10, H_ADS = 1L << 11,
             H_PROMO = 1L << 12, H_FRIENDS = 1L << 13, H_PREVIEW_SIZE = 1L << 14, H_FAVORITES = 1L << 15,
-            H_PROFILE = 1L << 16, H_TAGS = 1L << 17;
+            H_PROFILE = 1L << 16, H_TAGS = 1L << 17, H_CATEGORY = 1L << 18;
 
     static final long K_FAVORITES = 1L, K_FREQUENT = 1L << 1, K_STICKY = 1L << 2, K_FIRST = 1L << 3, K_NO_GLOBAL = 1L << 4;
 
@@ -539,7 +539,9 @@ final class SettingsPreview extends View {
 
     private void topButtons() {
         float slot = 320 - 34;
-        icon("ic_settings", slot, 10, 22, WHITE);
+        if (hides(P_SETTINGS, slot, 10, 22, 22, 5)) {
+            icon("ic_settings", slot, 10, 22, WHITE);
+        }
         slot -= 30;
         if (hides(P_SHARE, slot, 10, 22, 22, 5)) {
             icon("ic_share", slot, 10, 22, WHITE);
@@ -1589,6 +1591,9 @@ final class SettingsPreview extends View {
         float textX = 12 + thumb * 1.6f + 10;
         label(names[index], textX, top + 14, 13, colors.fg, true);
         label(t("Название трансляции", "Stream title"), textX, top + 30, 11.5f, colors.dim, false);
+        if (focus == H_CATEGORY && hides(H_CATEGORY, textX, top + 34, 84, 14, 4)) {
+            label("Just Chatting", textX, top + 45, 11.5f, colors.dim, false);
+        }
         if (focus == H_TAGS && index < 2 && hides(H_TAGS, textX, top + 34, 104, 16, 8)) {
             box(textX, top + 34, 50, 16, 8, 0xFF35353B);
             label(t("Русский", "English"), textX + 6, top + 46, 10, colors.fg, false);

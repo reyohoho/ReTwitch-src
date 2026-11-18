@@ -292,8 +292,8 @@ public final class Toggles {
                     "The VOD's categories, jump to any of them")
             .look(SettingsPreview.PLAYER, SettingsPreview.P_CHAPTERS);
     public static final Toggle DOWNLOAD_BUTTON = new Toggle("download_button", "Скачивание", "Download", false)
-            .about("Видео и клипы в папку Загрузки/ReTwitch",
-                    "VODs and clips to the Downloads/ReTwitch folder")
+            .about("Видео и клипы в Загрузки, папки - ниже",
+                    "VODs and clips to Downloads, the folders are below")
             .look(SettingsPreview.PLAYER, SettingsPreview.P_DOWNLOAD).asNew("0.4.0-alpha");
     /** Live recording (LiveRecord, RecordService, RecordSheet). */
     public static final Toggle LIVE_RECORD = new Toggle("live_record", "Запись трансляций", "Stream recording", false)
@@ -465,6 +465,36 @@ public final class Toggles {
             .about("Стрелка в левом верхнем углу плеера. Свернуть можно и свайпом вниз",
                     "The arrow in the player's top left corner. Swiping down still minimizes")
             .look(SettingsPreview.PLAYER, SettingsPreview.P_MINIMIZE).asNew("0.5.30-beta");
+    /** Issue #70: sections of the player's Options sheet (stream_settings_fragment), UiHider.applyOptionsSheet. */
+    public static final Toggle HIDE_OPTIONS_QUALITY = new Toggle("hide_options_quality", "Качество", "Quality", false)
+            .about("Список качества в шторке «Параметры»", "The quality list in the Options sheet").asNew("0.5.39-beta");
+    public static final Toggle HIDE_OPTIONS_VIEWING = new Toggle("hide_options_viewing", "Варианты просмотра", "Viewing options",
+            false)
+            .about("«Только чат», «Только звук», субтитры, «Не беспокоить»",
+                    "Chat only, Audio only, captions, Do not disturb").asNew("0.5.39-beta");
+    public static final Toggle HIDE_OPTIONS_SPEED = new Toggle("hide_options_speed", "Скорость", "Speed", false)
+            .about("Скорость воспроизведения видео", "A video's playback speed").asNew("0.5.39-beta");
+    public static final Toggle HIDE_OPTIONS_EXTERNAL = new Toggle("hide_options_external", "Внешнее воспроизведение",
+            "External playback", false)
+            .about("Звук в фоне и маленькое окно", "Background audio and the pop-out window").asNew("0.5.39-beta");
+    public static final Toggle HIDE_OPTIONS_BROADCASTER = new Toggle("hide_options_broadcaster", "Действия со стримером",
+            "Broadcaster options", false)
+            .about("Заблокировать, пожаловаться, сообщить о проблеме", "Block, report, report a playback issue")
+            .asNew("0.5.39-beta");
+    /** Issue #58: back / forward around Twitch's play/pause in the native theatre's PiP window (VodSeek.pipActions). */
+    public static final Toggle PIP_SEEK = new Toggle("pip_seek", "Перемотка в окне PiP", "Seek in the PiP window", false)
+            .about("Кнопки назад и вперёд рядом с паузой, когда видео играет в маленьком окне",
+                    "Back and forward next to pause while a video plays in the small window")
+            .note("Шаги - как в уведомлении. Только записи: прямой эфир не перематывается",
+                    "The steps are the notification's. Videos only: a live stream doesn't seek")
+            .asNew("0.5.39-beta");
+    /** Issue #69: the overlay's settings_button; "Vertical view" draws its own in Compose, not covered. */
+    public static final Toggle HIDE_PLAYER_SETTINGS = new Toggle("hide_player_settings", "Настройки (шестерёнка)",
+            "Settings (gear)", false)
+            .about("Шестерёнка в правом верхнем углу плеера", "The gear in the player's top right corner")
+            .note("Без неё не открыть выбор качества, скорость и остальные параметры трансляции",
+                    "Without it the quality, speed and other stream options can't be opened")
+            .look(SettingsPreview.PLAYER, SettingsPreview.P_SETTINGS).asNew("0.5.39-beta");
     /** The mini player's buttons, shown after a tap on it (issues #47, #48): INVISIBLE, the others keep their places. */
     public static final Toggle HIDE_MINI_CLOSE = new Toggle("hide_mini_close", "Закрыть (✕)", "Close (✕)", false)
             .about("Крестик мини-плеера. Закрыть можно и смахнув его, если это включено в жестах",
@@ -568,13 +598,13 @@ public final class Toggles {
                     "The menu on every line of a video's chat: share, report")
             .look(SettingsPreview.HEADER, SettingsPreview.T_ROW_MENU).asNew("0.5.30-beta");
 
-    public static final Toggle HIDE_TAB_ACTIVITY = new Toggle("hide_tab_activity", "Вкладка «Активность»", "Activity tab", false)
+    public static final Toggle HIDE_TAB_ACTIVITY = new Toggle("hide_tab_activity", "Вкладка «Активность»", "Activity tab", true)
             .look(SettingsPreview.HOME, SettingsPreview.H_ACTIVITY);
-    public static final Toggle HIDE_TAB_BROWSE = new Toggle("hide_tab_browse", "Вкладка «Просмотр»", "Browse tab", false)
+    public static final Toggle HIDE_TAB_BROWSE = new Toggle("hide_tab_browse", "Вкладка «Просмотр»", "Browse tab", true)
             .look(SettingsPreview.HOME, SettingsPreview.H_BROWSE);
-    public static final Toggle HIDE_TAB_CREATE = new Toggle("hide_tab_create", "Кнопка «Создать» (+)", "Create (+) button", false)
+    public static final Toggle HIDE_TAB_CREATE = new Toggle("hide_tab_create", "Кнопка «Создать» (+)", "Create (+) button", true)
             .look(SettingsPreview.HOME, SettingsPreview.H_CREATE);
-    public static final Toggle HIDE_TAB_PROFILE = new Toggle("hide_tab_profile", "Вкладка «Профиль»", "Profile tab", false)
+    public static final Toggle HIDE_TAB_PROFILE = new Toggle("hide_tab_profile", "Вкладка «Профиль»", "Profile tab", true)
             .about("Настройки мода тогда открываются долгим нажатием на «Главную»",
                     "Mod settings then open with a long press on Home")
             .note("Вместе с вкладкой уходят и настройки Twitch, инвентарь Drops и ваш канал: на время включите вкладку обратно.",
@@ -637,6 +667,14 @@ public final class Toggles {
             .look(SettingsPreview.HOME, SettingsPreview.H_CATEGORIES).asNew("0.4.11-alpha");
     public static final Toggle HIDE_FOLLOWING_CONTINUE = new Toggle("hide_following_continue", "Продолжить просмотр", "Continue watching", true)
             .look(SettingsPreview.HOME, SettingsPreview.H_CONTINUE).asNew("0.4.11-alpha");
+    /** Issue #57: RN Following asks for 10 viewed videos and keeps the first unfinished one; native shelf - ResumeWatchingPatch. */
+    public static final Toggle HIDE_FINISHED_CONTINUE = new Toggle("hide_finished_continue", "Досмотренные видео",
+            "Finished videos", true)
+            .about("В «Продолжить просмотр» вместо видео, досмотренного до конца, следующее недосмотренное",
+                    "Continue watching shows the next unfinished video instead of one watched to the end")
+            .note("Досмотренным считается видео, где Twitch запомнил место на последней секунде. Хоть секунда до конца - видео остаётся",
+                    "A video counts as finished when Twitch saved its place at the last second. A second before the end, it stays")
+            .look(SettingsPreview.HOME, SettingsPreview.H_CONTINUE).asNew("0.5.39-beta");
     public static final Toggle HIDE_FOLLOWING_OFFLINE = new Toggle("hide_following_offline", "Каналы не в эфире", "Offline channels", true)
             .look(SettingsPreview.HOME, SettingsPreview.H_OFFLINE).asNew("0.4.11-alpha");
     /** The "stories will appear here" card, with the empty shelf only; RnScript. */
@@ -653,6 +691,22 @@ public final class Toggles {
             .about("«Русский», «Drops» и другие под каналами в «Отслеживаемом»",
                     "\"English\", \"Drops\" and others under channels in Following")
             .look(SettingsPreview.HOME, SettingsPreview.H_TAGS).asNew("0.5.37-beta");
+    /** Issue #71: the category under a live channel in Following, and in the mod's larger previews; RnScript. */
+    public static final Toggle HIDE_FOLLOWING_CATEGORY = new Toggle("hide_following_category", "Категория трансляции",
+            "Stream category", true)
+            .about("Игра или категория под каналами в «Отслеживаемом»",
+                    "The game or category under channels in Following")
+            .look(SettingsPreview.HOME, SettingsPreview.H_CATEGORY).asNew("0.5.39-beta");
+    /** Issue #71: the category line of a Following row (a Pressable) was as wide as the row; RnScript. */
+    public static final Toggle FOLLOWING_CATEGORY_TAP = new Toggle("following_category_tap", "Категория в «Отслеживаемом»",
+            "Category in Following", true, true)
+            .about("Нажатие на строку стрима открывало его категорию",
+                    "A tap on a stream's row opened its category")
+            .compare("Категория открывается нажатием в любом месте её строки",
+                    "Только нажатием на название, правее открывается стрим",
+                    "The category opens from anywhere on its line",
+                    "Only from its name, right of it the stream opens")
+            .asNew("0.5.39-beta");
     /** Following's live section when nobody is live ("They'll be back!"); RnScript. */
     public static final Toggle HIDE_LIVE_EMPTY = new Toggle("hide_live_empty", "Пустой раздел «В эфире»", "Empty \"Live Now\"", true)
             .about("Когда никто из отслеживаемых не в эфире",
@@ -677,6 +731,14 @@ public final class Toggles {
             .compare("Вкладки над лентой", "Ленты листаются свайпом вбок, начинается с вкладки из настройки «Открывать «Отслеживаемое»»",
                     "Tabs above the feed", "Feeds switch with a sideways swipe, starting from the tab set by Open Following")
             .asNew("0.5.18-beta");
+    /** Issue #56: HomeTabsPager's scrollEnabled; the tab row (when shown) still switches feeds; RnScript. */
+    public static final Toggle NO_HOME_SWIPE = new Toggle("no_home_swipe", "Без свайпа между вкладками", "No swipe between tabs",
+            true)
+            .about("«Отслеживаемое», «В эфире» и «Клипы» не листаются пальцем вбок",
+                    "Following, Live and Clips don't change with a sideways swipe")
+            .note("Вкладки переключаются нажатием на их названия. Если вкладки скрыты, остаётся та, с которой открывается главная",
+                    "Tabs switch with a tap on their names. With the tabs hidden, home stays on the one it opens with")
+            .asNew("0.5.39-beta");
 
     public static final Toggle HIDE_PROMOTIONS = new Toggle("hide_promotions", "Предложения Turbo и скидки", "Turbo offers and discounts", false)
             .about("Реклама Turbo и баннеры скидок на подписку",
@@ -1071,6 +1133,15 @@ public final class Toggles {
             .look(SettingsPreview.CHAT, SettingsPreview.C_REALTIME)
             .asNew("0.4.11-alpha");
 
+    /** Issue #60: the chat rules state's willShowRules (ChatRulesPatch -> LiveChatHook.chatRules). */
+    public static final Toggle SKIP_CHAT_RULES = new Toggle("skip_chat_rules", "Без окна «Правила чата»", "No \"Chat rules\" sheet",
+            false)
+            .about("Не показывать правила канала при первом нажатии на поле ввода",
+                    "The channel's rules don't pop up on the first tap on the chat field")
+            .note("Правила канала от этого не отменяются: модераторы банят по ним как раньше",
+                    "The channel's rules still apply: moderators ban by them as before")
+            .asNew("0.5.39-beta");
+
     public static final Toggle NEW_MESSAGES_COUNT = new Toggle("new_messages_count", "Счётчик новых сообщений", "New message count", false)
             .about("Сколько пришло, пока вы читаете выше", "How many came in while you read higher up")
             .look(SettingsPreview.CHAT, SettingsPreview.C_NEW_COUNT)
@@ -1227,8 +1298,12 @@ public final class Toggles {
     /** Interface page sections, by where the thing is on screen (top to bottom). */
     static final Toggle[] UI_PLAYER = {
             HIDE_PLAYER_CAST, HIDE_PLAYER_SHARE, HIDE_PLAYER_CLIP, HIDE_PLAYER_FULLSCREEN, HIDE_PLAYER_MUTE, HIDE_PLAYER_ROTATE,
-            HIDE_PLAYER_MINIMIZE, HIDE_FOLLOW_SUB, HIDE_UNFOLLOW,
+            HIDE_PLAYER_MINIMIZE, HIDE_PLAYER_SETTINGS, HIDE_FOLLOW_SUB, HIDE_UNFOLLOW,
             HIDE_MATURE_WARNING, HIDE_CHAT_MODE_POPUP,
+    };
+    /** The player's Options sheet, top to bottom; all of them hidden take the gear away too. */
+    static final Toggle[] UI_OPTIONS = {
+            HIDE_OPTIONS_QUALITY, HIDE_OPTIONS_VIEWING, HIDE_OPTIONS_SPEED, HIDE_OPTIONS_EXTERNAL, HIDE_OPTIONS_BROADCASTER,
     };
     /** After the whole-header choice (ChatHeaderSetting): the header row's elements, left to right, then their rows. */
     static final Toggle[] UI_CHAT_HEADER = {
@@ -1242,7 +1317,7 @@ public final class Toggles {
 
     /** Bug fixes (on by default), on their own page so they aren't switched off by accident. */
     static final Toggle[] FIXES = {NO_MANIFEST_CACHE, FRESH_RN_PREVIEWS, FEED_TAB_INDICATOR, ALL_FOLLOWED_CATEGORIES, LANDSCAPE_INPUT_VISIBLE, IDLE_INPUT_CURSOR,
-            GLOBAL_BADGES_NOW, BADGES_ON_BASELINE, LAYOUT_PICKER_ICONS, AUDIO_ONLY_UNMUTE, NOTIFICATION_SEEK, SCREEN_OFF_PAUSED, NO_COPY_TOAST, PIP_CLEAN_VIDEO, VOD_CHAT_EMOTES, VAFT_LOW_LATENCY, PICKER_OUTSIDE_TAP, FIX_LOGIN};
+            GLOBAL_BADGES_NOW, BADGES_ON_BASELINE, LAYOUT_PICKER_ICONS, AUDIO_ONLY_UNMUTE, FOLLOWING_CATEGORY_TAP, NOTIFICATION_SEEK, SCREEN_OFF_PAUSED, NO_COPY_TOAST, PIP_CLEAN_VIDEO, VOD_CHAT_EMOTES, VAFT_LOW_LATENCY, PICKER_OUTSIDE_TAP, FIX_LOGIN};
 
     private Toggles() {
     }

@@ -84,6 +84,10 @@ final class SettingsScreen {
         void set(int value);
     }
 
+    interface TextSetter {
+        void set(String value);
+    }
+
     /** Copies the real settings into a live preview. */
     interface Sync {
         void apply(SettingsPreview preview);
@@ -1414,30 +1418,124 @@ final class SettingsScreen {
     }
 
     void number(final String rowTitle, final int value, final IntSetter setter) {
+        number(rowTitle, value, null, setter);
+    }
+
+    void number(final String rowTitle, final int value, final Integer def, final IntSetter setter) {
+        number(rowTitle, () -> value, def, setter);
+    }
+
+    /**
+     * A number typed in a dialog; with {@code def}, Reset sets it back while another number is typed (#65).
+     * {@code value} is read again when another row on the page changes it (the text size slider, #66).
+     */
+    void number(final String rowTitle, final java.util.function.IntSupplier value, final Integer def,
+                final IntSetter setter) {
         Extra extra = take();
         if (skip(rowTitle, null, extra)) {
             return;
         }
-        TextView shown = text(String.valueOf(value), 14, accentText);
+        final TextView shown = text(String.valueOf(value.getAsInt()), 14, accentText);
+        syncs.add(() -> shown.setText(String.valueOf(value.getAsInt())));
         addRow(rowTitle, null, extra, false, shown, v -> {
             final EditText input = new EditText(context);
             input.setInputType(InputType.TYPE_CLASS_NUMBER);
-            input.setText(String.valueOf(value));
+            input.setText(String.valueOf(value.getAsInt()));
             input.setSelectAllOnFocus(true);
-            new AlertDialog.Builder(context)
+            AlertDialog.Builder builder = new AlertDialog.Builder(context)
                     .setTitle(rowTitle)
                     .setView(input)
                     .setPositiveButton(Strings.save(), (d, which) -> {
-                        try {
-                            int parsed = Integer.parseInt(input.getText().toString().trim());
+                        Integer parsed = parseInt(input);
+                        if (parsed != null) {
                             apply(() -> setter.set(parsed));
-                        } catch (NumberFormatException ignored) {
-                            // keep the old value
+                            render(true); // the row shows the saved number
                         }
                     })
-                    .setNegativeButton(Strings.cancel(), null)
-                    .show();
+                    .setNegativeButton(Strings.cancel(), null);
+            if (def != null) {
+                builder.setNeutralButton(Strings.reset(), (d, which) -> {
+                    apply(() -> setter.set(def));
+                    render(true);
+                });
+            }
+            AlertDialog dialog = builder.show();
+            if (def != null) {
+                resetWhileChanged(dialog, input, def);
+            }
         }, null, null);
+    }
+
+    /** The typed whole number, or null. */
+    static Integer parseInt(TextView input) {
+        try {
+            return Integer.parseInt(input.getText().toString().trim());
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    /** A shown dialog's Reset (neutral button) only while {@code input} holds something other than {@code def} (#65). */
+    static void resetWhileChanged(AlertDialog dialog, final TextView input, final int def) {
+        resetWhileChanged(dialog, input, text -> {
+            Integer typed = parseInt(input);
+            return typed != null && typed == def;
+        });
+    }
+
+    /** Text typed in a dialog (#67); Reset puts {@code def} back while something else is typed. */
+    void textValue(final String rowTitle, String summary, final java.util.function.Supplier<String> value,
+                   final String def, final TextSetter setter) {
+        Extra extra = take();
+        if (skip(rowTitle, summary, extra)) {
+            return;
+        }
+        TextView shown = text(value.get(), 14, accentText);
+        addRow(rowTitle, summary, extra, false, shown, v -> {
+            final EditText input = new EditText(context);
+            input.setSingleLine(true);
+            input.setText(value.get());
+            input.setSelectAllOnFocus(true);
+            AlertDialog dialog = new AlertDialog.Builder(context)
+                    .setTitle(rowTitle)
+                    .setView(input)
+                    .setPositiveButton(Strings.save(), (d, which) -> {
+                        apply(() -> setter.set(input.getText().toString()));
+                        render(true);
+                    })
+                    .setNegativeButton(Strings.cancel(), null)
+                    .setNeutralButton(Strings.reset(), (d, which) -> {
+                        apply(() -> setter.set(def));
+                        render(true);
+                    })
+                    .show();
+            resetWhileChanged(dialog, input, text -> def.equals(text.trim()));
+        }, null, null);
+    }
+
+    private static void resetWhileChanged(AlertDialog dialog, final TextView input,
+                                          final java.util.function.Predicate<String> isDefault) {
+        final View reset = dialog.getButton(AlertDialog.BUTTON_NEUTRAL);
+        if (reset == null) {
+            return;
+        }
+        final Runnable sync = () -> reset.setVisibility(
+                isDefault.test(input.getText().toString()) ? View.INVISIBLE : View.VISIBLE);
+        input.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                sync.run();
+            }
+        });
+        sync.run();
     }
 
     // ---- navigation and actions ----
