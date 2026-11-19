@@ -97,7 +97,7 @@ public final class EmoteProxy {
     /** Bumped on every {@link #reportFailure} that dropped the host; lets callers tell whether a retry may help. */
     private static volatile int switches;
 
-    /** Guards the "proxy down, going direct" toast so it fires once per outage, not per fetch. */
+    /** The "proxy down, going direct" toast fires once per app process: hosts flapping showed it on every outage. */
     private static volatile boolean unavailableNotified;
 
     private EmoteProxy() {
@@ -146,6 +146,12 @@ public final class EmoteProxy {
         return base == null ? null : base.replaceFirst("^https", "wss") + "7tv-proxy";
     }
 
+    /** {@code path} on the working proxy host ({@code "7tv-paint/123"}), or null when proxying is off or no host answers. */
+    static String onProxyHost(String path) {
+        String base = EmoteSettings.isProxyEnabled() ? workingBase : null;
+        return base == null ? null : base + path;
+    }
+
     /**
      * Forgets any cached host so the next {@link #ensureResolved()} re-probes.
      * Called when the proxy setting is toggled or the emote cache is reset,
@@ -155,7 +161,6 @@ public final class EmoteProxy {
         synchronized (LOCK) {
             workingBase = null;
             resolvedAt = -1L;
-            unavailableNotified = false;
             benchedUntil.clear();
         }
     }
@@ -180,7 +185,6 @@ public final class EmoteProxy {
             resolvedAt = System.currentTimeMillis();
             if (base != null) {
                 workingBase = base.endsWith("/") ? base : base + "/";
-                unavailableNotified = false;
                 Log.i(TAG, "emote proxy: selected " + base);
             } else {
                 workingBase = null;

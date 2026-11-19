@@ -208,8 +208,8 @@ public final class RteBadgeStore {
     /**
      * 7TV paints of users without an RTE one, as the extension's cosmetics fallback
      * ({@code userByConnection} on 7TV GQL): userId -> NickPaint, NO_PAINT once looked up, PENDING
-     * while queued. Bounded LRU; lookups beyond a short queue are dropped and retried on that
-     * user's next message.
+     * while queued, {@link Failed} after a failed lookup. Bounded LRU; lookups beyond a short queue
+     * are dropped and retried on that user's next message.
      */
     private static final Map<String, Object> SEVENTV_PAINTS = Collections.synchronizedMap(
             new java.util.LinkedHashMap<String, Object>(256, 0.75f, true) {
@@ -226,6 +226,26 @@ public final class RteBadgeStore {
                 t.setDaemon(true);
                 return t;
             });
+    /*
+     * 7TV slow or refusing (on 2026-11-18 the clients' paint lookups, retried on every message, took the RTE
+     * proxies down): after a failed lookup none start for SEVENTV_PAUSE_MS, doubling up to SEVENTV_MAX_PAUSE_MS,
+     * and that user is not asked again for SEVENTV_FAILED_RETRY_MS.
+     */
+    private static final long SEVENTV_PAUSE_MS = 10_000L;
+    private static final long SEVENTV_MAX_PAUSE_MS = 5 * 60_000L;
+    private static final long SEVENTV_FAILED_RETRY_MS = 2 * 60_000L;
+    private static volatile long sevenTvPausedUntil;
+    private static int sevenTvFailures; // the lookup thread only
+
+    /** A failed lookup in {@link #SEVENTV_PAINTS}: the user is asked again only after SEVENTV_FAILED_RETRY_MS. */
+    private static final class Failed {
+        final long at;
+
+        Failed(long at) {
+            this.at = at;
+        }
+    }
+
     private static final String SEVENTV_GQL = "https://7tv.io/v3/gql";
     private static final String SEVENTV_PAINT_QUERY = "query GetUserPaint($id: String!) { userByConnection(id: $id, "
             + "platform: TWITCH) { style { paint { id color function angle shape image_url repeat stops { at color } "
@@ -241,7 +261,9 @@ public final class RteBadgeStore {
             return paint;
         }
         Object cached = SEVENTV_PAINTS.get(userId);
-        if (cached == null && userId.matches("[0-9]+")) {
+        long now = System.currentTimeMillis();
+        boolean retryDue = cached instanceof Failed && now - ((Failed) cached).at >= SEVENTV_FAILED_RETRY_MS;
+        if ((cached == null || retryDue) && now >= sevenTvPausedUntil && userId.matches("[0-9]+")) {
             SEVENTV_PAINTS.put(userId, PENDING);
             try {
                 SEVENTV_LOOKUPS.execute(() -> lookupSevenTv(userId));
@@ -268,15 +290,28 @@ public final class RteBadgeStore {
     }
 
     private static void lookupSevenTv(String userId) {
+        // Queued before a failure paused the lookups: no request; the user's next message after the pause asks again
+        if (System.currentTimeMillis() < sevenTvPausedUntil) {
+            SEVENTV_PAINTS.remove(userId);
+            return;
+        }
         try {
-            JSONObject body = new JSONObject().put("operationName", "GetUserPaint")
-                    .put("variables", new JSONObject().put("id", userId)).put("query", SEVENTV_PAINT_QUERY);
-            Request request = new Request.Builder().url(EmoteProxy.wrap(SEVENTV_GQL))
-                    .post(RequestBody.create(JSON, body.toString())).build();
+            // Through the RTE proxy one GET per user: the proxy asks 7TV and caches the answer for an hour for
+            // every viewer of every client. Without it, the GQL POST straight to 7TV.
+            String cachedUrl = EmoteProxy.onProxyHost("7tv-paint/" + userId);
+            Request request;
+            if (cachedUrl != null) {
+                request = new Request.Builder().url(cachedUrl).build();
+            } else {
+                JSONObject body = new JSONObject().put("operationName", "GetUserPaint")
+                        .put("variables", new JSONObject().put("id", userId)).put("query", SEVENTV_PAINT_QUERY);
+                request = new Request.Builder().url(EmoteProxy.wrap(SEVENTV_GQL))
+                        .post(RequestBody.create(JSON, body.toString())).build();
+            }
             try (Response response = EmoteHttp.sharedClient().newCall(request).execute()) {
                 ResponseBody rb = response.body();
                 if (!response.isSuccessful() || rb == null) {
-                    SEVENTV_PAINTS.remove(userId); // retried on a later message
+                    sevenTvFailed(userId);
                     return;
                 }
                 JSONObject user = new JSONObject(rb.string()).optJSONObject("data");
@@ -284,6 +319,7 @@ public final class RteBadgeStore {
                 JSONObject style = user == null ? null : user.optJSONObject("style");
                 JSONObject def = style == null ? null : style.optJSONObject("paint");
                 NickPaint paint = def == null ? null : NickPaint.parse(def);
+                sevenTvFailures = 0;
                 SEVENTV_PAINTS.put(userId, paint != null ? paint : NO_PAINT);
                 if (paint != null) {
                     // Rows built while it loaded hold a pending span (NickPaint.Span#pending).
@@ -291,9 +327,18 @@ public final class RteBadgeStore {
                 }
             }
         } catch (Throwable t) {
-            SEVENTV_PAINTS.remove(userId);
+            sevenTvFailed(userId);
             Log.w(TAG, "7TV paint lookup failed for " + userId + ": " + t);
         }
+    }
+
+    /** A failed lookup: pause the lookups (10 s, doubling up to 5 min) and remember the user as failed. */
+    private static void sevenTvFailed(String userId) {
+        long now = System.currentTimeMillis();
+        sevenTvFailures++;
+        long pause = Math.min(SEVENTV_MAX_PAUSE_MS, SEVENTV_PAUSE_MS << Math.min(sevenTvFailures - 1, 10));
+        sevenTvPausedUntil = now + pause;
+        SEVENTV_PAINTS.put(userId, new Failed(now));
     }
 
     private static void refreshPaints() {

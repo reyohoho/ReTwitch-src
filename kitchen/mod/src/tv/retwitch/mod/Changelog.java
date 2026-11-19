@@ -13,6 +13,13 @@ import android.text.TextUtils;
 public final class Changelog {
 
     private static final String[][] ENTRIES = {
+            {"0.5.40-beta",
+                    "Раскраски 7TV у ников в чате приходят через сервер RTE, он запоминает их на час для всех зрителей\n"
+                            + "Если 7TV не отвечает или тормозит, приложение делает паузу и не спрашивает раскраски заново на каждом сообщении\n"
+                            + "Сообщение «ReYohoho прокси недоступен» показывается один раз за запуск, а не при каждом сбое прокси эмоутов",
+                    "7TV nick paints in chat come through the RTE server, which keeps them for an hour for every viewer\n"
+                            + "When 7TV fails or is slow, the app pauses and no longer asks for paints again on every message\n"
+                            + "The \"ReYohoho proxy unavailable\" message shows once per launch, not on every emote proxy failure"},
             {"0.5.39-beta",
                     "Переключатели скрытия вкладок нижнего меню показывают, что нужен перезапуск\n"
                             + "Экран «Далее» в конце видео больше не мелькает и не возвращается после разворота мини-плеера\n"
