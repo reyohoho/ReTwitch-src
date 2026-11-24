@@ -29,9 +29,8 @@ public final class RnFollowingHook {
     private static final String STREAK_FLAGS = "{\"ultralight_following_ws_tag\":true,\"ws-following-tab\":\"treatment\"}";
     private static final String SECTIONS_QUERY = "query MwebFollowingTabSections";
     private static final String CATEGORIES_FIELD = "followedGames {";
-    private static final String VIEWED_FIELD = "viewedVideos(first: 1,";
-    /** Viewed videos asked for while finished ones are skipped (#57): Continue watching shows one. */
-    private static final int VIEWED_ASKED = 10;
+    private static final int VIEWED_SHOWN = 5;
+    private static final String VIEWED_FIELD = "viewedVideos(first: 5)";
 
     private RnFollowingHook() {
     }
@@ -88,12 +87,30 @@ public final class RnFollowingHook {
         return length > 0 && position >= length;
     }
 
-    /** Continue watching asks for one video (#57): more, so one not finished is left after {@link #strip}. */
+    /** Ask for replacements when some of Following's five recent videos are finished (#81). */
     static String withMoreViewed(String body) {
-        int query = body != null ? body.indexOf(SECTIONS_QUERY) : -1;
-        int field = query >= 0 ? body.indexOf(VIEWED_FIELD, query) : -1;
-        return field < 0 ? body : body.substring(0, field) + "viewedVideos(first: " + VIEWED_ASKED + ","
-                + body.substring(field + VIEWED_FIELD.length());
+        if (body == null || !body.contains(SECTIONS_QUERY) || !body.contains(VIEWED_FIELD)) return body;
+        try {
+            Object root = new JSONTokener(body).nextValue();
+            boolean changed = false;
+            if (root instanceof JSONObject) {
+                changed = widenViewed((JSONObject) root);
+            } else if (root instanceof JSONArray) {
+                JSONArray batch = (JSONArray) root;
+                for (int i = 0; i < batch.length(); i++) changed |= widenViewed(batch.optJSONObject(i));
+            }
+            return changed ? root.toString() : body;
+        } catch (JSONException ignored) {
+            return body;
+        }
+    }
+
+    private static boolean widenViewed(JSONObject operation) throws JSONException {
+        if (operation == null) return false;
+        String query = operation.optString("query");
+        if (!query.contains(SECTIONS_QUERY) || !query.contains(VIEWED_FIELD)) return false;
+        operation.put("query", query.replace(VIEWED_FIELD, "viewedVideos(first: 10)"));
+        return true;
     }
 
     /**
@@ -145,7 +162,7 @@ public final class RnFollowingHook {
         return strip(json, categories, vods, offline, sort, false);
     }
 
-    /** With {@code finished}: Continue watching keeps its first video not watched to the end (#57). */
+    /** With {@code finished}: Continue watching keeps videos not watched to the end (#57). */
     static String strip(String json, boolean categories, boolean vods, boolean offline, boolean sort, boolean finished)
             throws JSONException {
         if (!json.contains("\"followedLiveUsers\"") && !json.contains("\"followedVideos\"")) {
@@ -177,7 +194,7 @@ public final class RnFollowingHook {
             changed |= categories ? empty(user.optJSONObject("followedGames"), "nodes")
                     : sort && sortByName(user.optJSONObject("followedGames"));
             changed |= vods ? empty(user.optJSONObject("viewedVideos"), "edges")
-                    : finished && firstUnfinished(user.optJSONObject("viewedVideos"));
+                    : finished && keepUnfinished(user.optJSONObject("viewedVideos"));
         } else if (offline) {
             // Only this query has currentUser.followedVideos next to follows: others need their follows.
             JSONObject me = data.optJSONObject("currentUser");
@@ -193,17 +210,14 @@ public final class RnFollowingHook {
         return changed;
     }
 
-    /**
-     * Continue watching: the first edge whose saved place is before the video's end, alone (the query asked for
-     * more, the section shows one); none left, the section is gone. Finished means the place reached the length.
-     */
-    private static boolean firstUnfinished(JSONObject viewed) throws JSONException {
+    /** Fill the shelf in the original order, up to the same five entries as stock Following. */
+    private static boolean keepUnfinished(JSONObject viewed) throws JSONException {
         JSONArray edges = viewed == null ? null : viewed.optJSONArray("edges");
         if (edges == null) {
             return false;
         }
         JSONArray kept = new JSONArray();
-        for (int i = 0; i < edges.length() && kept.length() == 0; i++) {
+        for (int i = 0; i < edges.length() && kept.length() < VIEWED_SHOWN; i++) {
             JSONObject edge = edges.optJSONObject(i);
             JSONObject node = edge == null ? null : edge.optJSONObject("node");
             JSONObject self = node == null ? null : node.optJSONObject("self");
@@ -214,7 +228,7 @@ public final class RnFollowingHook {
                 kept.put(edge);
             }
         }
-        if (kept.length() == edges.length() && edges.length() <= 1) {
+        if (kept.length() == edges.length()) {
             return false;
         }
         viewed.put("edges", kept);

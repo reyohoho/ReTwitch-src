@@ -1,5 +1,7 @@
 package tv.retwitch.mod;
 
+import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -31,7 +33,53 @@ public final class LandingTabHook {
 
     private static final String TAG = "RTlandingtab";
 
-    /** Index of the Following page inside Twitch's discovery-feed pager list. */
+    private static boolean firstActivity = true;
+    private static int pendingSlot = -1;
+    private static final String VIEWER = "tv.twitch.android.feature.viewer.landing.ViewerLandingActivity";
+
+    /** The launcher forwards to the viewer. Deep links, notifications and restored tasks keep their own routes. */
+    static void activityCreated(Activity activity, Bundle saved) {
+        try {
+            if (!firstActivity) {
+                if (saved != null || !VIEWER.equals(activity.getClass().getName())) pendingSlot = -1;
+                return;
+            }
+            firstActivity = false;
+            if (saved != null || !"tv.twitch.android.app.core.LandingActivity".equals(activity.getClass().getName())) return;
+            Intent intent = activity.getIntent();
+            if (intent == null || intent.getData() != null || (intent.getAction() != null &&
+                    !Intent.ACTION_MAIN.equals(intent.getAction())) || intent.hasExtra("destinationOrdinal") ||
+                    intent.getBooleanExtra("fromPushNotification", false) || intent.getBooleanExtra("fromDeepLink", false)) return;
+            switch (LandingSettings.launchTab()) {
+                case LandingSettings.BROWSE: if (!Toggles.on(Toggles.HIDE_TAB_BROWSE)) pendingSlot = 1; break;
+                case LandingSettings.ACTIVITY: if (!Toggles.on(Toggles.HIDE_TAB_ACTIVITY)) pendingSlot = 3; break;
+                case LandingSettings.PROFILE: if (!Toggles.on(Toggles.HIDE_TAB_PROFILE)) pendingSlot = 4; break;
+            }
+        } catch (Throwable t) {
+            pendingSlot = -1;
+            Log.w(TAG, "launch destination failed", t);
+            CrashReporter.report(TAG, "launch destination failed", t);
+        }
+    }
+
+    static boolean pendingBottomTab() {
+        return pendingSlot >= 0;
+    }
+
+    static void openBottomTab(Activity activity, View nav) {
+        if (!VIEWER.equals(activity.getClass().getName()) || nav == null || !nav.isShown() || nav.getWidth() == 0 ||
+                BottomTabs.item(nav, 0) == null) return;
+        View item = BottomTabs.item(nav, pendingSlot);
+        pendingSlot = -1;
+        if (item != null) item.post(() -> {
+            try {
+                if (item.isAttachedToWindow() && item.isShown() && !activity.isFinishing()) item.performClick();
+            } catch (Throwable t) {
+                Log.w(TAG, "opening launch tab failed", t);
+                CrashReporter.report(TAG, "opening launch tab failed", t);
+            }
+        });
+    }
 
     private LandingTabHook() {
     }
@@ -65,7 +113,54 @@ public final class LandingTabHook {
     private static final String RN_TAB_KEY = "tv.twitch.android.rn.feed.subfeedTab";
     private static WeakReference<Object> rnHome;
     /** The RN home opens on Following: the Live content the launch splash waits for won't come. */
-    private static volatile boolean startedOnFollowing;
+    private static volatile int readyPage = -1;
+
+    private static WeakReference<Activity> checkHomeAfterPip;
+
+    /** ViewerLandingActivity.onPictureInPictureModeChanged. Wait until the user minimizes the expanded video. */
+    public static void systemPipChanged(Activity activity, boolean inPip) {
+        checkHomeAfterPip = inPip ? null : new WeakReference<>(activity);
+    }
+
+    /** Called from the normal layout pass. Only inspects the feed once per PiP exit, after its window settles. */
+    static void checkPipFeed(Activity activity, View decor) {
+        if (checkHomeAfterPip == null || checkHomeAfterPip.get() != activity || !ChannelTracker.playerMinimized()) return;
+        checkHomeAfterPip = null;
+        decor.postOnAnimation(() -> {
+            try {
+                if (activity.isInPictureInPictureMode() || !ChannelTracker.playerMinimized() || !decor.isAttachedToWindow()) return;
+                Object fragment = rnHome == null ? null : rnHome.get();
+                View surface = fragment == null ? null : (View) fragment.getClass().getMethod("getView").invoke(fragment);
+                if (surface == null || !surface.isShown() || surface.getRootView() != decor || !(surface.getParent() instanceof View)) return;
+                View host = (View) surface.getParent();
+                View pager = surface.findViewWithTag("home-tabs-pager");
+                if (pager == null || !pipSizedFeed(host.getWidth(), host.getHeight(), pager.getWidth(), pager.getHeight())) return;
+
+                // ReactSurfaceView.onMeasure forwards fresh constraints to Fabric, even at the same measured size.
+                surface.forceLayout();
+                surface.requestLayout();
+                for (android.view.ViewParent p = pager.getParent(); p instanceof View && p != surface; p = p.getParent()) {
+                    if ("com.swmansion.rnscreens.Screen".equals(p.getClass().getName())) {
+                        // Screen checks its Fabric frameWidth/frameHeight and updates only when they disagree.
+                        View screen = (View) p;
+                        screen.requestLayout();
+                        p.getClass().getMethod("onStateWrapperUpdated").invoke(p);
+                        break;
+                    }
+                }
+                Log.i(TAG, "remeasured feed after PiP: pager " + pager.getWidth() + "x" + pager.getHeight()
+                        + ", host " + host.getWidth() + "x" + host.getHeight());
+            } catch (Throwable t) {
+                Log.w(TAG, "PiP feed remeasure failed", t);
+                CrashReporter.report(TAG, "PiP feed remeasure failed", t);
+            }
+        });
+    }
+
+    // #82: the 1080px-wide phone displayed a ~590px-wide, ~166px-high feed after leaving PiP.
+    static boolean pipSizedFeed(int hostWidth, int hostHeight, int pageWidth, int pageHeight) {
+        return pageWidth > 0 && pageHeight > 0 && pageWidth * 4L < hostWidth * 3L && pageHeight * 3L < hostHeight;
+    }
 
     /** Injected at the entry of {@code DiscoveryFeedRNFragment.onCreateView}. Never throws. */
     public static void onRnHomeCreated(Object fragment) {
@@ -75,9 +170,9 @@ public final class LandingTabHook {
     /** Injected after the React Native home reads its starting tab argument (31.x). Never throws. */
     public static String resolveRnTab(String tab) {
         try {
-            if (!LandingSettings.isFollowingDefaultEnabled()) {
-                return tab;
-            }
+            int start = LandingSettings.launchTab();
+            if (start != LandingSettings.FOLLOWING && start != LandingSettings.CLIPS) return tab;
+            String desired = start == LandingSettings.CLIPS ? "clips" : "following";
             // Native passes its default page explicitly ("live").
             if (tab == null || "live".equals(tab)) {
                 // The argument too: a re-attached home view (back from settings) re-emits it when it
@@ -86,11 +181,11 @@ public final class LandingTabHook {
                 Bundle args = fragment != null
                         ? (Bundle) fragment.getClass().getMethod("getArguments").invoke(fragment) : null;
                 if (args != null) {
-                    args.putString(RN_TAB_KEY, "following");
+                    args.putString(RN_TAB_KEY, desired);
                 }
-                tab = "following";
+                tab = desired;
             }
-            startedOnFollowing = "following".equals(tab);
+            readyPage = "following".equals(tab) ? 0 : "clips".equals(tab) ? 2 : -1;
         } catch (Throwable t) {
             Log.w(TAG, "resolveRnTab failed, keeping original tab", t);
             CrashReporter.report(TAG, "resolveRnTab failed, keeping original tab", t);
@@ -100,16 +195,16 @@ public final class LandingTabHook {
 
     /** Injected before the content-ready holder's getters return: what the launch splash waits for. */
     public static boolean feedReady(boolean ready) {
-        return ready || startedOnFollowing && followingShown();
+        return ready || readyPage >= 0 && pageShown(readyPage);
     }
 
     /** The RN pager lays the tabs out side by side, Following first: mounted and at 0. */
-    private static boolean followingShown() {
+    private static boolean pageShown(int page) {
         try {
             Object fragment = rnHome != null ? rnHome.get() : null;
             View root = fragment != null ? (View) fragment.getClass().getMethod("getView").invoke(fragment) : null;
             HorizontalScrollView pager = root != null ? findPager(root) : null;
-            return pager != null && pager.getScrollX() == 0;
+            return pager != null && pager.getWidth() > 0 && pager.getScrollX() == page * pager.getWidth();
         } catch (Throwable t) {
             Log.w(TAG, "pager check failed", t);
             return false;

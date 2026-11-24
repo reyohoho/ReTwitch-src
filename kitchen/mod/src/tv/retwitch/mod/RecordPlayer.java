@@ -115,7 +115,7 @@ final class RecordPlayer {
     private SeekBar seek;
     private Heat heat;
     private View handle;
-    private int chatPercent = TheatreSettings.getSideChatWidthPercent();
+    private float chatPercent = TheatreSettings.getSideChatWidthPercent();
     private LinearLayout chatBox;
     private TextView chatHeader;
     private ListView list;
@@ -383,7 +383,7 @@ final class RecordPlayer {
             int[] at = new int[2];
             split.getLocationOnScreen(at);
             int width = at[0] + split.getWidth() - Math.round(ev.getRawX());
-            int percent = TheatreSettings.clamp(Math.round(width * 100f / TheatreDividerHook.chatWidthPx(100)));
+            float percent = TheatreSettings.clamp(width * 100f / TheatreDividerHook.chatWidthPx(100));
             if (percent != chatPercent) {
                 chatPercent = percent;
                 arrange();

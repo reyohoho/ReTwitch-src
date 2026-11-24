@@ -227,13 +227,18 @@ public final class ChatSettings {
         return index >= 0 && index < DELETED_ALPHAS.length ? index : 2;
     }
 
-    public static void setDeletedBgAlphaIndex(Context context, int index) {
-        prefs(context).edit().putInt(KEY_DELETED_BG_ALPHA, index).apply();
+    public static int getDeletedBgPercent() {
+        Context c = AppContext.get();
+        return c == null ? 20 : prefs(c).getInt("deleted_bg_percent", DELETED_ALPHAS[getDeletedBgAlphaIndex()]);
+    }
+
+    public static void setDeletedBgPercent(Context c, int percent) {
+        prefs(c).edit().putInt("deleted_bg_percent", Math.max(0, Math.min(100, percent))).apply();
     }
 
     /** ARGB of the deleted row tint. */
     public static int getDeletedBackground() {
-        int alpha = Math.round(255 * DELETED_ALPHAS[getDeletedBgAlphaIndex()] / 100f);
+        int alpha = Math.round(255 * getDeletedBgPercent() / 100f);
         return alpha << 24 | MENTION_COLORS[getDeletedBgColorIndex()] & 0xFFFFFF;
     }
 

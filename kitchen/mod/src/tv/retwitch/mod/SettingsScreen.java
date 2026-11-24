@@ -112,7 +112,7 @@ final class SettingsScreen {
     }
 
     private static final String TAG = "RTSettings";
-    private static final int ACCENT = 0xFF9147FF; // Twitch purple
+    private final int accent;
 
     final Context context;
     private final Dialog dialog;
@@ -181,15 +181,26 @@ final class SettingsScreen {
 
     private SettingsScreen(Context context) {
         this.context = context;
-        bg = themeColor(context, android.R.attr.colorBackground, 0xFF0E0E10);
-        // Twitch's textColorPrimary is its purple; pick text colors from the background instead.
-        boolean dark = Color.luminance(bg) < 0.5f;
-        surface = dark ? 0xFF1C1C21 : 0xFFFFFFFF;
-        fg = dark ? 0xFFEFEFF1 : 0xFF0E0E10;
-        fgDim = dark ? 0xFFADADB8 : 0xFF53535F;
+        int background = themeColor(context, android.R.attr.colorBackground, 0xFF0E0E10);
+        boolean dark = Color.luminance(background) < 0.5f;
+        boolean dynamicColours = android.os.Build.VERSION.SDK_INT >= 31 && Toggles.on(Toggles.SYSTEM_PALETTE);
+        if (dynamicColours) {
+            bg = context.getColor(dark ? android.R.color.system_neutral1_900 : android.R.color.system_neutral1_50);
+            surface = context.getColor(dark ? android.R.color.system_neutral2_800 : android.R.color.system_neutral1_0);
+            fg = context.getColor(dark ? android.R.color.system_neutral1_50 : android.R.color.system_neutral1_900);
+            fgDim = context.getColor(dark ? android.R.color.system_neutral2_200 : android.R.color.system_neutral2_700);
+            accent = context.getColor(android.R.color.system_accent1_600);
+            accentText = context.getColor(dark ? android.R.color.system_accent1_200 : android.R.color.system_accent1_700);
+        } else {
+            bg = background;
+            surface = dark ? 0xFF1C1C21 : 0xFFFFFFFF;
+            fg = dark ? 0xFFEFEFF1 : 0xFF0E0E10;
+            fgDim = dark ? 0xFFADADB8 : 0xFF53535F;
+            accent = 0xFF9147FF;
+            accentText = dark ? 0xFFBF94FF : 0xFF772CE8;
+        }
         line = dark ? 0x1AFFFFFF : 0x1A000000;
-        accentText = dark ? 0xFFBF94FF : 0xFF772CE8;
-        colors = new SettingsPreview.Colors(dark ? bg : 0xFFF2F2F4, surface, fg, fgDim, line, ACCENT);
+        colors = new SettingsPreview.Colors(dark || dynamicColours ? bg : 0xFFF2F2F4, surface, fg, fgDim, line, accent);
 
         dialog = new Dialog(context, android.R.style.Theme_DeviceDefault_NoActionBar) {
             @Override
@@ -273,6 +284,12 @@ final class SettingsScreen {
             return insets;
         });
         dialog.setContentView(root);
+        dialog.setOnDismissListener(ignored -> rememberSearch());
+        search.setOnFocusChangeListener((v, focused) -> {
+            if (focused && query == null && pages.size() == 1) {
+                render(true);
+            }
+        });
         Window window = dialog.getWindow();
         if (window != null) {
             window.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
@@ -299,6 +316,7 @@ final class SettingsScreen {
         search.setPadding(dp(44), 0, dp(44), 0);
         search.setImeOptions(EditorInfo.IME_ACTION_SEARCH);
         search.setOnEditorActionListener((v, actionId, event) -> {
+            rememberSearch();
             InputMethodManager imm = (InputMethodManager) context.getSystemService(Context.INPUT_METHOD_SERVICE);
             if (imm != null) {
                 imm.hideSoftInputFromWindow(v.getWindowToken(), 0);
@@ -326,14 +344,14 @@ final class SettingsScreen {
         clear.setVisibility(View.GONE);
         clear.setPadding(dp(13), dp(13), dp(13), dp(13));
         clear.setContentDescription(Strings.close());
-        clear.setOnClickListener(v -> search.setText(""));
+        clear.setOnClickListener(v -> clearSearch());
         searchBox.addView(clear, new FrameLayout.LayoutParams(dp(46), dp(46), Gravity.END | Gravity.CENTER_VERTICAL));
     }
 
     private LinearLayout buildRestartBar() {
         LinearLayout bar = new LinearLayout(context);
         bar.setGravity(Gravity.CENTER_VERTICAL);
-        bar.setBackground(rounded(ACCENT, dp(14)));
+        bar.setBackground(rounded(accent, dp(14)));
         bar.setPadding(dp(16), dp(12), dp(10), dp(12));
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
@@ -341,7 +359,7 @@ final class SettingsScreen {
         bar.setLayoutParams(lp);
         bar.addView(text(Strings.restartBar(), 14, Color.WHITE),
                 new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
-        TextView button = text(Strings.restartNow(), 14, ACCENT);
+        TextView button = text(Strings.restartNow(), 14, accent);
         button.setTypeface(medium);
         button.setPadding(dp(14), dp(8), dp(14), dp(8));
         button.setBackground(rounded(Color.WHITE, dp(10)));
@@ -361,7 +379,7 @@ final class SettingsScreen {
         pages.add(page);
         openKey = null;
         if (query != null) {
-            search.setText(""); // renders through the watcher
+            clearSearch(); // renders through the watcher
         } else {
             render(false);
         }
@@ -370,7 +388,7 @@ final class SettingsScreen {
 
     private void back() {
         if (query != null) {
-            search.setText("");
+            clearSearch();
         } else if (pages.size() > 1) {
             titles.remove(titles.size() - 1);
             pages.remove(pages.size() - 1);
@@ -391,7 +409,7 @@ final class SettingsScreen {
                 .setInterpolator(new DecelerateInterpolator()).start();
     }
 
-    private void render(boolean keepScroll) {
+    void render(boolean keepScroll) {
         final int y = scroll.getScrollY();
         list.removeAllViews();
         next = new Extra();
@@ -411,6 +429,9 @@ final class SettingsScreen {
         searchBox.setVisibility(pages.size() == 1 || query != null ? View.VISIBLE : View.GONE);
         try {
             if (query == null) {
+                if (pages.size() == 1 && search.hasFocus() && Toggles.on(Toggles.SEARCH_HISTORY)) {
+                    historyRows();
+                }
                 pages.get(pages.size() - 1).build(this);
             } else {
                 searchAll();
@@ -420,6 +441,46 @@ final class SettingsScreen {
             CrashReporter.report(TAG, "page build failed", t);
         }
         scroll.post(() -> scroll.scrollTo(0, keepScroll ? y : 0));
+    }
+
+    private void rememberSearch() {
+        if (Toggles.on(Toggles.SEARCH_HISTORY)) {
+            SettingsSearchHistory.remember(context, search.getText().toString());
+        }
+    }
+
+    private void clearSearch() {
+        rememberSearch();
+        search.setText("");
+    }
+
+    private void historyRows() {
+        ArrayList<String> entries = SettingsSearchHistory.entries(context);
+        if (entries.isEmpty()) {
+            return;
+        }
+        section(Strings.pick("Недавние запросы", "Recent searches"));
+        for (String term : entries) {
+            ImageView remove = glyph("ic_close_small", fgDim, 16);
+            remove.setMinimumWidth(dp(48));
+            remove.setMinimumHeight(dp(48));
+            remove.setScaleType(ImageView.ScaleType.CENTER);
+            remove.setBackground(ripple());
+            remove.setContentDescription(Strings.pickf("Удалить запрос %s", "Delete search %s", term));
+            remove.setOnClickListener(v -> {
+                SettingsSearchHistory.remove(context, term);
+                render(true);
+            });
+            addRow(term, null, new Extra(), false, remove, v -> {
+                search.setText(term);
+                search.setSelection(term.length());
+                rememberSearch();
+            }, null, null);
+        }
+        action(Strings.pick("Очистить историю поиска", "Clear search history"), null, () -> {
+            SettingsSearchHistory.clear(context);
+            render(true);
+        });
     }
 
     /** Builds every page reachable from the root; {@link #skip} keeps the matching rows. */
@@ -658,7 +719,7 @@ final class SettingsScreen {
             line.addView(title);
             TextView badge = newBadge();
             // On the purple hero the usual purple badge would vanish.
-            badge.setTextColor(ACCENT);
+            badge.setTextColor(accent);
             badge.setBackground(rounded(Color.WHITE, dp(4)));
             line.addView(badge);
             title = line;
@@ -926,7 +987,7 @@ final class SettingsScreen {
         line.setPadding(0, dp(2), 0, dp(8));
         box.addView(line);
         final ProgressBar bar = new ProgressBar(context, null, android.R.attr.progressBarStyleHorizontal);
-        bar.setProgressTintList(ColorStateList.valueOf(ACCENT));
+        bar.setProgressTintList(ColorStateList.valueOf(accent));
         box.addView(bar);
         final LinearLayout actions = new LinearLayout(context);
         actions.setGravity(Gravity.END);
@@ -965,7 +1026,7 @@ final class SettingsScreen {
     }
 
     private TextView cardButton() {
-        TextView button = text("", 14, ACCENT);
+        TextView button = text("", 14, accent);
         button.setGravity(Gravity.CENTER);
         button.setPadding(dp(12), dp(10), dp(12), dp(4));
         button.setBackground(ripple());
@@ -1067,7 +1128,7 @@ final class SettingsScreen {
         int[][] states = {{android.R.attr.state_checked}, {}};
         GradientDrawable track = new GradientDrawable();
         track.setCornerRadius(dp(14));
-        track.setColor(new ColorStateList(states, new int[]{ACCENT, Color.luminance(bg) < .5f ? 0xFF3F3F46 : 0xFFC9C9D1}));
+        track.setColor(new ColorStateList(states, new int[]{accent, Color.luminance(bg) < .5f ? 0xFF3F3F46 : 0xFFC9C9D1}));
         track.setSize(dp(46), dp(28));
         GradientDrawable knob = new GradientDrawable();
         knob.setShape(GradientDrawable.OVAL);
@@ -1184,12 +1245,12 @@ final class SettingsScreen {
             name.setTypeface(on ? medium : Typeface.DEFAULT);
             GradientDrawable dot = new GradientDrawable();
             dot.setShape(GradientDrawable.OVAL);
-            dot.setColor(on ? ACCENT : 0);
+            dot.setColor(on ? accent : 0);
             dot.setStroke(dp(on ? 3 : 1) + 1, on ? 0x559147FF : fgDim);
             mark.setBackground(dot);
             GradientDrawable stroke = new GradientDrawable();
             stroke.setCornerRadius(dp(10));
-            stroke.setStroke(on ? dp(2) : 1, on ? ACCENT : line);
+            stroke.setStroke(on ? dp(2) : 1, on ? accent : line);
             frame.setForeground(stroke);
         };
         paint.run();
@@ -1349,7 +1410,7 @@ final class SettingsScreen {
                 boolean on = current[0] == which;
                 GradientDrawable shape = new GradientDrawable();
                 shape.setCornerRadius(dp(10));
-                shape.setColor(on ? ACCENT : 0);
+                shape.setColor(on ? accent : 0);
                 if (!on) {
                     shape.setStroke(1, fgDim);
                 }
@@ -1368,7 +1429,29 @@ final class SettingsScreen {
     }
 
     /** Ordered values: a slider with the value at the end of the title line. */
+    /** Keep the drag shortcuts; tapping the heading opens the same numeric editor used by other settings. */
+    void numericSlider(String title, int[] steps, String unit, java.util.function.IntSupplier read,
+                       int def, IntSetter write) {
+        int current = read.getAsInt(), closest = 0;
+        String[] labels = new String[steps.length];
+        for (int i = 0; i < steps.length; i++) {
+            labels[i] = steps[i] + unit;
+            if (Math.abs(steps[i] - current) < Math.abs(steps[closest] - current)) closest = i;
+        }
+        int selected = closest;
+        String original = labels[selected];
+        labels[selected] = current + unit;
+        slider(title, labels, selected, false, i -> {
+            labels[selected] = original;
+            write.set(steps[i]);
+        }, () -> editNumber(title, read.getAsInt(), def, write));
+    }
+
     void slider(final String rowTitle, final String[] labels, int index, final boolean restart, final IntSetter setter) {
+        slider(rowTitle, labels, index, restart, setter, null);
+    }
+
+    private void slider(String rowTitle, String[] labels, int index, boolean restart, IntSetter setter, Runnable edit) {
         Extra extra = take();
         if (skip(rowTitle, null, extra)) {
             return;
@@ -1383,13 +1466,17 @@ final class SettingsScreen {
                 new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
         TextView value = text(labels[current[0]], 14, accentText);
         value.setTypeface(medium);
+        if (edit != null) {
+            head.setOnClickListener(v -> edit.run());
+            head.setBackground(ripple());
+        }
         head.addView(value);
         row.addView(head);
         SeekBar bar = new SeekBar(context);
         bar.setMax(labels.length - 1);
         bar.setProgress(current[0]);
-        bar.setProgressTintList(ColorStateList.valueOf(ACCENT));
-        bar.setThumbTintList(ColorStateList.valueOf(ACCENT));
+        bar.setProgressTintList(ColorStateList.valueOf(accent));
+        bar.setThumbTintList(ColorStateList.valueOf(accent));
         bar.setProgressBackgroundTintList(ColorStateList.valueOf(fgDim));
         bar.setPadding(0, dp(10), 0, dp(10));
         bar.setContentDescription(rowTitle);
@@ -1437,33 +1524,35 @@ final class SettingsScreen {
         }
         final TextView shown = text(String.valueOf(value.getAsInt()), 14, accentText);
         syncs.add(() -> shown.setText(String.valueOf(value.getAsInt())));
-        addRow(rowTitle, null, extra, false, shown, v -> {
-            final EditText input = new EditText(context);
-            input.setInputType(InputType.TYPE_CLASS_NUMBER);
-            input.setText(String.valueOf(value.getAsInt()));
-            input.setSelectAllOnFocus(true);
-            AlertDialog.Builder builder = new AlertDialog.Builder(context)
-                    .setTitle(rowTitle)
-                    .setView(input)
-                    .setPositiveButton(Strings.save(), (d, which) -> {
-                        Integer parsed = parseInt(input);
-                        if (parsed != null) {
-                            apply(() -> setter.set(parsed));
-                            render(true); // the row shows the saved number
-                        }
-                    })
-                    .setNegativeButton(Strings.cancel(), null);
-            if (def != null) {
-                builder.setNeutralButton(Strings.reset(), (d, which) -> {
-                    apply(() -> setter.set(def));
-                    render(true);
-                });
-            }
-            AlertDialog dialog = builder.show();
-            if (def != null) {
-                resetWhileChanged(dialog, input, def);
-            }
-        }, null, null);
+        addRow(rowTitle, null, extra, false, shown, v -> editNumber(rowTitle, value.getAsInt(), def, setter), null, null);
+    }
+
+    private void editNumber(String rowTitle, int value, Integer def, IntSetter setter) {
+        final EditText input = new EditText(context);
+        input.setInputType(InputType.TYPE_CLASS_NUMBER);
+        input.setText(String.valueOf(value));
+        input.setSelectAllOnFocus(true);
+        AlertDialog.Builder builder = new AlertDialog.Builder(context)
+                .setTitle(rowTitle)
+                .setView(input)
+                .setPositiveButton(Strings.save(), (d, which) -> {
+                    Integer parsed = parseInt(input);
+                    if (parsed != null) {
+                        apply(() -> setter.set(parsed));
+                        render(true); // the row shows the saved number
+                    }
+                })
+                .setNegativeButton(Strings.cancel(), null);
+        if (def != null) {
+            builder.setNeutralButton(Strings.reset(), (d, which) -> {
+                apply(() -> setter.set(def));
+                render(true);
+            });
+        }
+        AlertDialog dialog = builder.show();
+        if (def != null) {
+            resetWhileChanged(dialog, input, def);
+        }
     }
 
     /** The typed whole number, or null. */
@@ -1644,7 +1733,7 @@ final class SettingsScreen {
             action.setGravity(Gravity.CENTER);
             action.setSingleLine(true);
             action.setPadding(dp(12), dp(7), dp(12), dp(7));
-            action.setBackground(rounded(primary ? ACCENT : (fg & 0x00FFFFFF) | 0x1F000000, dp(8)));
+            action.setBackground(rounded(primary ? accent : (fg & 0x00FFFFFF) | 0x1F000000, dp(8)));
             action.setOnClickListener(v -> apply(onButton));
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
                     ViewGroup.LayoutParams.WRAP_CONTENT);
@@ -1750,8 +1839,9 @@ final class SettingsScreen {
                     imm.hideSoftInputFromWindow(search.getWindowToken(), 0);
                 }
                 search.clearFocus();
-                search.setText("");
-                for (Object[] step : trail) {
+                clearSearch();
+                if (!trail.isEmpty()) {
+                    Object[] step = trail.get(trail.size() - 1);
                     open((String) step[0], (Page) step[1]);
                 }
                 CharSequence wanted = title != null ? title.getText() : null;
@@ -1786,7 +1876,7 @@ final class SettingsScreen {
             row = (View) row.getParent();
         }
         final View target = row;
-        final ColorDrawable glow = new ColorDrawable(ACCENT);
+        final ColorDrawable glow = new ColorDrawable(accent);
         glow.setAlpha(0);
         final Drawable previous = target.getForeground();
         target.setForeground(glow);
@@ -2061,7 +2151,7 @@ final class SettingsScreen {
         badge.setTypeface(Typeface.DEFAULT_BOLD);
         badge.setSingleLine(true);
         badge.setPadding(dp(5), dp(1), dp(5), dp(1));
-        badge.setBackground(rounded(ACCENT, dp(4)));
+        badge.setBackground(rounded(accent, dp(4)));
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         lp.leftMargin = dp(8);

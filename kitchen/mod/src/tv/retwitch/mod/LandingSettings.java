@@ -21,12 +21,35 @@ public final class LandingSettings {
     private LandingSettings() {
     }
 
+    static final int FOLLOWING = 0, LIVE = 1, CLIPS = 2, BROWSE = 3, ACTIVITY = 4, PROFILE = 5;
+
+    static int launchTab() {
+        Context c = AppContext.get();
+        int legacy = getBool(KEY_FOLLOWING_DEFAULT, true) ? FOLLOWING : LIVE;
+        int tab = c == null ? legacy : prefs(c).getInt("launch_tab", legacy);
+        return tab >= FOLLOWING && tab <= PROFILE ? tab : legacy;
+    }
+
+    static void setLaunchTab(Context c, int tab) {
+        prefs(c).edit().putInt("launch_tab", tab).putBoolean(KEY_FOLLOWING_DEFAULT, tab == FOLLOWING).apply();
+    }
+
     public static boolean isFollowingDefaultEnabled() {
-        return getBool(KEY_FOLLOWING_DEFAULT, true);
+        return launchTab() == FOLLOWING;
     }
 
     public static void setFollowingDefaultEnabled(Context context, boolean value) {
-        setBool(context, KEY_FOLLOWING_DEFAULT, value);
+        if (isFollowingDefaultEnabled() != value) setLaunchTab(context, value ? FOLLOWING : LIVE);
+    }
+
+    static String bottomOrder() {
+        Context c = AppContext.get();
+        String order = c == null ? BottomTabs.DEFAULT : prefs(c).getString("bottom_order", BottomTabs.DEFAULT);
+        return BottomTabs.valid(order) ? order : BottomTabs.DEFAULT;
+    }
+
+    static void setBottomOrder(Context c, String order) {
+        if (BottomTabs.valid(order)) prefs(c).edit().putString("bottom_order", order).apply();
     }
 
     private static final String KEY_PREVIEW_SIZE = "following_preview_size";

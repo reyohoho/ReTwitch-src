@@ -45,6 +45,7 @@ public final class RnScript {
             boolean hideStories = Toggles.on(Toggles.HIDE_HOME_STORIES);
             boolean hideTabs = Toggles.on(Toggles.HIDE_FEED_TABS);
             boolean favorites = Toggles.on(Toggles.FAVORITE_CHANNELS);
+            boolean liveToTop = Toggles.on(Toggles.LIVE_TAB_TO_TOP);
             boolean uptime = Toggles.on(Toggles.STREAM_UPTIME);
             boolean profileRecaps = Toggles.on(Toggles.HIDE_PROFILE_RECAPS);
             boolean profileClips = Toggles.on(Toggles.HIDE_PROFILE_FEATURED_CLIPS);
@@ -54,7 +55,7 @@ public final class RnScript {
             if (!compactLive && !hideFollowedShelf && !hideClipsShelf && !hideStoriesEmpty && !hideLiveEmpty && !hideTags && !friends
                     && !hideCategory && !categoryTap && !noHomeSwipe
                     && previewSize == 0
-                    && !tabIndicator && !hideStories && !hideTabs && !favorites && !uptime
+                    && !tabIndicator && !hideStories && !hideTabs && !liveToTop && !favorites && !uptime
                     && !profileRecaps && !profileClips && !profileUserClips && !profileCategories && !profileStreamers) {
                 return;
             }
@@ -72,6 +73,7 @@ public final class RnScript {
                     .put("tabIndicator", tabIndicator)
                     .put("hideStories", hideStories)
                     .put("hideTabs", hideTabs)
+                    .put("liveToTop", liveToTop)
                     .put("uptime", uptime)
                     .put("hideProfileRecaps", profileRecaps)
                     .put("hideProfileClips", profileClips)

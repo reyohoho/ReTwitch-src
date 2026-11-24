@@ -19,12 +19,13 @@ val retwitchRecordServicePatch = resourcePatch(
     finalize {
         document("AndroidManifest.xml").use { document ->
             val manifest = document.getElementsByTagName("manifest").item(0) as Element
-            val permission = "android.permission.FOREGROUND_SERVICE_SPECIAL_USE"
             val existing = manifest.getElementsByTagName("uses-permission")
-            if ((0 until existing.length).none { (existing.item(it) as Element).getAttribute("android:name") == permission }) {
-                manifest.appendChild(document.createElement("uses-permission").apply {
-                    setAttribute("android:name", permission)
-                })
+            for (permission in listOf("android.permission.FOREGROUND_SERVICE_SPECIAL_USE", "android.permission.RECEIVE_BOOT_COMPLETED")) {
+                if ((0 until existing.length).none { (existing.item(it) as Element).getAttribute("android:name") == permission }) {
+                    manifest.appendChild(document.createElement("uses-permission").apply {
+                        setAttribute("android:name", permission)
+                    })
+                }
             }
             val application = document.getElementsByTagName("application").item(0) as Element
             val service = document.createElement("service")
@@ -36,6 +37,11 @@ val retwitchRecordServicePatch = resourcePatch(
                 setAttribute("android:value", "Records a live stream the user chose to a file")
             })
             application.appendChild(service)
+            application.appendChild(document.createElement("service").apply {
+                setAttribute("android:name", "tv.retwitch.mod.ClipFileJob")
+                setAttribute("android:permission", "android.permission.BIND_JOB_SERVICE")
+                setAttribute("android:exported", "true")
+            })
             // The background update check (UpdateCheckReceiver): an explicit broadcast from the mod's own alarm.
             application.appendChild(document.createElement("receiver").apply {
                 setAttribute("android:name", "tv.retwitch.mod.UpdateCheckReceiver")

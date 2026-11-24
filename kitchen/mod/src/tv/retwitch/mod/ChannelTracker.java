@@ -197,7 +197,11 @@ public final class ChannelTracker {
         try {
             Object id = vod != null ? vod.getClass().getMethod("getId").invoke(vod) : null;
             String text = id != null ? id.toString() : null;
-            currentVodId = text != null && text.startsWith("v") ? text.substring(1) : text;
+            String next = text != null && text.startsWith("v") ? text.substring(1) : text;
+            if (!java.util.Objects.equals(next, currentVodId)) {
+                currentVodId = next;
+                VodChapters.onVodChanged(next);
+            }
         } catch (Throwable t) {
             Log.w(TAG, "noteVod failed", t);
             CrashReporter.report(TAG, "noteVod failed", t);

@@ -18,6 +18,7 @@ import android.view.ViewGroup;
 import android.view.ViewParent;
 import android.view.ViewTreeObserver;
 import android.view.Window;
+import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.SeekBar;
@@ -193,7 +194,7 @@ public final class TheatreDividerHook {
      */
     public static int guideEnd(int original) {
         try {
-            int percent = widthPercent();
+            float percent = widthPercent();
             return percent >= 0 ? chatWidthPx(percent) : original;
         } catch (Throwable t) {
             return original;
@@ -222,7 +223,7 @@ public final class TheatreDividerHook {
             if (original > 0f && original < 1f && landscape() && ChatOff.hidden()) {
                 return 1f; // chat off: no column, as in Twitch's No chat mode
             }
-            int percent = widthPercent();
+            float percent = widthPercent();
             if (percent < 0 || original <= 0f || original >= 1f) {
                 return original;
             }
@@ -236,7 +237,7 @@ public final class TheatreDividerHook {
     }
 
     /** Our chat width % for Twitch's guideline writes: typing, else the divider's, else -1 (Twitch's own). */
-    private static int widthPercent() {
+    private static float widthPercent() {
         // The applier also lays out portrait (vertical view, mini player): our px width
         // of the long edge there left the player overlay a third of the screen.
         if (!landscape()) {
@@ -260,7 +261,7 @@ public final class TheatreDividerHook {
     }
 
     /** Width % of the chat column over the video: typing's, else the divider's (Twitch's 30 by default). */
-    private static int overVideoPercent() {
+    private static float overVideoPercent() {
         return typingPercent > 0 ? typingPercent : TheatreSettings.getSideChatWidthPercent();
     }
 
@@ -279,7 +280,7 @@ public final class TheatreDividerHook {
      * fixed size like Twitch's own 279dp, so it doesn't follow the theatre's
      * width when the system bars show and hide with the player controls.
      */
-    static int chatWidthPx(int percent) {
+    static int chatWidthPx(float percent) {
         android.util.DisplayMetrics dm = AppContext.get().getResources().getDisplayMetrics();
         return Math.round(Math.max(dm.widthPixels, dm.heightPixels) * percent / 100f);
     }
@@ -358,10 +359,13 @@ public final class TheatreDividerHook {
             return;
         }
 
+        // Half a pixel accounts for rounding without swallowing fine adjustments after reopening a VOD.
+        float tolerance = 0.5f / Math.max(1, split.parent.getWidth());
+
         // Typing (see setTyping): temporary width, no handle; the next pass after
         // it ends restores the divider's width or Twitch's.
         if (typingPercent > 0) {
-            split.applyPercent(typingPercent, 0.004f);
+            split.applyPercent(typingPercent, tolerance);
             removeHandle(root);
             return;
         }
@@ -372,7 +376,7 @@ public final class TheatreDividerHook {
             if (!TheatreSettings.hasSideChatWidth()) {
                 split.restore();
             } else {
-                split.applyPercent(TheatreSettings.getSideChatWidthPercent(), 0.004f);
+                split.applyPercent(TheatreSettings.getSideChatWidthPercent(), tolerance);
             }
             removeHandle(root);
             return;
@@ -382,7 +386,7 @@ public final class TheatreDividerHook {
         // each time it configures side-by-side). Guarded so setLayoutParams ->
         // relayout -> onGlobalLayout doesn't loop; after a change we return and
         // let the next (settled) pass place the handle.
-        if (split.applyPercent(TheatreSettings.getSideChatWidthPercent(), 0.004f)) {
+        if (split.applyPercent(TheatreSettings.getSideChatWidthPercent(), tolerance)) {
             return;
         }
 
@@ -434,7 +438,7 @@ public final class TheatreDividerHook {
         }
         unfadeBackgrounds(chat);
         if (guideline != null && columnMode) {
-            int percent = widthPercent();
+            float percent = widthPercent();
             setGuideline(guideline, -1f, percent >= 0 ? chatWidthPx(percent) : dp(guideline.getContext(), 279));
         }
     }
@@ -633,15 +637,15 @@ public final class TheatreDividerHook {
          * Chat width % for a finger at window x {@code rawX}: of the largest
          * display edge in the theatre ({@link #chatWidthPx}), of the parent in VODs.
          */
-        int chatPercentAt(float rawX, int parentLeft) {
+        float chatPercentAt(float rawX, int parentLeft) {
             int pw = parent.getWidth();
             float chatPx = chatOnRight ? parentLeft + pw - rawX : rawX - parentLeft;
             float base = guideline != null ? chatWidthPx(100) : pw;
-            return TheatreSettings.clamp(Math.round(chatPx * 100f / base));
+            return TheatreSettings.clamp(chatPx * 100f / base);
         }
 
         /** Window x of the seam for a chat width of {@code percent} (see {@link #chatPercentAt}). */
-        int boundaryXFor(int percent, int parentLeft) {
+        int boundaryXFor(float percent, int parentLeft) {
             int pw = parent.getWidth();
             int chatPx = guideline != null ? chatWidthPx(percent) : Math.round(pw * percent / 100f);
             return chatOnRight ? parentLeft + pw - chatPx : parentLeft + chatPx;
@@ -652,7 +656,7 @@ public final class TheatreDividerHook {
          * (VOD: skips work within {@code threshold}; pass 0 to force during a
          * drag). The guideline's own setters skip repeats, so it reports false.
          */
-        boolean applyPercent(int percent, float threshold) {
+        boolean applyPercent(float percent, float threshold) {
             if (over) {
                 return placeOverVideo(chat, chatWidthPx(percent));
             }
@@ -992,6 +996,33 @@ public final class TheatreDividerHook {
         box.setOrientation(LinearLayout.VERTICAL);
         box.setPadding(pad, pad / 2, pad, 0);
 
+        DragState drag = (DragState) handle.getTag(DRAG_TAG_KEY);
+        if (drag != null && drag.split != null) {
+            Split split = drag.split;
+            int base = split.guideline != null ? chatWidthPx(100) : split.parent.getWidth();
+            if (base > 0) {
+                LinearLayout widthRow = new LinearLayout(ctx);
+                widthRow.setGravity(Gravity.CENTER_VERTICAL);
+                TextView width = new TextView(ctx);
+                Runnable showWidth = () -> width.setText(Strings.pickf("Ширина чата: %d пкс", "Chat width: %d px",
+                        Math.round(base * TheatreSettings.getSideChatWidthPercent() / 100f)));
+                showWidth.run();
+                widthRow.addView(width, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+                for (int step : new int[]{-1, 1}) {
+                    Button button = new Button(ctx);
+                    button.setText(step < 0 ? "−1" : "+1");
+                    button.setOnClickListener(v -> {
+                        int px = Math.round(base * TheatreSettings.getSideChatWidthPercent() / 100f) + step;
+                        TheatreSettings.setSideChatWidthPercent(ctx, px * 100f / base);
+                        update(root);
+                        showWidth.run();
+                    });
+                    widthRow.addView(button);
+                }
+                box.addView(widthRow);
+            }
+        }
+
         Switch over = new Switch(ctx);
         over.setText(Toggles.CHAT_OVER_VIDEO.label());
         over.setChecked(Toggles.on(Toggles.CHAT_OVER_VIDEO));
@@ -1006,7 +1037,7 @@ public final class TheatreDividerHook {
         final SeekBar bar = new SeekBar(ctx);
         bar.setMax(steps.length - 1);
         bar.setProgress(stepIndex(TheatreSettings.getChatBgOpacity()));
-        label.setText(Strings.pickf("Фон чата: %s", "Chat background: %s", steps[bar.getProgress()] + "%"));
+        label.setText(Strings.pickf("Фон чата: %s", "Chat background: %s", TheatreSettings.getChatBgOpacity() + "%"));
         bar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
@@ -1086,7 +1117,7 @@ public final class TheatreDividerHook {
     /** The current {@link Split}, refreshed on every layout pass, read by the touch listener. */
     private static final class DragState {
         Split split;
-        int lastPercent = -1;
+        float lastPercent = -1;
         float downX;
         /** Past the touch slop: a drag, not a tap (a tap opens {@link #openQuickPanel}). */
         boolean moved;
@@ -1124,6 +1155,9 @@ public final class TheatreDividerHook {
                     case MotionEvent.ACTION_UP:
                     case MotionEvent.ACTION_CANCEL:
                         dragging = false;
+                        if (s.moved && event.getActionMasked() == MotionEvent.ACTION_UP) {
+                            applyDrag(v, s, event.getRawX());
+                        }
                         if (v.getParent() != null) {
                             v.getParent().requestDisallowInterceptTouchEvent(false);
                         }
@@ -1158,7 +1192,7 @@ public final class TheatreDividerHook {
                 return;
             }
             // Chat width the finger is dragging to, clamped to [MIN, MAX]%.
-            int chatPercent = split.chatPercentAt(rawX, pl[0]);
+            float chatPercent = split.chatPercentAt(rawX, pl[0]);
 
             // Move the seam: player, chat and every anchored overlay reflow
             // together (guideline in theatre, chat width in VOD).

@@ -437,7 +437,20 @@ final class RecordSettings {
 
     private static void folderRow(SettingsScreen s, String title, final String kind) {
         final Context c = s.context;
-        s.markNew("0.5.39-beta").textValue(title, t("Внутри Download/", "Inside Download/"), () -> folder(kind),
-                DEFAULT_FOLDER, typed -> setFolder(c, kind, typed));
+        s.markNew("0.5.41-beta").nav(title, DownloadFolder.label(c, kind), page -> {
+            page.action(t("Выбрать папку", "Choose folder"), DownloadFolder.label(c, kind), () -> DownloadFolder.pick(c, kind));
+            page.textValue(t("Подпапка в загрузках", "Subfolder in Downloads"),
+                    t("Применить эту папку вместо выбранной через «Файлы»", "Use this folder in place of the one chosen in Files"),
+                    () -> folder(kind), DEFAULT_FOLDER, typed -> {
+                        setFolder(c, kind, typed);
+                        DownloadFolder.reset(c, kind);
+                    });
+            if (DownloadFolder.tree(c, kind) != null) {
+                page.action(t("Вернуть папку загрузок", "Use Downloads again"), folder(kind), () -> {
+                    DownloadFolder.reset(c, kind);
+                    page.render(true);
+                });
+            }
+        });
     }
 }

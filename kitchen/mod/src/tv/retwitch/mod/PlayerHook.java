@@ -457,7 +457,8 @@ public final class PlayerHook {
 
     /** From {@link UiHider}'s layout pass: a live-latency badge in each player overlay while the toggle is on. */
     static void attachLatencyLabels(Activity activity, View decor) {
-        boolean on = Toggles.on(Toggles.LATENCY_LABEL);
+        boolean on = Toggles.on(Toggles.LATENCY_LABEL)
+                && !(ChannelTracker.playerMinimized() && Toggles.on(Toggles.HIDE_MINI_LATENCY));
         if (!on && !latencyLabels) {
             attachLatencyHints(activity, decor);
             return;

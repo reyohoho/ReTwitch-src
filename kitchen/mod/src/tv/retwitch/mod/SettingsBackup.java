@@ -62,7 +62,7 @@ public final class SettingsBackup {
     private static final String PREFIX = "retwitch_";
     /** Device state, not settings. */
     private static final Set<String> EXCLUDED = new HashSet<>(Arrays.asList("retwitch_launch_promo", "retwitch_update",
-            "retwitch_feedback", LiveRecord.STATE, StreamSwitch.STATE, QuickSetup.PREFS));
+            "retwitch_feedback", LiveRecord.STATE, StreamSwitch.STATE, QuickSetup.PREFS, DownloadFolder.PREFS));
     /** A picked file larger than this is not a settings backup. */
     private static final int MAX_BYTES = 1 << 20;
     // 16-bit codes: FragmentActivity rejects larger ones.
@@ -245,6 +245,9 @@ public final class SettingsBackup {
             }
             editor.commit(); // synchronous: the restart bar may exit the process right after
         }
+        if (!Toggles.prefs(context).getBoolean(Toggles.SEARCH_HISTORY.key, false)) {
+            SettingsSearchHistory.clear(context);
+        }
         return restored;
     }
 
@@ -383,6 +386,9 @@ public final class SettingsBackup {
      * excluded state files. Applies after a restart (classes hold what they read).
      */
     static void resetAll(Context context) {
+        SettingsSearchHistory.clear(context);
+        // Reset new file destinations but keep the Android grants used by existing recordings.
+        context.getSharedPreferences(DownloadFolder.PREFS, Context.MODE_PRIVATE).edit().clear().commit();
         for (String name : localFiles(context)) {
             if (name.equals("retwitch_vod_chat_offset")) {
                 continue;

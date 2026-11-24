@@ -26,6 +26,7 @@ public final class TheatreSettings {
     private static final String PREFS_NAME = "retwitch_theatre_settings";
     private static final String KEY_ENABLED = "side_chat_divider_enabled";
     private static final String KEY_WIDTH_PERCENT = "side_chat_width_percent";
+    private static final String KEY_WIDTH_BPS = "side_chat_width_basis_points";
     private static final String KEY_CHAT_BG = "chat_bg_opacity";
 
     /** Chat background opacity steps, %: the settings slider and the quick panel on the divider. */
@@ -59,18 +60,19 @@ public final class TheatreSettings {
     }
 
     /** The persisted chat-column width as a percentage of the largest screen edge, clamped to the usable range. */
-    public static int getSideChatWidthPercent() {
-        return clamp(getInt(KEY_WIDTH_PERCENT, DEFAULT_WIDTH_PERCENT));
+    public static float getSideChatWidthPercent() {
+        int legacy = getInt(KEY_WIDTH_PERCENT, DEFAULT_WIDTH_PERCENT);
+        return clamp(getInt(KEY_WIDTH_BPS, legacy * 100) / 100f);
     }
 
-    public static void setSideChatWidthPercent(Context context, int value) {
-        setInt(context, KEY_WIDTH_PERCENT, clamp(value));
+    public static void setSideChatWidthPercent(Context context, float value) {
+        setInt(context, KEY_WIDTH_BPS, Math.round(clamp(value) * 100));
     }
 
     /** Whether a width was dragged: it applies with the handle turned off too. */
     public static boolean hasSideChatWidth() {
         Context context = AppContext.get();
-        return context != null && prefs(context).contains(KEY_WIDTH_PERCENT);
+        return context != null && (prefs(context).contains(KEY_WIDTH_PERCENT) || prefs(context).contains(KEY_WIDTH_BPS));
     }
 
     /** Forgets the dragged width, so the column falls back to {@link #DEFAULT_WIDTH_PERCENT}. */
@@ -78,7 +80,7 @@ public final class TheatreSettings {
         if (context == null) {
             return;
         }
-        prefs(context).edit().remove(KEY_WIDTH_PERCENT).apply();
+        prefs(context).edit().remove(KEY_WIDTH_PERCENT).remove(KEY_WIDTH_BPS).apply();
     }
 
     /** Opacity of the chat background over the video, %: the side column over the video and the overlay chat bubble. */
@@ -96,7 +98,7 @@ public final class TheatreSettings {
         return context != null && prefs(context).contains(KEY_CHAT_BG);
     }
 
-    public static int clamp(int percent) {
+    public static float clamp(float percent) {
         if (percent < MIN_WIDTH_PERCENT) {
             return MIN_WIDTH_PERCENT;
         }

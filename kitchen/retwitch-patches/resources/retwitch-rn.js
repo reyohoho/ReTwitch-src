@@ -13,12 +13,14 @@
         FollowingChannelRow: config.previewSize > 0 || config.categoryTap || config.hideCategory,
         CustomTabIndicator: config.tabIndicator,
         StoriesShelf: config.hideStories || config.hideStoriesEmpty,
-        CollapsedStoriesIcons: config.hideStories || config.hideStoriesEmpty, FeedTabsRow: config.hideTabs,
+        CollapsedStoriesIcons: config.hideStories || config.hideStoriesEmpty, FeedTabsRow: config.hideTabs || config.liveToTop,
+        FeedTabList: config.liveToTop,
         HomeTabsPager: config.noHomeSwipe,
         FreeScrollCellRenderer: config.compactLive, useFeedData: config.compactLive, ChannelProfileRecapsShelf: config.hideProfileRecaps,
         ChannelProfileClipShelf: config.hideProfileClips || config.hideProfileUserClips,
         ChannelProfileHomeShelf: config.hideProfileCategories || config.hideProfileStreamers,
         ChannelProfileTrackedShelf: config.hideProfileRecaps || config.hideProfileClips || config.hideProfileUserClips};
+    var liveListRef = null;
     var FRIENDS_SHOWN = 5;
     // Tabs' content container: paddingEnd is space-0200 (paddingStart, where the first tab starts, is space-0250).
     var TABS_PADDING_END = 16;
@@ -453,6 +455,17 @@
     // From the Following data (useFollowingTabData, rendered before the header and rows): ids of live favorites
     // shown as rows, the last of them, and how many other live rows follow.
     var liveFav = {ids: {}, last: null, rest: 0, edges: null};
+    // FlashList can reuse a row or header without calling its renderer when another channel goes live.
+    var liveFavListeners = new Set(), liveFavKey = '';
+    function subscribeLiveFavorites(listener) {
+        liveFavListeners.add(listener);
+        return function () { liveFavListeners.delete(listener); };
+    }
+    function liveFavoritesSnapshot() { return liveFavKey; }
+    function useLiveFavorites() {
+        React.useSyncExternalStore(subscribeLiveFavorites, liveFavoritesSnapshot);
+    }
+
     var LiveHeader = null, liveHeaderProps = null, openMenu = null, openProfile = null, stars = {}, sheets = null,
         overflowItem = null;
     // Favorites without a followed live row, from GQL (ids, anonymous): a live one becomes a row of Twitch's own (issue
@@ -567,6 +580,7 @@
     // A tap opens the channel page like those rows do (a channel opened offline showed an error); still loading ones
     // stand here by name until GQL says they're live.
     function FavoritesOffline() {
+        useLiveFavorites();
         var list = useFavorites(), collapsed = useCollapsed();
         var loaded = React.useState(0), setLoaded = loaded[1];
         React.useEffect(function () {
@@ -713,6 +727,10 @@
                         return Object.assign({}, source, change);
                     }, [source, sorted]);
                     liveFav = sorted;
+                    liveFavKey = JSON.stringify([sorted.last, sorted.rest > 0, Object.keys(sorted.ids)]);
+                    React.useLayoutEffect(function () {
+                        liveFavListeners.forEach(function (notify) { notify(); });
+                    }, [liveFavKey]);
                 }
                 if (!config.hideLiveEmpty) return data;
                 // The favorites strip is drawn by the live header's wrapper: with favorites the section stays.
@@ -729,6 +747,7 @@
             LiveHeader = original;
             return function (props) {
                 var list = useFavorites();
+                useLiveFavorites();
                 liveHeaderProps = props;
                 if (!list.length) return React.createElement(original, props);
                 if (liveFav.last) return React.createElement(FavoritesHeader);
@@ -740,6 +759,7 @@
         TrackedFollowingChannelRow: function (original) {
             return function (props) {
                 useFavorites();
+                useLiveFavorites();
                 if (props.onOpenMenu) openMenu = props.onOpenMenu;
                 var row = React.createElement(original, props);
                 var broadcaster = props.stream && props.stream.broadcaster;
@@ -960,8 +980,30 @@
         },
         // Following, Live, Clips; the launch cover's placeholder row too. The bar keeps its top inset, so the feed
         // still re-measures it (only heights above 0 count).
-        FeedTabsRow: function () {
-            return function () { return null; };
+        FeedTabList: function (original) {
+            return function (props) {
+                // Live and Clips share FeedTabList. Only the active page gets its live bundle and ref.
+                var ref = props.active && props.bundle && props.bundle.listRef;
+                React.useEffect(function () {
+                    if (!ref) return;
+                    liveListRef = ref;
+                    return function () { if (liveListRef === ref) liveListRef = null; };
+                }, [ref]);
+                return React.createElement(original, props);
+            };
+        },
+        FeedTabsRow: function (original) {
+            if (config.hideTabs) return function () { return null; };
+            return function (props) {
+                // FeedTabsRow uses onChange for both the first tap and a tap on the active tab.
+                return React.createElement(original, Object.assign({}, props, {onChange: function (index) {
+                    var list = liveListRef && liveListRef.current;
+                    if (index === 1 && props.activeIndex === index && list && list.scrollToOffset) {
+                        list.scrollToOffset({offset: 0, animated: true});
+                    }
+                    return props.onChange.apply(this, arguments);
+                }}));
+            };
         },
         // FeedTabsRow (Following, Live, Clips) draws this under a Tabs row with its own indicator hidden. With a large
         // font the row overflows and Tabs scrolls the active tab to the middle of it, but this one sits outside the

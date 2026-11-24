@@ -287,6 +287,13 @@ public final class Toggles {
                     "The bars around the video glow with its colours, with a button in the player")
             .look(SettingsPreview.PLAYER, SettingsPreview.P_AMBILIGHT);
 
+    public static final Toggle VOD_DETAILS_OVER_CHAT = new Toggle("vod_details_over_chat",
+            "Описание поверх повтора чата", "Show video details over chat replay", false)
+            .about("При нажатии на видео описание плавно появляется над сообщениями и исчезает без сдвига чата",
+                    "Video details fade over the messages when you tap the player. Chat stays in place")
+            .compare("Описание сдвигает чат", "Чат остаётся на месте", "Details resize the chat", "Chat stays in place")
+            .note("В записях при вертикальном положении телефона", "For past broadcasts in portrait")
+            .asNew("0.5.41-beta");
     public static final Toggle CHAPTERS_BUTTON = new Toggle("chapters_button", "Главы", "Chapters", false)
             .about("Список категорий записи с переходом к нужной",
                     "The VOD's categories, jump to any of them")
@@ -485,8 +492,8 @@ public final class Toggles {
     public static final Toggle PIP_SEEK = new Toggle("pip_seek", "Перемотка в окне PiP", "Seek in the PiP window", false)
             .about("Кнопки назад и вперёд рядом с паузой, когда видео играет в маленьком окне",
                     "Back and forward next to pause while a video plays in the small window")
-            .note("Шаги - как в уведомлении. Только записи: прямой эфир не перематывается",
-                    "The steps are the notification's. Videos only: a live stream doesn't seek")
+            .note("Только записи: прямой эфир не перематывается",
+                    "Videos only: a live stream doesn't seek")
             .asNew("0.5.39-beta");
     /** Issue #69: the overlay's settings_button; "Vertical view" draws its own in Compose, not covered. */
     public static final Toggle HIDE_PLAYER_SETTINGS = new Toggle("hide_player_settings", "Настройки (шестерёнка)",
@@ -496,6 +503,9 @@ public final class Toggles {
                     "Without it the quality, speed and other stream options can't be opened")
             .look(SettingsPreview.PLAYER, SettingsPreview.P_SETTINGS).asNew("0.5.39-beta");
     /** The mini player's buttons, shown after a tap on it (issues #47, #48): INVISIBLE, the others keep their places. */
+    public static final Toggle HIDE_MINI_LATENCY = new Toggle("hide_mini_latency", "Скрыть задержку в мини-плеере", "Hide latency in mini player", false)
+            .about("Показывать задержку только в развёрнутом плеере", "Show the latency badge only in the expanded player")
+            .look(SettingsPreview.PLAYER, SettingsPreview.P_LATENCY).asNew("0.5.41-beta");
     public static final Toggle HIDE_MINI_CLOSE = new Toggle("hide_mini_close", "Закрыть (✕)", "Close (✕)", false)
             .about("Крестик мини-плеера. Закрыть можно и смахнув его, если это включено в жестах",
                     "The mini player's cross. Swiping it away still closes it if that's on in Gestures")
@@ -562,6 +572,19 @@ public final class Toggles {
             .compare("Обложки категорий канала сеткой", "Сетки нет",
                     "The channel's category covers in a grid", "No grid")
             .asNew("0.5.27-beta");
+    public static final Toggle HIDE_VIDEO_CARD_MENU = new Toggle("hide_video_card_menu", "Меню под видео", "Menu under videos", false)
+            .about("Убрать троеточие под обложками записей", "Hide the three dots below video thumbnails")
+            .compare("Меню рядом с названием", "Название без меню", "Menu beside the title", "Title without the menu")
+            .asNew("0.5.41-beta");
+    public static final Toggle SYSTEM_PALETTE = new Toggle("settings_system_palette", "Цвета обоев", "Wallpaper colours", true)
+            .about("Системная палитра в настройках ReTwitch и элементах темы Android", "Use system colours in ReTwitch settings and Android themed controls")
+            .compare("Фиолетовые переключатели", "Переключатели в цвет обоев", "Purple switches", "Switches match the wallpaper")
+            .note("У ленты и элементов с собственными цветами Twitch своя палитра", "The feed and controls with explicit Twitch colours keep their own palette")
+            .asNew("0.5.41-beta");
+    public static final Toggle SEARCH_HISTORY = new Toggle("settings_search_history", "История поиска настроек", "Settings search history", false)
+            .about("Показывать недавние запросы при нажатии на пустую строку поиска", "Show recent searches when you tap the empty search field")
+            .compare("Пустая строка поиска", "Можно выбрать прошлый запрос", "Empty search field", "Pick a previous search")
+            .note("При выключении история удаляется", "Turning this off deletes the search history").asNew("0.5.41-beta");
     public static final Toggle HIDE_PROFILE_STREAMERS = new Toggle("hide_profile_streamers", "Советует стримеров", "Suggested streamers", true)
             .about("Список стримеров, которых советует канал", "The list of streamers the channel suggests")
             .compare("Аватарки стримеров со зрителями или «Не в сети»", "Списка нет",
@@ -670,8 +693,8 @@ public final class Toggles {
     /** Issue #57: RN Following asks for 10 viewed videos and keeps the first unfinished one; native shelf - ResumeWatchingPatch. */
     public static final Toggle HIDE_FINISHED_CONTINUE = new Toggle("hide_finished_continue", "Досмотренные видео",
             "Finished videos", true)
-            .about("В «Продолжить просмотр» вместо видео, досмотренного до конца, следующее недосмотренное",
-                    "Continue watching shows the next unfinished video instead of one watched to the end")
+            .about("В «Продолжить просмотр» остаются недосмотренные видео",
+                    "Continue Watching keeps unfinished videos")
             .note("Досмотренным считается видео, где Twitch запомнил место на последней секунде. Хоть секунда до конца - видео остаётся",
                     "A video counts as finished when Twitch saved its place at the last second. A second before the end, it stays")
             .look(SettingsPreview.HOME, SettingsPreview.H_CONTINUE).asNew("0.5.39-beta");
@@ -726,6 +749,9 @@ public final class Toggles {
                     "Pulling the feed down opens the stories shelf", "No stories, a pull refreshes the feed right away")
             .asNew("0.5.18-beta");
     /** FeedTopChrome's FeedTabsRow (and the launch cover's placeholder tabs); RnScript. */
+    public static final Toggle LIVE_TAB_TO_TOP = new Toggle("live_tab_to_top", "В начало по нажатию", "Tap Live to scroll to top", true)
+            .about("Нажмите «В эфире» ещё раз, чтобы вернуться к началу списка", "Tap the active Live tab again to scroll to the first stream")
+            .look(SettingsPreview.HOME, SettingsPreview.H_FOLLOWING).asNew("0.5.41-beta");
     public static final Toggle HIDE_FEED_TABS = new Toggle("hide_feed_tabs", "Вкладки главной", "Home tabs", true)
             .about("Строка «Отслеживаемое · В эфире · Клипы» над лентой", "The Following · Live · Clips row above the feed")
             .compare("Вкладки над лентой", "Ленты листаются свайпом вбок, начинается с вкладки из настройки «Открывать «Отслеживаемое»»",
@@ -1333,6 +1359,9 @@ public final class Toggles {
 
     static void set(Context context, Toggle toggle, boolean value) {
         prefs(context).edit().putBoolean(toggle.key, value).apply();
+        if (toggle == SEARCH_HISTORY && !value) {
+            SettingsSearchHistory.clear(context);
+        }
         if (toggle == UPDATE_NOTIFY) {
             // The alarm was set only on the next app start, so a fresh "on" missed releases until then (issue #22).
             ModUpdate.schedule(context);

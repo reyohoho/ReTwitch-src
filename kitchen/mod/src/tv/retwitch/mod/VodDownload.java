@@ -185,19 +185,30 @@ final class VodDownload {
                             rec.clipFrom = from;
                             rec.clipTo = to;
                             LiveRecord.start(context, rec);
-                            Toast.makeText(context, Strings.downloadStarted(RecordSettings.folder(RecordSettings.FOLDER_VODS)),
+                            Toast.makeText(context, Strings.downloadStarted(DownloadFolder.label(context, RecordSettings.FOLDER_VODS)),
                                     Toast.LENGTH_SHORT).show();
                         });
                         return;
                     }
-                    DownloadManager.Request request = new DownloadManager.Request(Uri.parse(url))
-                            .setTitle(name + ".mp4")
-                            .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-                            .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS,
-                                    RecordSettings.folder(RecordSettings.FOLDER_CLIPS) + "/" + name + ".mp4");
-                    ((DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE)).enqueue(request);
-                    Toast.makeText(context, Strings.downloadStarted(RecordSettings.folder(RecordSettings.FOLDER_CLIPS)),
-                            Toast.LENGTH_SHORT).show();
+                    try {
+                        Uri tree = DownloadFolder.tree(context, RecordSettings.FOLDER_CLIPS);
+                        if (tree != null) {
+                            ClipFileJob.enqueue(context, tree, name + ".mp4", url);
+                        } else {
+                            DownloadManager.Request request = new DownloadManager.Request(Uri.parse(url))
+                                    .setTitle(name + ".mp4")
+                                    .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+                                    .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS,
+                                            RecordSettings.folder(RecordSettings.FOLDER_CLIPS) + "/" + name + ".mp4");
+                            ((DownloadManager) context.getSystemService(Context.DOWNLOAD_SERVICE)).enqueue(request);
+                        }
+                        Toast.makeText(context, Strings.downloadStarted(DownloadFolder.label(context, RecordSettings.FOLDER_CLIPS)),
+                                Toast.LENGTH_SHORT).show();
+                    } catch (Throwable t) {
+                        Log.w(TAG, "clip destination failed", t);
+                        CrashReporter.report(TAG, "clip destination failed", t);
+                        Toast.makeText(context, Strings.downloadFailed(), Toast.LENGTH_LONG).show();
+                    }
                 })
                 .setNegativeButton(android.R.string.cancel, null)
                 .show();
@@ -551,7 +562,7 @@ final class VodDownload {
         }
     }
 
-    private static void pipe(InputStream in, OutputStream out, AtomicLong counted) throws IOException {
+    static void pipe(InputStream in, OutputStream out, AtomicLong counted) throws IOException {
         byte[] buffer = new byte[64 * 1024];
         for (int n; (n = in.read(buffer)) > 0; ) {
             out.write(buffer, 0, n);

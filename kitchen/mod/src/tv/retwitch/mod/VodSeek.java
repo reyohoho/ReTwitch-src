@@ -122,7 +122,7 @@ public final class VodSeek {
     }
 
     private static RemoteAction pipAction(Context context, boolean forward) {
-        int seconds = PlayerSettings.getNotificationSeekSeconds(forward);
+        int seconds = PlayerSettings.getPipSeekSeconds(forward);
         int size = 96;
         Bitmap bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
         int arrow = context.getResources().getIdentifier(forward ? "rt_seek_forward" : "rt_seek_rewind", "drawable",
@@ -154,7 +154,7 @@ public final class VodSeek {
                         return;
                     }
                     long position = (Long) player.getClass().getMethod("getPosition").invoke(player);
-                    long step = PlayerSettings.getNotificationSeekSeconds(forward) * 1000L;
+                    long step = PlayerSettings.getPipSeekSeconds(forward) * 1000L;
                     PlayerHook.seekCurrent(Math.max(0, position + (forward ? step : -step)));
                 } catch (Throwable t) {
                     Log.w("RTVodSeek", "pip seek failed", t);

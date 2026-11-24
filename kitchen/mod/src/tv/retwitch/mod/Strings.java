@@ -43,7 +43,7 @@ public final class Strings {
         if (own != null && !own.isEmpty()) {
             return own;
         }
-        Locale locale = Locale.getDefault();
+        Locale locale = TwitchLanguage.systemLocale();
         return locale != null ? locale.getLanguage() : "en";
     }
 
@@ -192,9 +192,8 @@ public final class Strings {
         return pick("Нечего скачивать: плеер ещё не загрузил видео", "Nothing to download: the player hasn't loaded a video yet");
     }
 
-    /** {@code folder}: under Download/, see {@code RecordSettings.folder}. */
     public static String downloadStarted(String folder) {
-        return pickf("Скачивание началось (Загрузки/%s)", "Download started (Downloads/%s)", folder);
+        return pickf("Скачивание началось (%s)", "Download started (%s)", folder);
     }
 
     public static String downloadQuality() {
@@ -1116,7 +1115,7 @@ public final class Strings {
     public static String[] appIconModes() {
         return new String[]{
                 pick("Звёзды", "Stars"),
-                pick("Как в Twitch", "As in Twitch"),
+                "Twitch",
                 pick("Тёмная", "Dark"),
                 pick("Чёрная", "Black"),
         };

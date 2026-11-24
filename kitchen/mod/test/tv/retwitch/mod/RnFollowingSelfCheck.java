@@ -21,6 +21,11 @@ public final class RnFollowingSelfCheck {
             + "\"currentUser\":{\"id\":\"1\",\"followedVideos\":{\"edges\":[]}}}}";
 
     public static void main(String[] args) throws Exception {
+        // #82: cropped feed from the screen recording; healthy Pixel 7 layout; narrow but full-height window.
+        assert LandingTabHook.pipSizedFeed(1080, 2053, 590, 166);
+        assert !LandingTabHook.pipSizedFeed(1080, 2053, 1080, 2053);
+        assert !LandingTabHook.pipSizedFeed(1080, 2053, 590, 2053);
+        assert !LandingTabHook.pipSizedFeed(1080, 2053, 0, 0);
         // Nothing of ours: the same instance, not reparsed.
         String other = "{\"data\":{\"user\":{\"follows\":{\"edges\":[{\"cursor\":\"a\"}]}}}}";
         assert RnFollowingHook.strip(other, true, true, true, true) == other;
@@ -84,10 +89,13 @@ public final class RnFollowingSelfCheck {
         String unrelated = "{\"query\":\"query Other { followedGames { id } }\"}";
         assert RnFollowingHook.withAllCategories(unrelated) == unrelated;
         assert RnFollowingHook.withAllCategories(null) == null;
-        // Continue watching (#57): ten asked for, the first one not at its end kept alone.
-        String viewedQuery = "{\"query\":\"query MwebFollowingTabSections {\\n viewedVideos(first: 1, sort: RECOMMENDED) {\"}";
-        String more = RnFollowingHook.withMoreViewed(viewedQuery);
-        assert more.contains("viewedVideos(first: 10, sort: RECOMMENDED)") : more;
+        // Actual Following query in Twitch 31.9.0. The separate ContinueWatchingFeedVod requests one.
+        String viewedQuery = new JSONObject().put("query", "query MwebFollowingTabSections { user { viewedVideos(first: 5) { edges { node { id } } } } }").toString();
+        String otherQuery = new JSONObject().put("query", "query Other { viewedVideos(first: 5) { edges { node { id } } } }").toString();
+        String more = RnFollowingHook.withMoreViewed("[" + viewedQuery + "," + otherQuery + "]");
+        JSONArray widened = new JSONArray(more);
+        assert widened.getJSONObject(0).getString("query").contains("viewedVideos(first: 10)");
+        assert widened.getJSONObject(1).getString("query").contains("viewedVideos(first: 5)");
         assert RnFollowingHook.withMoreViewed(more) == more;
         String viewed = "{\"data\":{\"user\":{\"followedLiveUsers\":{\"edges\":[]},\"viewedVideos\":{\"edges\":["
                 + "{\"node\":{\"id\":\"done\",\"lengthSeconds\":3600,\"self\":{\"viewingHistory\":{\"position\":3600}}}},"
@@ -95,8 +103,16 @@ public final class RnFollowingSelfCheck {
                 + "{\"node\":{\"id\":\"next\",\"lengthSeconds\":3600,\"self\":{\"viewingHistory\":{\"position\":10}}}}]}}}}";
         JSONArray left = user(RnFollowingHook.strip(viewed, false, false, false, false, true))
                 .getJSONObject("viewedVideos").getJSONArray("edges");
-        assert left.length() == 1 && left.getJSONObject(0).getJSONObject("node").getString("id").equals("almost") : left;
+        assert left.length() == 2 && left.getJSONObject(0).getJSONObject("node").getString("id").equals("almost") : left;
+        assert left.getJSONObject(1).getJSONObject("node").getString("id").equals("next");
         assert RnFollowingHook.strip(viewed, false, false, false, false, false) == viewed;
+        JSONObject full = new JSONObject(viewed);
+        JSONArray edges = full.getJSONObject("data").getJSONObject("user").getJSONObject("viewedVideos").getJSONArray("edges");
+        for (int i = 0; i < 6; i++) edges.put(new JSONObject().put("node", new JSONObject().put("id", i)));
+        JSONArray five = user(RnFollowingHook.strip(full.toString(), false, false, false, false, true))
+                .getJSONObject("viewedVideos").getJSONArray("edges");
+        assert five.length() == 5;
+        assert five.getJSONObject(4).getJSONObject("node").getInt("id") == 2;
         String allDone = "{\"data\":{\"user\":{\"followedLiveUsers\":{\"edges\":[]},\"viewedVideos\":{\"edges\":["
                 + "{\"node\":{\"id\":\"done\",\"lengthSeconds\":60,\"self\":{\"viewingHistory\":{\"position\":61}}}}]}}}}";
         assert user(RnFollowingHook.strip(allDone, false, false, false, false, true))

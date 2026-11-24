@@ -546,7 +546,7 @@ final class LiveRecord {
                 String init = initOf(url, first);
                 rec.file = VodDownload.fileName(new String[]{rec.display, rec.title}) + (init != null ? ".mp4" : ".ts");
                 created = createFile(app, rec.file,
-                        RecordSettings.folder(rec.isVod() ? RecordSettings.FOLDER_VODS : RecordSettings.FOLDER_RECORDS));
+                        rec.isVod() ? RecordSettings.FOLDER_VODS : RecordSettings.FOLDER_RECORDS);
                 rec.uri = created.toString();
                 out = Records.openAt(app, created, 0);
                 rec.dir = Records.dir(app, rec.id);
@@ -611,8 +611,12 @@ final class LiveRecord {
         }
     }
 
-    /** {@code folder}: under Download/, see {@link RecordSettings#folder}. */
-    private static Uri createFile(Context app, String name, String folder) throws IOException {
+    private static Uri createFile(Context app, String name, String kind) throws IOException {
+        Uri tree = DownloadFolder.tree(app, kind);
+        if (tree != null) {
+            return DownloadFolder.create(app, tree, name, name.endsWith(".mp4") ? "video/mp4" : "video/mp2t");
+        }
+        String folder = RecordSettings.folder(kind);
         if (Build.VERSION.SDK_INT >= 29) {
             ContentValues values = new ContentValues();
             values.put(MediaStore.MediaColumns.DISPLAY_NAME, name);

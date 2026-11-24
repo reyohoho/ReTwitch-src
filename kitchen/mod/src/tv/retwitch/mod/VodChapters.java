@@ -21,6 +21,7 @@ import android.widget.Toast;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -50,59 +51,73 @@ public final class VodChapters {
     private VodChapters() {
     }
 
-    /** VOD id -> whether it has chapters; a failed lookup counts as yes, the tap then says what's wrong. */
-    private static final java.util.Map<String, Boolean> HAS =
-            java.util.Collections.synchronizedMap(new java.util.HashMap<String, Boolean>());
+    private static final java.util.Map<String, Boolean> HAS = new java.util.HashMap<>();
+    private static final java.util.Set<Button> ATTACHED = java.util.Collections.newSetFromMap(new java.util.WeakHashMap<>());
 
-    /** Shown only for a VOD with chapters (reyohoho/ReTwitch-src#45); checks the playing VOD once a second while attached. */
-    private static final class Button extends ImageView {
-        private final Runnable check = new Runnable() {
-            @Override
-            public void run() {
-                sync();
-                postDelayed(this, 1000);
+    /** Start when the VOD is identified so the controls usually open with the answer already available. */
+    private static void prefetch(String vodId) {
+        prefetch(vodId, 0);
+    }
+
+    private static void prefetch(String vodId, int attempt) {
+        if (vodId == null || !Toggles.on(Toggles.CHAPTERS_BUTTON)) return;
+        synchronized (HAS) {
+            if (HAS.containsKey(vodId)) return;
+            HAS.put(vodId, null);
+        }
+        new Thread(() -> {
+            try {
+                List<String> titles = new ArrayList<>();
+                parse(fetch(vodId), new ArrayList<long[]>(), titles, new ArrayList<String>());
+                synchronized (HAS) { HAS.put(vodId, !titles.isEmpty()); }
+                new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
+                    for (Button button : ATTACHED) button.sync();
+                });
+            } catch (Throwable t) {
+                synchronized (HAS) { HAS.remove(vodId); }
+                Log.w(TAG, "chapters lookup failed", t);
+                CrashReporter.report(TAG, "chapters lookup failed", t);
+                if (attempt < 2) {
+                    new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                        if (!ATTACHED.isEmpty() && vodId.equals(ChannelTracker.getCurrentVodId())) {
+                            prefetch(vodId, attempt + 1);
+                        }
+                    }, attempt == 0 ? 2000L : 8000L);
+                }
             }
-        };
+        }, "RTChaptersCheck").start();
+    }
 
+    static void onVodChanged(String vodId) {
+        if (!Toggles.on(Toggles.CHAPTERS_BUTTON)) return;
+        new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
+            for (Button button : ATTACHED) button.sync();
+        });
+        prefetch(vodId);
+    }
+
+    private static final class Button extends ImageView {
         Button(Context context) {
             super(context);
-            setVisibility(View.GONE); // shown once the playing VOD is known to have chapters (#55)
+            setVisibility(View.INVISIBLE);
         }
 
-        @Override
-        protected void onAttachedToWindow() {
+        @Override protected void onAttachedToWindow() {
             super.onAttachedToWindow();
-            post(check);
+            ATTACHED.add(this);
+            sync();
+            prefetch(ChannelTracker.getCurrentVodId());
         }
 
-        @Override
-        protected void onDetachedFromWindow() {
-            removeCallbacks(check);
+        @Override protected void onDetachedFromWindow() {
+            ATTACHED.remove(this);
             super.onDetachedFromWindow();
         }
 
-        private void sync() {
-            final String vodId = ChannelTracker.getCurrentVodId();
-            Boolean has = vodId == null ? Boolean.FALSE : HAS.get(vodId);
-            if (has == null) {
-                HAS.put(vodId, Boolean.FALSE); // asked: hidden until the answer
-                new Thread(() -> {
-                    boolean any = true;
-                    try {
-                        List<String> titles = new ArrayList<>();
-                        parse(fetch(vodId), new ArrayList<long[]>(), titles, new ArrayList<String>());
-                        any = !titles.isEmpty();
-                    } catch (Throwable t) {
-                        Log.w(TAG, "chapters lookup failed", t);
-                    }
-                    HAS.put(vodId, any);
-                }, "RTChaptersCheck").start();
-                has = Boolean.FALSE;
-            }
-            int visibility = has ? View.VISIBLE : View.GONE;
-            if (getVisibility() != visibility) {
-                setVisibility(visibility);
-            }
+        void sync() {
+            boolean has;
+            synchronized (HAS) { has = Boolean.TRUE.equals(HAS.get(ChannelTracker.getCurrentVodId())); }
+            setVisibility(has ? View.VISIBLE : View.INVISIBLE);
         }
     }
 
@@ -260,6 +275,7 @@ public final class VodChapters {
                 .build();
         Response response = client().newCall(request).execute();
         try {
+            if (!response.isSuccessful()) throw new IOException("Chapters HTTP " + response.code());
             return response.body() != null ? response.body().string() : "";
         } finally {
             response.close();
@@ -268,8 +284,10 @@ public final class VodChapters {
 
     static void parse(String json, List<long[]> positions, List<String> titles, List<String> boxArts)
             throws Exception {
-        JSONObject video = new JSONObject(json).optJSONObject("data");
-        video = video != null ? video.optJSONObject("video") : null;
+        JSONObject payload = new JSONObject(json);
+        JSONArray errors = payload.optJSONArray("errors");
+        if (errors != null && errors.length() > 0) throw new IOException("Chapters query failed");
+        JSONObject video = payload.getJSONObject("data").optJSONObject("video");
         JSONObject moments = video != null ? video.optJSONObject("moments") : null;
         JSONArray edges = moments != null ? moments.optJSONArray("edges") : null;
         for (int i = 0; edges != null && i < edges.length(); i++) {

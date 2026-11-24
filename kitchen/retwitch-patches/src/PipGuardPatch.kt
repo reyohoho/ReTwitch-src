@@ -1,5 +1,6 @@
 package tv.retwitch.patches
 
+import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.extensions.InstructionExtensions.instructions
 import app.morphe.patcher.extensions.InstructionExtensions.replaceInstruction
 import app.morphe.patcher.patch.bytecodePatch
@@ -63,6 +64,11 @@ val retwitchPipGuardPatch = bytecodePatch(
     dependsOn(retwitchExtensionPatch)
 
     execute {
+        // The system window has resized; the home underneath the expanded video becomes visible later.
+        mutableClassDefByOrNull { it.type == "Ltv/twitch/android/feature/viewer/landing/ViewerLandingActivity;" }
+            ?.methods?.singleOrNull { it.name == "onPictureInPictureModeChanged" &&
+                    it.parameterTypes.map { p -> p.toString() } == listOf("Z", "Landroid/content/res/Configuration;") }
+            ?.addInstructions(0, "invoke-static/range {p0 .. p1}, Ltv/retwitch/mod/LandingTabHook;->systemPipChanged(Landroid/app/Activity;Z)V")
         var rewritten = 0
         var skipped = 0
 

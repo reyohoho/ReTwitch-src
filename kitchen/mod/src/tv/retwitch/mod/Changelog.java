@@ -13,6 +13,29 @@ import android.text.TextUtils;
 public final class Changelog {
 
     private static final String[][] ENTRIES = {
+            {"0.5.41-beta",
+                    "В «Продолжить просмотр» остаётся до пяти недосмотренных видео. Когда избранный канал выходит в эфир, раздел «В эфире» больше не дублируется\n"
+                            + "Выберите стартовую вкладку и порядок кнопок нижнего меню в разделе «Главная». Скрытие вкладок применяется после перезапуска. Кнопка «Создать» выровнена при скрытом профиле\n"
+                            + "По желанию повторное нажатие на вкладку «В эфире» прокручивает ленту к первому стриму\n"
+                            + "Шаги перемотки вперёд и назад настраиваются отдельно для плеера, уведомления и PiP. Задержку можно скрыть в мини-плеере\n"
+                            + "Кнопка глав больше не сдвигает соседние кнопки, когда загружается список глав. Меню с тремя точками под обложками видео можно скрыть\n"
+                            + "При просмотре записи в вертикальном положении описание видео можно показывать поверх повтора чата. Сообщения остаются на месте\n"
+                            + "Граница бокового чата перетаскивается точнее. Нажмите на неё, чтобы менять ширину по одному пикселю. Нажмите на число у ползунка, чтобы задать размер эмоута, длительность вибрации, прозрачность фона чата или насыщенность фона удалённых сообщений\n"
+                            + "Для записей, видео и клипов можно выбрать отдельные папки через системное приложение «Файлы». Доступ к выбранной папке действует на этом устройстве\n"
+                            + "Язык Twitch и язык настроек ReTwitch выбираются отдельно. На Android 12 и новее цвета обоев можно применить к настройкам ReTwitch и элементам Twitch, которые используют тему Android\n"
+                            + "При возврате из PiP мод повторно измеряет ленту, если она осталась размером с маленькое окно\n"
+                            + "В поиске по настройкам можно включить историю запросов. После перехода к настройке долгим нажатием «Назад» возвращает на главный экран настроек. Исходная иконка приложения теперь подписана «Twitch»",
+                    "Continue Watching keeps up to five unfinished videos. Live Now no longer appears twice when a favourite channel goes live\n"
+                            + "Choose the launch tab and the order of the bottom bar buttons under Home. Tab visibility changes apply on restart. Create stays aligned when Profile is hidden\n"
+                            + "Tap the active Live tab again to scroll to the first stream with the new option enabled\n"
+                            + "Set separate backward and forward seek steps for the player, notification and PiP. You can hide latency in the mini player\n"
+                            + "The Chapters button no longer moves nearby buttons as chapters load. You can hide the three-dot menu below video thumbnails\n"
+                            + "In portrait, past broadcasts can show video details over chat replay, keeping the messages in place\n"
+                            + "Drag the side chat divider more precisely, or tap it to adjust the width one pixel at a time. Tap a slider value to enter emote size, vibration length, chat background opacity or the strength of the deleted message background\n"
+                            + "Pick separate folders for recordings, videos and clips in the system file picker. Folder access is specific to the device\n"
+                            + "Set the Twitch interface language separately from the ReTwitch settings language. On Android 12 and later, ReTwitch settings and Twitch controls that use the Android theme can use wallpaper colours\n"
+                            + "When returning from PiP, the app checks the feed layout again if it is still the size of the small window\n"
+                            + "Settings search can keep a history of your queries. After a long press opens a setting, Back returns to the main settings page. The stock app icon is now labelled Twitch"},
             {"0.5.40-beta",
                     "Раскраски 7TV у ников в чате приходят через сервер RTE, он запоминает их на час для всех зрителей\n"
                             + "Если 7TV не отвечает или тормозит, приложение делает паузу и не спрашивает раскраски заново на каждом сообщении\n"

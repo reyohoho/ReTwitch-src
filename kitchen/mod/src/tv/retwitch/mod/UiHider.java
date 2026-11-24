@@ -92,7 +92,7 @@ public final class UiHider {
 
     /** Single ids looked up under the decor in a pass (with the arrays above); one walk finds them all. */
     private static final String[] SCANNED = {
-            PLAYER_OVERLAY, "unfollow_button", "follow_button", "mature_disclosure",
+            PLAYER_OVERLAY, "metadata_widget", "unfollow_button", "follow_button", "mature_disclosure",
             "stop_sign_button_affirmative", "stop_sign_button_affirmative_horizontal",
             "one_chat_message_input_view_container", "split_button", "bit_picker", "bits_button",
             "leaderboards_container", "leaderboards_icon", "paid_pinned_chat_container",
@@ -161,7 +161,16 @@ public final class UiHider {
             DebugServer.install(application);
             QuickSetup.install(application);
             application.registerActivityLifecycleCallbacks(new Application.ActivityLifecycleCallbacks() {
-                public void onActivityCreated(Activity a, Bundle b) { attach(a); }
+                @Override public void onActivityPreCreated(Activity a, Bundle b) {
+                    applySystemPalette(a);
+                }
+
+                public void onActivityCreated(Activity a, Bundle b) {
+                    // AppCompat and the landing activity may select the light/dark theme during creation.
+                    applySystemPalette(a);
+                    LandingTabHook.activityCreated(a, b);
+                    attach(a);
+                }
                 public void onActivityStarted(Activity a) { }
                 public void onActivityResumed(Activity a) { }
                 public void onActivityPaused(Activity a) { }
@@ -172,6 +181,24 @@ public final class UiHider {
         } catch (Throwable t) {
             Log.w(TAG, "install failed", t);
             CrashReporter.report(TAG, "install failed", t);
+        }
+    }
+
+    private static void applySystemPalette(Activity activity) {
+        if (android.os.Build.VERSION.SDK_INT < 31 || !Toggles.on(Toggles.SYSTEM_PALETTE)
+                || !activity.getClass().getName().startsWith("tv.twitch.android.")) {
+            return;
+        }
+        try {
+            boolean dark = (activity.getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK)
+                    == Configuration.UI_MODE_NIGHT_YES;
+            int style = res(activity, "ThemeOverlay.Material3.DynamicColors." + (dark ? "Dark" : "Light"), "style");
+            if (style != 0) {
+                activity.getTheme().applyStyle(style, true);
+            }
+        } catch (Throwable t) {
+            Log.w(TAG, "activity palette failed", t);
+            CrashReporter.report(TAG, "activity palette failed", t);
         }
     }
 
@@ -205,6 +232,7 @@ public final class UiHider {
             @Override
             public void onGlobalLayout() {
                 long t0 = UiStallLog.start();
+                LandingTabHook.checkPipFeed(activity, decor);
                 int hiddenBefore = hiddenCount;
                 safeApply(activity, decor);
                 if (hiddenCount != hiddenBefore) {
@@ -453,25 +481,33 @@ public final class UiHider {
         if (Toggles.on(Toggles.HIDE_SOCIAL_GIFT_SUBS)) {
             hideAll(activity, decor, "social_gift_subs_banner_compose");
         }
-        boolean browse = Toggles.on(Toggles.HIDE_TAB_BROWSE);
-        boolean activityTab = Toggles.on(Toggles.HIDE_TAB_ACTIVITY);
+        syncVideoCardMenus(activity, decor);
+        boolean browse = NavVisibility.BROWSE;
+        boolean activityTab = NavVisibility.ACTIVITY;
         if (browse) {
             hideNavItem(activity, decor, "viewer_bottom_nav_explore");
         }
         if (activityTab) {
             hideNavItem(activity, decor, "viewer_bottom_nav_activity");
         }
-        if (Toggles.on(Toggles.HIDE_TAB_CREATE)) {
+        if (NavVisibility.CREATE) {
             hideNavItem(activity, decor, "viewer_bottom_nav_create_placeholder");
             hide(find(activity, decor, "custom_create_bottom_nav_button"));
         }
-        if (Toggles.on(Toggles.HIDE_TAB_PROFILE)) {
+        if (NavVisibility.PROFILE) {
             // Issue #35: the tab was the only way into the mod's settings; a long press on Home opens them.
             hideNavItem(activity, decor, "viewer_bottom_nav_profile");
             hideNavItem(activity, decor, "viewer_bottom_nav_profile_rn");
             settingsOnHomeLongPress(activity, decor);
         }
-        centreCreateButton(activity, decor, browse || activityTab);
+        if (LandingTabHook.pendingBottomTab()) {
+            View nav = find(activity, decor, NAV_VIEWS[0]);
+            if (nav == null || !nav.isShown()) nav = find(activity, decor, NAV_VIEWS[1]);
+            LandingTabHook.openBottomTab(activity, nav);
+        }
+        boolean reordered = !BottomTabs.DEFAULT.equals(NavVisibility.ORDER);
+        if (reordered) BottomTabs.arrange(find(activity, decor, NAV_VIEWS[0]), NavVisibility.ORDER);
+        centreCreateButton(activity, decor, reordered || browse || activityTab || NavVisibility.PROFILE);
         for (View button : findAll(activity, decor, "seek_forward_button")) {
             VodSeek.showStep(button, true);
         }
@@ -1378,6 +1414,42 @@ public final class UiHider {
      * Hides a bottom-navigation item through its menu: a GONE item view would
      * leave its slot empty, a hidden menu item makes the bar re-lay out.
      */
+    // Include recycled (detached) cards when restoring the toggle.
+    private static final Set<View> hiddenVideoMenus = Collections.newSetFromMap(new WeakHashMap<>());
+
+    private static void syncVideoCardMenus(Activity activity, View decor) {
+        if (!Toggles.on(Toggles.HIDE_VIDEO_CARD_MENU)) {
+            if (!hiddenVideoMenus.isEmpty()) {
+                for (View button : hiddenVideoMenus) {
+                    hideWhile(false, button);
+                }
+                hiddenVideoMenus.clear();
+            }
+            return;
+        }
+        // video_card_recycler_item and collection_recycler_item share metadata_widget. Only VODs have vod_length.
+        int duration = id(activity, "vod_length");
+        int more = id(activity, "more_options");
+        for (View metadata : findAll(activity, decor, "metadata_widget")) {
+            if (metadata.getParent() instanceof View && ((View) metadata.getParent()).findViewById(duration) != null) {
+                View button = metadata.findViewById(more);
+                if (button != null && button.getVisibility() == View.VISIBLE) {
+                    hideWhile(true, button);
+                    hiddenVideoMenus.add(button);
+                }
+            }
+        }
+    }
+
+    /** The tab settings take effect together on a fresh process (#80). */
+    private static final class NavVisibility {
+        static final String ORDER = LandingSettings.bottomOrder();
+        static final boolean BROWSE = Toggles.on(Toggles.HIDE_TAB_BROWSE);
+        static final boolean ACTIVITY = Toggles.on(Toggles.HIDE_TAB_ACTIVITY);
+        static final boolean CREATE = Toggles.on(Toggles.HIDE_TAB_CREATE);
+        static final boolean PROFILE = Toggles.on(Toggles.HIDE_TAB_PROFILE);
+    }
+
     private static void hideNavItem(Activity activity, View decor, String itemName) {
         int itemId = id(activity, itemName);
         if (itemId == 0) {

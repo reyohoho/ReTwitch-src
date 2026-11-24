@@ -408,16 +408,8 @@ public final class SettingsHook {
         });
         s.toggle(Toggles.WIDE_CHAT_PANELS);
         s.toggle(Toggles.CHAT_OVER_VIDEO);
-        int[] steps = TheatreSettings.CHAT_BG_STEPS;
-        String[] labels = new String[steps.length];
-        for (int i = 0; i < steps.length; i++) {
-            labels[i] = steps[i] + "%";
-        }
-        s.markNew("0.5.17-beta").note(t("0% - без фона, 100% - непрозрачный. Оверлей чата Twitch (одно сообщение поверх видео) тоже берёт эту непрозрачность, когда её выбрали.",
-                "0% is no background, 100% is solid. Twitch's chat overlay (one message over the video) takes this opacity too once it's chosen."))
-                .slider(t("Фон чата поверх видео", "Chat background over the video"), labels,
-                        TheatreDividerHook.stepIndex(TheatreSettings.getChatBgOpacity()), false,
-                        i -> TheatreSettings.setChatBgOpacity(c, steps[i]));
+        s.numericSlider(t("Фон чата поверх видео", "Chat background over the video"), TheatreSettings.CHAT_BG_STEPS, "%",
+                TheatreSettings::getChatBgOpacity, 60, v -> TheatreSettings.setChatBgOpacity(c, v));
     }
 
     private static void audioPage(SettingsScreen s) {
@@ -487,14 +479,19 @@ public final class SettingsHook {
                 PlayerSettings.DEFAULT_SEEK_FORWARD, v -> PlayerSettings.setSeekSeconds(c, true, v));
         // The notification and headset buttons (reyohoho/ReTwitch-src#40); unset they follow the two above.
         s.markNew("0.5.38-beta").number(t("В уведомлении назад, с", "Notification back, s"),
-                PlayerSettings.getNotificationSeekSeconds(false), PlayerSettings.getSeekBackSeconds(),
+                PlayerSettings.getNotificationSeekSeconds(false), PlayerSettings.DEFAULT_SEEK_BACK,
                 v -> PlayerSettings.setNotificationSeekSeconds(c, false, v));
         s.markNew("0.5.38-beta").number(t("В уведомлении вперёд, с", "Notification forward, s"),
-                PlayerSettings.getNotificationSeekSeconds(true), PlayerSettings.getSeekForwardSeconds(),
+                PlayerSettings.getNotificationSeekSeconds(true), PlayerSettings.DEFAULT_SEEK_FORWARD,
                 v -> PlayerSettings.setNotificationSeekSeconds(c, true, v));
         s.toggle(Toggles.PIP_SEEK);
+        s.number(t("В PiP назад, с", "PiP back, s"), PlayerSettings.getPipSeekSeconds(false),
+                PlayerSettings.DEFAULT_SEEK_BACK, v -> PlayerSettings.setPipSeekSeconds(c, false, v));
+        s.number(t("В PiP вперёд, с", "PiP forward, s"), PlayerSettings.getPipSeekSeconds(true),
+                PlayerSettings.DEFAULT_SEEK_FORWARD, v -> PlayerSettings.setPipSeekSeconds(c, true, v));
         s.section(t("Кнопки на плеере", "Player buttons"));
         s.toggle(Toggles.CHAPTERS_BUTTON);
+        s.toggle(Toggles.VOD_DETAILS_OVER_CHAT);
         s.toggle(Toggles.VOD_CHAT_SYNC);
     }
 
@@ -605,16 +602,10 @@ public final class SettingsHook {
                 ChatSettings.isMentionHighlightEnabled(), false, on -> ChatSettings.setMentionHighlightEnabled(c, on),
                 () -> s.strip(t("Цвет", "Colour"), null, Strings.mentionColorLabels(), ChatSettings.getMentionColorIndex(), false,
                         i -> ChatSettings.setMentionColorIndex(c, i)));
-        int[] lengths = {30, 60, 100, 200, 400};
-        String[] lengthLabels = new String[lengths.length];
-        for (int i = 0; i < lengths.length; i++) {
-            lengthLabels[i] = Strings.vibrateMsLabel(lengths[i]);
-        }
         s.group(t("Вибрация", "Vibration"), t("Когда вас упомянули", "When you're mentioned"),
                 ChatSettings.isMentionVibrateEnabled(), false, on -> ChatSettings.setMentionVibrateEnabled(c, on),
-                () -> s.slider(t("Длительность", "Length"), lengthLabels,
-                        Math.max(0, indexOf(lengths, ChatSettings.getMentionVibrateMs())), false,
-                        i -> ChatSettings.setMentionVibrateMs(c, lengths[i])));
+                () -> s.numericSlider(t("Длительность, мс", "Length, ms"), new int[]{30, 60, 100, 200, 400}, "", ChatSettings::getMentionVibrateMs, 60,
+                        v -> ChatSettings.setMentionVibrateMs(c, Math.max(1, Math.min(5000, v)))));
         int[] volumes = {25, 50, 75, 100};
         String[] volumeLabels = {"25%", "50%", "75%", "100%"};
         s.markNew("0.5.2-beta").group(t("Звук", "Sound"), t("Когда вас упомянули: звук уведомления", "When you're mentioned: the notification sound"),
@@ -675,15 +666,11 @@ public final class SettingsHook {
         s.lookEach(SettingsPreview.CHAT, SettingsPreview.C_DELETED, SettingsPreview.VALUE_DELETED)
                 .choice(t("Как показывать", "How to show them"), Strings.deletedModes(), ChatSettings.getDeletedMode(), true,
                         i -> ChatSettings.setDeletedMode(c, i));
-        String[] alphaLabels = new String[ChatSettings.DELETED_ALPHAS.length];
-        for (int i = 0; i < alphaLabels.length; i++) {
-            alphaLabels[i] = ChatSettings.DELETED_ALPHAS[i] + "%";
-        }
         s.group(Toggles.DELETED_BACKGROUND, () -> {
             s.strip(t("Цвет", "Colour"), null, Strings.mentionColorLabels(), ChatSettings.getDeletedBgColorIndex(), false,
                     i -> ChatSettings.setDeletedBgColorIndex(c, i));
-            s.slider(t("Насыщенность", "Strength"), alphaLabels, ChatSettings.getDeletedBgAlphaIndex(), false,
-                    i -> ChatSettings.setDeletedBgAlphaIndex(c, i));
+            s.numericSlider(t("Насыщенность", "Strength"), ChatSettings.DELETED_ALPHAS, "%", ChatSettings::getDeletedBgPercent, 20,
+                    v -> ChatSettings.setDeletedBgPercent(c, v));
         });
         s.section(t("Удобства", "Conveniences"));
         s.compare(t("Сундук с баллами нужно нажимать вручную", "You have to tap the points chest yourself"),
@@ -740,16 +727,7 @@ public final class SettingsHook {
         s.look(SettingsPreview.CHAT, SettingsPreview.C_HOMIES).toggle("Homies", t("В разделах 7TV", "In the 7TV sections"),
                 EmoteSettings.isHomiesEnabled(), false, on -> EmoteSettings.setHomiesEnabled(c, on));
         s.section(t("В чате", "In chat"));
-        int[] sizes = {16, 18, 20, 22, 24, 26, 28, 32, 36, 40, 48, 56, 64};
-        String[] sizeLabels = new String[sizes.length];
-        int sizeIndex = 0;
-        for (int i = 0; i < sizes.length; i++) {
-            sizeLabels[i] = String.valueOf(sizes[i]);
-            if (sizes[i] <= EmoteSettings.getEmoteSizeDp()) {
-                sizeIndex = i;
-            }
-        }
-        s.slider(t("Размер", "Size"), sizeLabels, sizeIndex, false, i -> EmoteSettings.setEmoteSizeDp(c, sizes[i]));
+        s.numericSlider(t("Размер, dp", "Size, dp"), new int[]{16, 18, 20, 22, 24, 26, 28, 32, 36, 40, 48, 56, 64}, "", EmoteSettings::getEmoteSizeDp, 22, v -> EmoteSettings.setEmoteSizeDp(c, v));
         s.note(t("Смена качества сбрасывает кэш эмоутов.", "Changing the quality clears the emote cache."))
                 .strip(t("Качество картинок", "Image quality"), null, Strings.emoteQualityModes(), EmoteSettings.getQuality() - 1, false,
                         i -> EmoteSettings.setQuality(c, i + 1));
@@ -834,6 +812,12 @@ public final class SettingsHook {
         s.toggle(Toggles.HIDE_PROFILE_USER_CLIPS);
         s.toggle(Toggles.HIDE_PROFILE_CATEGORIES);
         s.toggle(Toggles.HIDE_PROFILE_STREAMERS);
+        s.toggle(Toggles.HIDE_VIDEO_CARD_MENU);
+        s.section(t("Настройки ReTwitch", "ReTwitch settings"));
+        if (android.os.Build.VERSION.SDK_INT >= 31) {
+            s.toggle(Toggles.SYSTEM_PALETTE);
+        }
+        s.toggle(Toggles.SEARCH_HISTORY);
         s.section(Strings.sectionAppIcon());
         s.markNew("0.4.17-alpha").icons(Strings.appIconLabel(), Strings.appIconModes(), AppIcon.DRAWABLES, AppIcon.current(c),
                 i -> AppIcon.set(c, i));
@@ -853,6 +837,7 @@ public final class SettingsHook {
         s.toggle(Toggles.HIDE_VERTICAL_BUTTONS);
         s.toggle(Toggles.HIDE_VERTICAL_PANEL);
         s.section(t("Мини-плеер", "Mini player"));
+        s.toggle(Toggles.HIDE_MINI_LATENCY);
         s.toggle(Toggles.HIDE_MINI_CLOSE);
         s.toggle(Toggles.HIDE_MINI_EXPAND);
     }
@@ -907,9 +892,13 @@ public final class SettingsHook {
     /** The home screen is React Native: these act on its data, so most take a restart. */
     private static void homePage(SettingsScreen s) {
         final Context c = s.context;
-        s.look(SettingsPreview.HOME, SettingsPreview.H_FOLLOWING).toggle(t("Открывать «Отслеживаемое»", "Open Following"),
-                t("При запуске вместо «В эфире»", "At launch instead of Live"),
-                LandingSettings.isFollowingDefaultEnabled(), true, on -> LandingSettings.setFollowingDefaultEnabled(c, on));
+        s.markNew("0.5.41-beta").look(SettingsPreview.HOME, SettingsPreview.H_FOLLOWING)
+                .note(t("Скрытая вкладка уступает место главной. Ссылки по-прежнему открывают свой экран.",
+                        "Hidden tabs fall back to Home. Links still open their own destination."))
+                .choice(t("Стартовая вкладка", "Launch tab"), t("Что открыть при запуске", "Where to start the app"),
+                        new String[]{t("Отслеживаемое", "Following"), t("В эфире", "Live"), t("Клипы", "Clips"),
+                                t("Просмотр", "Browse"), t("Активность", "Activity"), t("Профиль", "Profile")},
+                        LandingSettings.launchTab(), true, i -> LandingSettings.setLaunchTab(c, i));
         s.markNew("0.5.36-beta").note(t("Twitch держит главную и другие экраны вне плеера в портрете. «По автоповороту» - как "
                         + "системный автоповорот (выключен - экран остаётся, как вы его повернули кнопкой системы). «Не менять» - "
                         + "главная остаётся в той ориентации, в которой вы вышли из стрима, и не поворачивается, пока не откроете стрим.",
@@ -920,6 +909,10 @@ public final class SettingsHook {
                         t("Не сбрасывать горизонтальный режим после стрима", "Don't drop landscape after a stream"),
                         new String[]{t("Как в Twitch", "As in Twitch"), t("По автоповороту", "Auto-rotate"), t("Не менять", "Keep as is")},
                         LandingSettings.getHomeOrientationMode(), false, i -> LandingSettings.setHomeOrientationMode(c, i));
+        s.markNew("0.5.41-beta").compare(t("Обычный порядок кнопок", "Default button order"),
+                t("Кнопки на выбранных местах", "Buttons in your chosen positions"))
+                .action(t("Порядок кнопок нижнего меню", "Bottom bar button order"),
+                        t("Выберите кнопку и её новое место", "Choose a button and its new position"), () -> BottomTabs.edit(s));
         s.section(t("Нижнее меню: скрыть", "Bottom menu: hide"));
         s.toggle(Toggles.HIDE_TAB_BROWSE);
         s.toggle(Toggles.HIDE_TAB_ACTIVITY);
@@ -950,6 +943,7 @@ public final class SettingsHook {
         s.toggle(Toggles.HIDE_FEED_TABS);
         s.toggle(Toggles.NO_HOME_SWIPE);
         s.section(t("В эфире", "Live"));
+        s.toggle(Toggles.LIVE_TAB_TO_TOP);
         s.toggle(Toggles.COMPACT_LIVE_TAB);
         s.toggle(Toggles.HIDE_LIVE_FOLLOWED_SHELF);
         s.toggle(Toggles.HIDE_LIVE_CLIPS_SHELF);
@@ -1010,7 +1004,8 @@ public final class SettingsHook {
             labels[i] = TranslationFiles.name(codes[i]);
             index = codes[i].equals(chosen) ? i : index;
         }
-        s.strip(t("Язык мода", "Mod language"), t("Twitch остаётся на языке системы", "Twitch stays in the system language"),
+        TwitchLanguage.setting(s);
+        s.strip(t("Язык мода", "Mod language"), t("Язык настроек ReTwitch", "ReTwitch settings language"),
                 labels, index, false, i -> {
                     TranslationFiles.choose(c, codes[i]);
                     // Redrawn in the new language; strings elsewhere were already built.

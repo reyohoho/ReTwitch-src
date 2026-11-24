@@ -108,18 +108,33 @@ public final class PlayerSettings {
         return seconds > 0 ? seconds : forward ? getSeekForwardSeconds() : getSeekBackSeconds();
     }
 
-    /** The player's step itself (what Reset sets) is stored as "unset": it follows the player's again. */
+    private static final String KEY_PIP_SEEK_BACK = "pip_seek_back_seconds";
+    private static final String KEY_PIP_SEEK_FORWARD = "pip_seek_forward_seconds";
+
+    public static int getPipSeekSeconds(boolean forward) {
+        return getInt(forward ? KEY_PIP_SEEK_FORWARD : KEY_PIP_SEEK_BACK, getNotificationSeekSeconds(forward));
+    }
+
+    // Before the first edit, preserve each surface's effective step from older releases.
+    private static SharedPreferences.Editor editSeek(Context context, boolean forward) {
+        return prefs(context).edit()
+                .putInt(forward ? KEY_NOTIFICATION_SEEK_FORWARD : KEY_NOTIFICATION_SEEK_BACK, getNotificationSeekSeconds(forward))
+                .putInt(forward ? KEY_PIP_SEEK_FORWARD : KEY_PIP_SEEK_BACK, getPipSeekSeconds(forward));
+    }
+
     public static void setNotificationSeekSeconds(Context context, boolean forward, int seconds) {
-        String key = forward ? KEY_NOTIFICATION_SEEK_FORWARD : KEY_NOTIFICATION_SEEK_BACK;
-        if (seconds == (forward ? getSeekForwardSeconds() : getSeekBackSeconds())) {
-            prefs(context).edit().remove(key).apply();
-        } else {
-            prefs(context).edit().putInt(key, Math.max(1, Math.min(999, seconds))).apply();
-        }
+        editSeek(context, forward).putInt(forward ? KEY_NOTIFICATION_SEEK_FORWARD : KEY_NOTIFICATION_SEEK_BACK,
+                Math.max(1, Math.min(999, seconds))).apply();
+    }
+
+    public static void setPipSeekSeconds(Context context, boolean forward, int seconds) {
+        editSeek(context, forward).putInt(forward ? KEY_PIP_SEEK_FORWARD : KEY_PIP_SEEK_BACK,
+                Math.max(1, Math.min(999, seconds))).apply();
     }
 
     public static void setSeekSeconds(Context context, boolean forward, int seconds) {
-        prefs(context).edit().putInt(forward ? KEY_SEEK_FORWARD : KEY_SEEK_BACK, Math.max(1, Math.min(999, seconds))).apply();
+        editSeek(context, forward).putInt(forward ? KEY_SEEK_FORWARD : KEY_SEEK_BACK,
+                Math.max(1, Math.min(999, seconds))).apply();
     }
 
     private static int getInt(String key, int fallback) {

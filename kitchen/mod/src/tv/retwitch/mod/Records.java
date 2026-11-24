@@ -145,14 +145,17 @@ final class Records {
             throw new IOException("can't open " + uri);
         }
         FileOutputStream out = new ParcelFileDescriptor.AutoCloseOutputStream(fd);
-        FileChannel channel = out.getChannel();
-        if (channel.size() < length) {
+        try {
+            FileChannel channel = out.getChannel();
+            long size = channel.size();
+            if (size < length) throw new IOException("the file is shorter than its segments: " + size + " < " + length);
+            channel.truncate(length);
+            channel.position(length);
+            return out;
+        } catch (IOException | RuntimeException e) {
             out.close();
-            throw new IOException("the file is shorter than its segments: " + channel.size() + " < " + length);
+            throw e;
         }
-        channel.truncate(length);
-        channel.position(length);
-        return out;
     }
 
     /**
@@ -169,14 +172,19 @@ final class Records {
                 if (file.exists() && !file.delete()) {
                     return false;
                 }
+            } else if (android.provider.DocumentsContract.isDocumentUri(context, uri)) {
+                if (!android.provider.DocumentsContract.deleteDocument(context.getContentResolver(), uri)) return false;
             } else if (!meta.optString("uri").isEmpty()) {
                 context.getContentResolver().delete(uri, null, null); // 0 rows: already gone
             }
         } catch (SecurityException e) {
             Log.w(TAG, "video not deleted: " + e);
             return false;
+        } catch (java.io.FileNotFoundException ignored) {
+            // The file was already deleted in Files.
         } catch (Exception e) {
             Log.w(TAG, "video delete failed: " + e);
+            return false;
         }
         File dir = dir(context, meta.optString("id"));
         File[] files = dir.listFiles();
