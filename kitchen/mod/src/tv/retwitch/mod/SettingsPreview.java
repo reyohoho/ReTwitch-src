@@ -68,7 +68,8 @@ final class SettingsPreview extends View {
             H_CATEGORIES = 1L << 4, H_CONTINUE = 1L << 5, H_OFFLINE = 1L << 6, H_STREAK = 1L << 7,
             H_COMPACT = 1L << 8, H_SHELF_FOLLOWED = 1L << 9, H_SHELF_CLIPS = 1L << 10, H_ADS = 1L << 11,
             H_PROMO = 1L << 12, H_FRIENDS = 1L << 13, H_PREVIEW_SIZE = 1L << 14, H_FAVORITES = 1L << 15,
-            H_PROFILE = 1L << 16, H_TAGS = 1L << 17, H_CATEGORY = 1L << 18;
+            H_PROFILE = 1L << 16, H_TAGS = 1L << 17, H_CATEGORY = 1L << 18,
+            H_LIVE_MUTE = 1L << 19, H_LIVE_MORE = 1L << 20, H_LIVE_FOLLOW = 1L << 21;
 
     static final long K_FAVORITES = 1L, K_FREQUENT = 1L << 1, K_STICKY = 1L << 2, K_FIRST = 1L << 3, K_NO_GLOBAL = 1L << 4;
 
@@ -1450,7 +1451,8 @@ final class SettingsPreview extends View {
     private void home() {
         box(0, 0, 320, 250, 0, colors.bg);
         long f = focus;
-        boolean live = f == H_COMPACT || f == H_SHELF_FOLLOWED || f == H_SHELF_CLIPS;
+        boolean liveButtons = f == H_LIVE_MUTE || f == H_LIVE_MORE || f == H_LIVE_FOLLOW;
+        boolean live = f == H_COMPACT || f == H_SHELF_FOLLOWED || f == H_SHELF_CLIPS || liveButtons;
         boolean following = !live;
         if (f == H_FOLLOWING) {
             following = on(H_FOLLOWING);
@@ -1491,7 +1493,27 @@ final class SettingsPreview extends View {
             if (f == H_SHELF_CLIPS) {
                 shelf(H_SHELF_CLIPS, "Clips for you", true);
             }
-            if (f == H_COMPACT && !on(H_COMPACT)) {
+            if (liveButtons) {
+                video(12, y, 296, 112, false);
+                float right = 280;
+                if (hides(H_LIVE_MORE, right, y + 84, 24, 24, 12)) {
+                    circle(right + 12, y + 96, 12, 0xCC18181B);
+                    icon("more_vertical", right + 4, y + 88, 16, WHITE);
+                    right -= 30;
+                }
+                if (hides(H_LIVE_MUTE, right, y + 84, 24, 24, 12)) {
+                    circle(right + 12, y + 96, 12, 0xCC18181B);
+                    icon("volume_mute", right + 4, y + 88, 16, WHITE);
+                }
+                label("mira", 16, y + 134, 14, colors.fg, true);
+                String follow = t("Отслеживать", "Follow");
+                float w = width(follow, 12, true) + 16;
+                if (hides(H_LIVE_FOLLOW, 308 - w, y + 116, w, 24, 12)) {
+                    box(308 - w, y + 116, w, 24, 12, colors.accent);
+                    label(follow, 316 - w, y + 132, 12, WHITE, true);
+                }
+                y += 144;
+            } else if (f == H_COMPACT && !on(H_COMPACT)) {
                 video(12, y, 296, 130, false);
                 circle(24, y + 14, 4, LIVE);
                 y += 136;

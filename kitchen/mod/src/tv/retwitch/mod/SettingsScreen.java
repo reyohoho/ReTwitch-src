@@ -4,6 +4,7 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Context;
@@ -443,6 +444,15 @@ final class SettingsScreen {
         scroll.post(() -> scroll.scrollTo(0, keepScroll ? y : 0));
     }
 
+    void refreshAfterPicker(Activity host) {
+        // A result can arrive after the dialog regained focus. Otherwise onWindowFocusChanged refreshes it.
+        Window window = dialog.getWindow();
+        if (dialog.isShowing() && window != null && window.getDecorView().hasWindowFocus()
+                && !host.isFinishing() && !host.isDestroyed() && SettingsBackup.activity(context) == host) {
+            render(true);
+        }
+    }
+
     private void rememberSearch() {
         if (Toggles.on(Toggles.SEARCH_HISTORY)) {
             SettingsSearchHistory.remember(context, search.getText().toString());
@@ -460,7 +470,17 @@ final class SettingsScreen {
             return;
         }
         section(Strings.pick("Недавние запросы", "Recent searches"));
+        LinearLayout history = card();
         for (String term : entries) {
+            if (history.getChildCount() > 0) {
+                addDivider(history, 16, 16);
+            }
+            LinearLayout row = new LinearLayout(context);
+            row.setGravity(Gravity.CENTER_VERTICAL);
+            row.setMinimumHeight(dp(56));
+            row.setPadding(dp(16), 0, dp(16), 0);
+            row.setBackground(ripple());
+            row.addView(text(term, 16, fg), new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
             ImageView remove = glyph("ic_close_small", fgDim, 16);
             remove.setMinimumWidth(dp(48));
             remove.setMinimumHeight(dp(48));
@@ -471,16 +491,25 @@ final class SettingsScreen {
                 SettingsSearchHistory.remove(context, term);
                 render(true);
             });
-            addRow(term, null, new Extra(), false, remove, v -> {
+            row.addView(remove);
+            row.setOnClickListener(v -> {
                 search.setText(term);
                 search.setSelection(term.length());
                 rememberSearch();
-            }, null, null);
+            });
+            history.addView(row);
         }
-        action(Strings.pick("Очистить историю поиска", "Clear search history"), null, () -> {
+        addDivider(history, 0, 0);
+        TextView clear = text(Strings.pick("Очистить историю поиска", "Clear search history"), 16, fg);
+        clear.setGravity(Gravity.CENTER);
+        clear.setMinimumHeight(dp(56));
+        clear.setPadding(dp(16), dp(8), dp(16), dp(8));
+        clear.setBackground(ripple());
+        clear.setOnClickListener(v -> {
             SettingsSearchHistory.clear(context);
             render(true);
         });
+        history.addView(clear);
     }
 
     /** Builds every page reachable from the root; {@link #skip} keeps the matching rows. */
@@ -1651,7 +1680,15 @@ final class SettingsScreen {
                 end.addView(trailing);
                 trailing = end;
             }
-            addRow(rowTitle, summary, extra, false, trailing, v -> open(rowTitle, page), null, null);
+            View row = addRow(rowTitle, summary, extra, false, trailing, v -> open(rowTitle, page), null, null);
+            if (query != null) {
+                // A page result (including the About hero) points to the page itself.
+                row.setOnLongClickListener(v -> {
+                    hideSearchKeyboard();
+                    open(rowTitle, page);
+                    return true;
+                });
+            }
         }
         if (query != null && searched.add(page.getClass())) {
             String path = searchPath;
@@ -1671,11 +1708,21 @@ final class SettingsScreen {
     }
 
     void action(String rowTitle, String summary, final Runnable action) {
+        action(rowTitle, summary, action, null);
+    }
+
+    void action(String rowTitle, String summary, final Runnable action, final Runnable longPress) {
         Extra extra = take();
         if (skip(rowTitle, summary, extra)) {
             return;
         }
-        addRow(rowTitle, summary, extra, false, null, action == null ? null : v -> apply(action), null, null);
+        View row = addRow(rowTitle, summary, extra, false, null, action == null ? null : v -> apply(action), null, null);
+        if (longPress != null && query == null) {
+            row.setOnLongClickListener(v -> {
+                apply(longPress);
+                return true;
+            });
+        }
     }
 
     /** A row leaving the app, with the mark for that at its end. */
@@ -1814,16 +1861,20 @@ final class SettingsScreen {
     private void addToCard(View row) {
         LinearLayout target = card();
         if (target.getChildCount() > 0 || target != list && target.getPaddingLeft() > 0) {
-            View divider = new View(context);
-            divider.setBackgroundColor(line);
-            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 1);
-            lp.leftMargin = dp(16);
-            target.addView(divider, lp);
+            addDivider(target, 16, 0);
         }
         target.addView(row);
         if (query != null) {
             goToOnLongPress(row, new ArrayList<>(searchTrail), firstText(row));
         }
+    }
+
+    private void addDivider(LinearLayout target, int left, int right) {
+        View divider = new View(context);
+        divider.setBackgroundColor(line);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 1);
+        lp.setMargins(dp(left), 0, dp(right), 0);
+        target.addView(divider, lp);
     }
 
     /**
@@ -1834,11 +1885,7 @@ final class SettingsScreen {
     private void goToOnLongPress(View view, final ArrayList<Object[]> trail, final TextView title) {
         if (view.isClickable()) {
             view.setOnLongClickListener(v -> {
-                InputMethodManager imm = (InputMethodManager) context.getSystemService(Context.INPUT_METHOD_SERVICE);
-                if (imm != null) {
-                    imm.hideSoftInputFromWindow(search.getWindowToken(), 0);
-                }
-                search.clearFocus();
+                hideSearchKeyboard();
                 clearSearch();
                 if (!trail.isEmpty()) {
                     Object[] step = trail.get(trail.size() - 1);
@@ -1867,6 +1914,12 @@ final class SettingsScreen {
                 goToOnLongPress(group.getChildAt(i), trail, title);
             }
         }
+    }
+
+    private void hideSearchKeyboard() {
+        InputMethodManager imm = (InputMethodManager) context.getSystemService(Context.INPUT_METHOD_SERVICE);
+        if (imm != null) imm.hideSoftInputFromWindow(search.getWindowToken(), 0);
+        search.clearFocus();
     }
 
     /** The row a search jump landed on blinks twice once the scroll settles (reyohoho/ReTwitch-src#43). */
@@ -1970,7 +2023,7 @@ final class SettingsScreen {
      * With {@code detail} the text unfolds it and {@code control} works on its own, set off by a thin line;
      * without it the whole row is the control.
      */
-    private void addRow(String rowTitle, String summary, Extra extra, boolean restart, View control,
+    private View addRow(String rowTitle, String summary, Extra extra, boolean restart, View control,
             View.OnClickListener click, Detail detail, Integer titleColor) {
         LinearLayout wrapper = new LinearLayout(context);
         wrapper.setOrientation(LinearLayout.VERTICAL);
@@ -2043,6 +2096,7 @@ final class SettingsScreen {
             }
         }
         addToCard(wrapper);
+        return row;
     }
 
     private void unfold(String key, LinearLayout area, Detail detail, View caret) {

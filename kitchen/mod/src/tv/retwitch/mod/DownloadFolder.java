@@ -12,12 +12,15 @@ import android.util.Log;
 import android.widget.Toast;
 
 import java.io.IOException;
+import java.lang.ref.WeakReference;
 
 /** Persistent SAF destinations are device-local. Recording metadata keeps its original document URI. */
 public final class DownloadFolder extends Fragment {
     static final String PREFS = "retwitch_folder_grants";
     private static final String TAG = "RTFolder";
     private static final int ACCESS = Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION;
+    private static final int REQUEST_TREE = 1;
+    private WeakReference<SettingsScreen> caller;
 
     private static SharedPreferences prefs(Context c) {
         return c.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
@@ -46,7 +49,8 @@ public final class DownloadFolder extends Fragment {
         return file;
     }
 
-    static void pick(Context c, String kind) {
+    static void pick(SettingsScreen screen, String kind) {
+        Context c = screen.context;
         Activity activity = SettingsBackup.activity(c);
         if (activity == null) return;
         DownloadFolder fragment = new DownloadFolder();
@@ -54,13 +58,14 @@ public final class DownloadFolder extends Fragment {
             Bundle args = new Bundle();
             args.putString("kind", kind);
             fragment.setArguments(args);
+            fragment.caller = new WeakReference<>(screen);
             activity.getFragmentManager().beginTransaction().add(fragment, TAG).commitNow();
             Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
                     .addFlags(ACCESS | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION | Intent.FLAG_GRANT_PREFIX_URI_PERMISSION)
                     .putExtra(Intent.EXTRA_LOCAL_ONLY, true);
             Uri current = tree(c, kind);
             if (current != null) intent.putExtra(DocumentsContract.EXTRA_INITIAL_URI, current);
-            fragment.startActivityForResult(intent, 1);
+            fragment.startActivityForResult(intent, REQUEST_TREE);
         } catch (Throwable t) {
             if (fragment.isAdded()) activity.getFragmentManager().beginTransaction().remove(fragment).commitAllowingStateLoss();
             Log.w(TAG, "folder picker failed", t);
@@ -70,6 +75,7 @@ public final class DownloadFolder extends Fragment {
     }
 
     @Override public void onActivityResult(int request, int result, Intent data) {
+        if (request != REQUEST_TREE) return;
         Activity activity = getActivity();
         if (activity == null) return;
         try {
@@ -81,6 +87,8 @@ public final class DownloadFolder extends Fragment {
                 activity.getContentResolver().takePersistableUriPermission(uri, ACCESS);
                 String kind = getArguments().getString("kind");
                 prefs(activity).edit().putString(kind, uri.toString()).apply();
+                SettingsScreen screen = caller != null ? caller.get() : null;
+                if (screen != null) screen.refreshAfterPicker(activity);
                 Toast.makeText(activity, label(activity, kind), Toast.LENGTH_SHORT).show();
             }
         } catch (Throwable t) {

@@ -24,6 +24,7 @@ import okhttp3.Response;
 import okhttp3.ResponseBody;
 
 import tv.retwitch.mod.CrashReporter;
+import tv.retwitch.mod.PrivateClipPlayback;
 
 /**
  * Local HLS playlist proxy that runs VAFT on the device, the way Thream does.
@@ -158,6 +159,10 @@ public final class VaftServer {
         }
     }
 
+    public static String clipEndpoint() throws IOException {
+        return baseUrl() + "clip.mp4";
+    }
+
     private static synchronized String baseUrl() throws IOException {
         if (server == null || server.isClosed()) {
             final ServerSocket socket = new ServerSocket(0, 16, InetAddress.getByName(HOST));
@@ -214,8 +219,12 @@ public final class VaftServer {
             InputStream in = client.getInputStream();
             String requestLine = readLine(in);
             String header;
+            String range = null;
             do {
                 header = readLine(in);
+                if (header != null && header.regionMatches(true, 0, "Range:", 0, 6)) {
+                    range = header.substring(6).trim();
+                }
             } while (header != null && !header.isEmpty());
 
             String[] parts = requestLine != null ? requestLine.split(" ") : new String[0];
@@ -227,6 +236,14 @@ public final class VaftServer {
             Uri request = Uri.parse("http://" + HOST + parts[1]);
             List<String> path = request.getPathSegments();
             String kind = path.size() == 2 && path.get(0).equals(secret) ? path.get(1) : null;
+            if ("clip.mp4".equals(kind)) {
+                if (head || "GET".equals(parts[0])) {
+                    PrivateClipPlayback.serve(client, request, range, head);
+                } else {
+                    respond(client, 405, "text/plain", "method not allowed", head);
+                }
+                return;
+            }
             String target = request.getQueryParameter("u");
             String inPath = masterTargetInPath(parts[1], secret);
             if (inPath != null) {

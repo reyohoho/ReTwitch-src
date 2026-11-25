@@ -5,7 +5,9 @@
     var config = global.__retwitchRn;
     var React, RN, core, icons, host, numbers, define, openChannel, contentReady = false;
     var fav = !!config.favorites;
-    var targets = {FeedStreamItem: config.compactLive, FeedAdItem: config.compactLive, RecapsShelfHeader: config.hideFollowedShelf,
+    var targets = {createSpadeReporter: !!config.privateViewEvents,
+        resolveLiveUrl: !!config.privateViewEvents, resolveLiveUrlSync: !!config.privateViewEvents, signClipRenditionUrl: !!config.privateViewEvents,
+        FeedStreamItem: config.compactLive, FeedAdItem: config.compactLive, RecapsShelfHeader: config.hideFollowedShelf,
         FeedShelfContainer: config.hideClipsShelf, FollowingTab: !!config.friends || fav, FollowingCategories: !!config.friends,
         useFollowingTabData: fav || config.hideLiveEmpty, FollowingLiveHeader: fav, TrackedFollowingChannelRow: fav, FollowingChannelMenu: fav,
         ChannelProfileOverflowMenu: fav, FollowingRowTags: config.hideTags,
@@ -15,6 +17,7 @@
         StoriesShelf: config.hideStories || config.hideStoriesEmpty,
         CollapsedStoriesIcons: config.hideStories || config.hideStoriesEmpty, FeedTabsRow: config.hideTabs || config.liveToTop,
         FeedTabList: config.liveToTop,
+        IconButton: config.hideLiveMute || config.hideLiveMore, FeedFollowButton: config.hideLiveFollow,
         HomeTabsPager: config.noHomeSwipe,
         FreeScrollCellRenderer: config.compactLive, useFeedData: config.compactLive, ChannelProfileRecapsShelf: config.hideProfileRecaps,
         ChannelProfileClipShelf: config.hideProfileClips || config.hideProfileUserClips,
@@ -694,7 +697,42 @@
         return wrapped;
     }
 
+    // The synchronous resolver returns null without a prefetched token; the async one then requests
+    // a fresh token. Keep the account's credentials and tokens out of both playback paths.
+    function guestLiveUrl(resolve) {
+        return function (channel, options) {
+            var guest = Object.assign({}, options, {getAuthToken: undefined, preFetchedToken: undefined});
+            return resolve.call(this, channel, guest);
+        };
+    }
+
     var adapters = {
+        signClipRenditionUrl: function () {
+            // This helper is synchronous. The local endpoint fetches a guest token when the player reads the clip.
+            return function (rendition, token) {
+                if (!rendition || !rendition.sourceURL) return undefined;
+                var endpoint = config.privateClipEndpoint || 'http://127.0.0.1:0/clip.mp4';
+                try {
+                    var slug = JSON.parse(token.value).clip_slug;
+                    var asset = /^https:\/\/[^/?#]+(\/[^?#]*)/i.exec(rendition.sourceURL);
+                    if (/^[a-zA-Z0-9_-]{1,256}$/.test(slug) && typeof slug === 'string' && asset) {
+                        return endpoint + '?slug=' + encodeURIComponent(slug) + '&asset=' + encodeURIComponent(asset[1]);
+                    }
+                } catch (_) {}
+                return endpoint;
+            };
+        },
+        resolveLiveUrl: guestLiveUrl,
+        resolveLiveUrlSync: guestLiveUrl,
+        createSpadeReporter: function (create) {
+            return function () {
+                var reporter = create.apply(this, arguments), track = reporter.track;
+                reporter.track = function (name) {
+                    if (config.privateViewEvents.indexOf(name) === -1) return track.apply(this, arguments);
+                };
+                return reporter;
+            };
+        },
         // Favorites go first among live channels; the section header and the strip are drawn around them below.
         // Empty live section (issue #12): FollowingTabContent draws "Live Now" and "They'll be back!" only when
         // hasAnyFollows is set and nobody is live; nothing else reads it from here (the offline gate has its own).
@@ -820,6 +858,21 @@
             return React.memo(function (props) {
                 return React.createElement(props.freeScroll === true ? Row : original, props);
             }, original.compare);
+        },
+        // Both layouts of FeedStreamItem use these IDs. Clip cards, ads and theatre controls have distinct prefixes.
+        IconButton: function (original) {
+            return function (props) {
+                var id = props.testID;
+                if (typeof id === 'string' && ((config.hideLiveMute && id.indexOf('feed-mute-') === 0) ||
+                        (config.hideLiveMore && id.indexOf('feed-more-') === 0))) return null;
+                return React.createElement(original, props);
+            };
+        },
+        FeedFollowButton: function (original) {
+            return function (props) {
+                if (typeof props.testID === 'string' && props.testID.indexOf('feed-follow-') === 0) return null;
+                return React.createElement(original, props);
+            };
         },
         // An ad slot is a blank near-full-screen cell until the ad store drops it, and that waits for the feed to
         // turn interactive: 20 s (useDeferUntilInteractive's failsafe) without the stock card's player.
@@ -1037,8 +1090,45 @@
         });
     }
 
+    // Both themes are exported by @twitch-rn/tokens before any RN surface mounts.
+    // Leave overlayTheme (controls over video), status colours and per-channel colours alone.
+    var wallpaper = config.wallpaper;
+    function tintTheme(theme, dark) {
+        var colors = theme.colors;
+        function paint(keys, family, tone) {
+            var value = wallpaper[family + '_' + tone];
+            if (value) keys.split(' ').forEach(function (key) {
+                if (key in colors) colors[key] = value;
+            });
+        }
+        paint('backgroundBody backgroundBase backgroundChat', 'neutral1', dark ? 900 : 50);
+        paint('backgroundElevation1 backgroundAlt', 'neutral2', dark ? 800 : 10);
+        paint('backgroundElevation2 backgroundFloat', 'neutral2', dark ? 800 : 0);
+        paint('backgroundAlt2 backgroundButtonSecondary backgroundPillSubtle backgroundTag', 'neutral2', dark ? 700 : 100);
+        paint('textBase textTag', 'neutral1', dark ? 50 : 900);
+        paint('textAlt textAlt2', 'neutral2', dark ? 200 : 700);
+        paint('borderBase borderRegion', 'neutral2', dark ? 600 : 300);
+        paint('borderInput borderToggle', 'neutral2', dark ? 400 : 600);
+        paint('fillBrand backgroundBrand backgroundInputCheckboxChecked', 'accent1', 600);
+        paint('fillBrandHover', 'accent1', 700);
+        paint('buttonPrimaryTextColor', 'neutral1', 0);
+        paint('textLink textInteractableSelected borderBrand borderSpinnerFill backgroundToggleHandleChecked backgroundProgressStatus', 'accent1', dark ? 200 : 700);
+        paint('backgroundInteractableSelected backgroundTagActive', 'accent1', dark ? 800 : 100);
+    }
+
     function scan(exports) {
         if (exports === null || (typeof exports !== 'object' && typeof exports !== 'function')) return;
+        if (wallpaper && 'commonColors' in exports && 'overlayTheme' in exports && exports.darkTheme && exports.lightTheme
+                && exports.darkTheme.colors && exports.lightTheme.colors) {
+            try {
+                tintTheme(exports.darkTheme, true);
+                tintTheme(exports.lightTheme, false);
+                if (global.console) console.log('[ReTwitch] rn: wallpaper colours');
+            } catch (e) {
+                if (global.console) console.warn('[ReTwitch] rn: wallpaper colours unavailable', String(e));
+            }
+            wallpaper = null;
+        }
         if (fav) {
             // One module per icon: the one with IconVerified has no stars.
             if (!stars.on && 'IconStar' in exports) stars.on = exports.IconStar;
@@ -1071,6 +1161,10 @@
         }
         else Object.keys(targets).forEach(function (name) {
             if (targets[name] && name in exports) {
+                // A barrel can expose these buttons via a read-only getter. Patch the component's defining module.
+                if ((name === 'IconButton' || name === 'FeedFollowButton' || name === 'createSpadeReporter' ||
+                        name === 'resolveLiveUrl' || name === 'resolveLiveUrlSync' || name === 'signClipRenditionUrl') &&
+                        !(Object.getOwnPropertyDescriptor(exports, name) || {}).writable) return;
                 targets[name] = false;
                 exports[name] = adapters[name](exports[name]);
                 if (global.console) console.log('[ReTwitch] rn: ' + name);

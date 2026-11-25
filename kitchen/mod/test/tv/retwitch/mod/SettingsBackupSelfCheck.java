@@ -57,6 +57,12 @@ public final class SettingsBackupSelfCheck {
         assert !SettingsBackup.conflicts(new HashSet<String>(), set);
         assert SettingsBackup.conflicts(new HashSet<String>(), "a");
 
+        String landing = LandingSettings.PREFS_NAME, order = LandingSettings.KEY_BOTTOM_ORDER;
+        assert !SettingsBackup.canRestore(landing, order, null, 1234);
+        assert !SettingsBackup.canRestore(landing, order, "01234", "01233");
+        assert SettingsBackup.canRestore(landing, order, 1234, "41230");
+        assert !SettingsBackup.canRestore(landing, "launch_tab", false, 1);
+
         System.out.println("SettingsBackupSelfCheck OK");
     }
 }

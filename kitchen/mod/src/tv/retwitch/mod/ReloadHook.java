@@ -111,16 +111,8 @@ public final class ReloadHook {
             "player_overlay_container",
     };
 
-    /**
-     * Resource entry names of the VOD/clip scrubber. Only the seekable (VOD or
-     * clip) player inflates these; a live stream's controls overlay has none.
-     * If one is present in the window we treat the player as seekable and keep
-     * the reload button out (reloading only makes sense for a live stream).
-     */
-    private static final String[] SEEKBAR_NAMES = {
-            "seekbar_container",
-            "seekbar",
-    };
+    // The seekable player's control layout owns this bar even when the scrubber or overlay is GONE.
+    private static final String SEEKABLE_BAR = "bottom_player_control_overlay_widget";
 
     private static final String BUTTON_TAG = "retwitch_reload_button";
     private static final int LISTENER_TAG_KEY = 0x7e700d30;
@@ -527,7 +519,7 @@ public final class ReloadHook {
     private static void scanPass(View root) {
         Context ctx = root.getContext();
         SparseArray<List<View>> byId = new SparseArray<>();
-        for (String[] names : new String[][]{SEEKBAR_NAMES, OVERLAY_NAMES, ANCHOR_NAMES, {"share_button", CLIP_PAGE}}) {
+        for (String[] names : new String[][]{OVERLAY_NAMES, ANCHOR_NAMES, {SEEKABLE_BAR, "share_button", CLIP_PAGE}}) {
             for (String name : names) {
                 int id = idOf(ctx, name);
                 if (id != 0) {
@@ -561,69 +553,51 @@ public final class ReloadHook {
         View existing = passStrip;
         RecordSheet.syncLabel(root, existing);
 
-        // Live: reload + compressor; seekable VOD/clip player: chapters +
-        // compressor. The strip is rebuilt when its set of buttons changes.
-        int buttons = enabledButtons(isSeekablePlayer(root));
-        stripButtons = buttons;
-        if (buttons == 0) {
-            if (existing != null) {
-                detach(existing);
+        ViewGroup parent = existing != null && existing.getParent() instanceof ViewGroup
+                ? (ViewGroup) existing.getParent() : null;
+        View anchor = null;
+        if (parent == null || !parent.isShown()) {
+            anchor = findActiveAnchor(root);
+            if (anchor == null && parent == null) anchor = preparedVodAnchor(root);
+        }
+        View barItem = anchor != null ? anchor : existing;
+        if (barItem == null) {
+            if (lastAnchorDump == 0L && (enabledButtons(false) != 0 || enabledButtons(true) != 0)) {
+                logAnchorState(root, "no usable anchor");
             }
             return;
         }
-        if (existing != null && !Integer.valueOf(buttons).equals(existing.getTag(BUTTONS_TAG_KEY))) {
+        int barId = idOf(root.getContext(), SEEKABLE_BAR);
+        int buttons = enabledButtons(underId(barItem, barId));
+        stripButtons = buttons;
+        boolean move = anchor != null && anchor.getParent() != parent;
+        if (existing != null && (buttons == 0 || move ||
+                !Integer.valueOf(buttons).equals(existing.getTag(BUTTONS_TAG_KEY)))) {
+            // Keep the original anchor when replacing the buttons while their parent is hidden.
+            if (anchor == null && parent != null && existing.getTag(ANCHOR_ID_TAG_KEY) instanceof Integer) {
+                anchor = childById(parent, (Integer) existing.getTag(ANCHOR_ID_TAG_KEY));
+            }
             detach(existing);
             existing = null;
         }
-
+        if (buttons == 0) return;
         if (existing != null) {
-            ViewGroup exParent = existing.getParent() instanceof ViewGroup
-                    ? (ViewGroup) existing.getParent() : null;
-            if (exParent != null) {
-                if (exParent.isShown()) {
-                    // In the active bar: mirror the controls' fade by following
-                    // the exact control we anchored to (rotate in portrait,
-                    // fullscreen in theater). Falling back to any bottom-bar
-                    // button would follow a GONE one (e.g. fullscreen in
-                    // portrait) and wrongly hide us.
-                    View ref = null;
-                    Object aid = existing.getTag(ANCHOR_ID_TAG_KEY);
-                    if (aid instanceof Integer) {
-                        ref = childById(exParent, (Integer) aid);
-                    }
-                    if (ref == null || UiHider.hiddenPlayerButton(ref)) {
-                        ref = firstAnchorSibling(exParent);
-                    }
-                    if (ref != null) {
-                        existing.setVisibility(ref.getVisibility());
-                    }
-                    liftCrowdedStats(exParent);
-                    return;
+            if (parent != null && parent.isShown()) {
+                Object anchorId = existing.getTag(ANCHOR_ID_TAG_KEY);
+                View ref = anchorId instanceof Integer ? childById(parent, (Integer) anchorId) : null;
+                if (ref == null || ref.getVisibility() != View.VISIBLE || UiHider.hiddenPlayerButton(ref)) {
+                    View visible = firstAnchorSibling(parent);
+                    if (visible != null) ref = visible;
                 }
-                // Our bar isn't on screen: either the controls are simply hidden
-                // (keep the button, it reappears with them) or the layout changed
-                // (portrait <-> theater) and we must move to the now-active bar.
-                View target = findActiveAnchor(root);
-                if (target == null || target.getParent() == exParent) {
-                    return;
-                }
-                detach(existing);
-                insertIntoChain((ViewGroup) target.getParent(), target);
-                return;
+                if (ref != null) existing.setVisibility(ref.getVisibility());
+                liftCrowdedStats(parent);
             }
-            detach(existing); // detached orphan; re-insert below
-        }
-
-        View anchor = findActiveAnchor(root);
-        if (anchor == null || !(anchor.getParent() instanceof ViewGroup)) {
-            logAnchorState(root, "no usable anchor");
             return;
         }
-        ViewGroup parent = (ViewGroup) anchor.getParent();
-        Log.i(TAG, "inserting: anchor=" + describe(anchor, anchor.getContext())
-                + " into parent=" + describe(parent, parent.getContext())
-                + " children=" + parent.getChildCount());
-        insertIntoChain(parent, anchor);
+        if (anchor != null && anchor.getParent() instanceof ViewGroup) {
+            insertIntoChain((ViewGroup) anchor.getParent(), anchor);
+        }
+
     }
 
     /**
@@ -1037,18 +1011,23 @@ public final class ReloadHook {
     // View-tree helpers (mirrors TimerHook -- proven chain-splice placement)
     // ------------------------------------------------------------------
 
-    /**
-     * True if this window hosts a seekable (VOD/clip) player, detected by a
-     * laid-out, visible scrubber. Live streams never inflate one.
-     */
-    private static boolean isSeekablePlayer(View root) {
-        Context ctx = root.getContext();
-        for (String name : SEEKBAR_NAMES) {
-            if (findShownById(root, idOf(ctx, name)) != null) {
-                return true;
-            }
+    private static boolean underId(View view, int id) {
+        for (Object p = view; id != 0 && p instanceof View; p = ((View) p).getParent()) {
+            if (((View) p).getId() == id) return true;
         }
         return false;
+    }
+
+    /** Place VOD buttons before Twitch first shows or measures the controls. The parent handles the fade. */
+    private static View preparedVodAnchor(View root) {
+        int id = idOf(root.getContext(), SEEKABLE_BAR);
+        List<View> bars = passViews.get(id);
+        if (bars == null || bars.size() != 1) return null;
+        for (String name : ANCHOR_NAMES) {
+            View v = bars.get(0).findViewById(idOf(root.getContext(), name));
+            if (v != null && v.getVisibility() == View.VISIBLE && v.getParent() instanceof LinearLayout) return v;
+        }
+        return null;
     }
 
     /**
@@ -1164,7 +1143,7 @@ public final class ReloadHook {
             }
             for (int i = 0; i < parent.getChildCount(); i++) {
                 View child = parent.getChildAt(i);
-                if (child.getId() == id && !UiHider.hiddenPlayerButton(child)) {
+                if (child.getId() == id && child.getVisibility() == View.VISIBLE && !UiHider.hiddenPlayerButton(child)) {
                     return child;
                 }
             }

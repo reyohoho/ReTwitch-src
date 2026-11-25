@@ -245,13 +245,16 @@ public enum ProxyBackend {
      * ReYohoho proxy expects ({@code .../usher...?...&auth=<token>}). This
      * lets the proxy make authenticated usher requests on the user's behalf
      * (subscriber/turbo qualities, ad handling, etc.). No-op when the user
-     * isn't logged in, so anonymous playback keeps working unchanged.
+     * isn't logged in or private viewing is enabled.
      *
      * <p>Only ever called for {@link Kind#URL_SUFFIX} (the built-in ReYohoho
      * hosts), never for {@link #CUSTOM} -- we don't leak the token to an
      * arbitrary user-entered proxy.
      */
     private static String withUserAuth(String proxyUrl) {
+        if (PrivateViewing.ENABLED) {
+            return proxyUrl;
+        }
         String token = TwitchAuth.getAuthToken();
         if (token == null || token.isEmpty()) {
             return proxyUrl;

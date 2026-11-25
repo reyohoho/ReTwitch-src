@@ -15,7 +15,8 @@ import android.content.SharedPreferences;
  */
 public final class LandingSettings {
 
-    private static final String PREFS_NAME = "retwitch_landing_settings";
+    static final String PREFS_NAME = "retwitch_landing_settings";
+    static final String KEY_BOTTOM_ORDER = "bottom_order";
     private static final String KEY_FOLLOWING_DEFAULT = "following_default_tab";
 
     private LandingSettings() {
@@ -44,12 +45,12 @@ public final class LandingSettings {
 
     static String bottomOrder() {
         Context c = AppContext.get();
-        String order = c == null ? BottomTabs.DEFAULT : prefs(c).getString("bottom_order", BottomTabs.DEFAULT);
-        return BottomTabs.valid(order) ? order : BottomTabs.DEFAULT;
+        Object order = c == null ? null : prefs(c).getAll().get(KEY_BOTTOM_ORDER);
+        return BottomTabs.valid(order) ? (String) order : BottomTabs.DEFAULT;
     }
 
     static void setBottomOrder(Context c, String order) {
-        if (BottomTabs.valid(order)) prefs(c).edit().putString("bottom_order", order).apply();
+        if (BottomTabs.valid(order)) prefs(c).edit().putString(KEY_BOTTOM_ORDER, order).apply();
     }
 
     private static final String KEY_PREVIEW_SIZE = "following_preview_size";

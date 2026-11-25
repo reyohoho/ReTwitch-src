@@ -30,7 +30,7 @@ val twitchCompatibility = Compatibility(packageName = OLD_PACKAGE_NAME, name = "
  * identifies to Google as the same Firebase app. See the notification
  * discussion in the ReTwitch build notes.
  */
-private const val NEW_PACKAGE_NAME = "ru.reyohoho.ReTwitch"
+internal const val NEW_PACKAGE_NAME = "ru.reyohoho.ReTwitch"
 
 /**
  * The visible launcher/app-info label ReTwitch should show instead of the

@@ -1,6 +1,10 @@
 package tv.retwitch.mod;
 
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.Context;
+import android.os.Build;
+import android.widget.Toast;
 
 /**
  * "About": what the mod is built on, with links, and the notices its licences ask for. GPL section 5(d)
@@ -59,7 +63,16 @@ final class AboutPage {
 
     static void build(SettingsScreen s) {
         final Context c = s.context;
-        s.action(Strings.changelogTitle(), t("Версия ", "Version ") + BuildInfo.VERSION_NAME, () -> SettingsHook.showChangelog(c));
+        s.action(Strings.changelogTitle(), Strings.pickf("Версия %s", "Version %s", BuildInfo.VERSION_NAME),
+                () -> SettingsHook.showChangelog(c), () -> {
+                    ClipboardManager clipboard = c.getSystemService(ClipboardManager.class);
+                    if (clipboard != null) {
+                        clipboard.setPrimaryClip(ClipData.newPlainText("ReTwitch", BuildInfo.VERSION_NAME));
+                        if (Build.VERSION.SDK_INT < 33) {
+                            Toast.makeText(c, Strings.pick("Версия скопирована", "Version copied"), Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                });
         s.toggle(Toggles.UPDATE_CHECK);
         s.group(Toggles.UPDATE_NOTIFY, () -> s.markNew("0.5.32-beta").choice(t("Как часто проверять", "How often to check"),
                 new String[]{t("Раз в 30 минут", "Every 30 minutes"), t("Раз в час", "Every hour"), t("Раз в 3 часа", "Every 3 hours"), t("Раз в 6 часов", "Every 6 hours"),

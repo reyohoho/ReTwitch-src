@@ -909,10 +909,10 @@ public final class SettingsHook {
                         t("Не сбрасывать горизонтальный режим после стрима", "Don't drop landscape after a stream"),
                         new String[]{t("Как в Twitch", "As in Twitch"), t("По автоповороту", "Auto-rotate"), t("Не менять", "Keep as is")},
                         LandingSettings.getHomeOrientationMode(), false, i -> LandingSettings.setHomeOrientationMode(c, i));
-        s.markNew("0.5.42-beta").compare(t("Обычный порядок кнопок", "Default button order"),
+        s.markNew("0.5.43-beta").compare(t("Обычный порядок кнопок", "Default button order"),
                 t("Кнопки на выбранных местах", "Buttons in your chosen positions"))
                 .action(t("Порядок кнопок нижнего меню", "Bottom bar button order"),
-                        t("Выберите кнопку и её новое место", "Choose a button and its new position"), () -> BottomTabs.edit(s));
+                        t("Перетащите кнопку за маркер справа", "Drag a button by its handle"), () -> BottomTabs.edit(s));
         s.section(t("Нижнее меню: скрыть", "Bottom menu: hide"));
         s.toggle(Toggles.HIDE_TAB_BROWSE);
         s.toggle(Toggles.HIDE_TAB_ACTIVITY);
@@ -947,6 +947,11 @@ public final class SettingsHook {
         s.toggle(Toggles.COMPACT_LIVE_TAB);
         s.toggle(Toggles.HIDE_LIVE_FOLLOWED_SHELF);
         s.toggle(Toggles.HIDE_LIVE_CLIPS_SHELF);
+        s.toggle(Toggles.HIDE_LIVE_MUTE);
+        s.toggle(Toggles.HIDE_LIVE_MORE);
+        s.toggle(Toggles.HIDE_LIVE_FOLLOW);
+        s.section(t("Просмотр", "Browse"));
+        s.toggle(Toggles.DISABLE_BROWSE_HISTORY);
     }
 
     private static void networkPage(SettingsScreen s) {
@@ -958,6 +963,7 @@ public final class SettingsHook {
                 "A proxy helps when Twitch is slow or unreachable. It doesn't remove ads: the Ads section does."));
         s.section(t("Доступ", "Access"));
         s.toggle(Toggles.WATCH_LOGGED_OUT);
+        s.toggle(Toggles.PRIVATE_VIEWING);
         s.toggle(Toggles.BAN_BYPASS);
     }
 

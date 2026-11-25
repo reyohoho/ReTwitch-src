@@ -117,44 +117,61 @@ public final class LandingTabHook {
 
     private static WeakReference<Activity> checkHomeAfterPip;
 
-    /** ViewerLandingActivity.onPictureInPictureModeChanged. Wait until the user minimizes the expanded video. */
+    private static boolean pipCheckPosted;
+
+    /** A VOD can keep covering the home after PiP expands. Check once the underlying feed is visible again. */
     public static void systemPipChanged(Activity activity, boolean inPip) {
         checkHomeAfterPip = inPip ? null : new WeakReference<>(activity);
+        pipCheckPosted = false;
     }
 
-    /** Called from the normal layout pass. Only inspects the feed once per PiP exit, after its window settles. */
     static void checkPipFeed(Activity activity, View decor) {
-        if (checkHomeAfterPip == null || checkHomeAfterPip.get() != activity || !ChannelTracker.playerMinimized()) return;
-        checkHomeAfterPip = null;
-        decor.postOnAnimation(() -> {
-            try {
-                if (activity.isInPictureInPictureMode() || !ChannelTracker.playerMinimized() || !decor.isAttachedToWindow()) return;
-                Object fragment = rnHome == null ? null : rnHome.get();
-                View surface = fragment == null ? null : (View) fragment.getClass().getMethod("getView").invoke(fragment);
-                if (surface == null || !surface.isShown() || surface.getRootView() != decor || !(surface.getParent() instanceof View)) return;
-                View host = (View) surface.getParent();
-                View pager = surface.findViewWithTag("home-tabs-pager");
-                if (pager == null || !pipSizedFeed(host.getWidth(), host.getHeight(), pager.getWidth(), pager.getHeight())) return;
+        WeakReference<Activity> exit = checkHomeAfterPip;
+        if (exit == null || exit.get() != activity || pipCheckPosted || !ChannelTracker.playerMinimized()) return;
+        pipCheckPosted = true;
+        decor.postOnAnimation(() -> checkPipFeed(activity, decor, exit, 0));
+    }
 
-                // ReactSurfaceView.onMeasure forwards fresh constraints to Fabric, even at the same measured size.
-                surface.forceLayout();
-                surface.requestLayout();
-                for (android.view.ViewParent p = pager.getParent(); p instanceof View && p != surface; p = p.getParent()) {
-                    if ("com.swmansion.rnscreens.Screen".equals(p.getClass().getName())) {
-                        // Screen checks its Fabric frameWidth/frameHeight and updates only when they disagree.
-                        View screen = (View) p;
-                        screen.requestLayout();
-                        p.getClass().getMethod("onStateWrapperUpdated").invoke(p);
-                        break;
-                    }
-                }
-                Log.i(TAG, "remeasured feed after PiP: pager " + pager.getWidth() + "x" + pager.getHeight()
-                        + ", host " + host.getWidth() + "x" + host.getHeight());
-            } catch (Throwable t) {
-                Log.w(TAG, "PiP feed remeasure failed", t);
-                CrashReporter.report(TAG, "PiP feed remeasure failed", t);
+    private static void checkPipFeed(Activity activity, View decor, WeakReference<Activity> exit, int pass) {
+        if (exit != checkHomeAfterPip) return;
+        try {
+            Object fragment = rnHome == null ? null : rnHome.get();
+            View surface = fragment == null ? null : (View) fragment.getClass().getMethod("getView").invoke(fragment);
+            View pager = surface == null ? null : surface.findViewWithTag("home-tabs-pager");
+            if (activity.isInPictureInPictureMode() || !ChannelTracker.playerMinimized() || pager == null
+                    || !pager.isShown() || pager.getWidth() == 0 || pager.getHeight() == 0
+                    || surface.getRootView() != decor || !decor.isAttachedToWindow()) {
+                // The fragment may not be attached/shown on this layout pass. Preserve the exit for its next layout.
+                pipCheckPosted = false;
+                return;
             }
-        });
+            if (pipSizedFeed(decor.getWidth(), decor.getHeight(), pager.getWidth(), pager.getHeight())) {
+                // An unchanged MeasureSpec leaves Fabric's mounted children at the PiP size.
+                // Measure one pixel smaller, then let the real parent restore both exact constraints.
+                int w = surface.getWidth(), h = surface.getHeight();
+                if (w > 1 && h > 1) {
+                    surface.forceLayout();
+                    surface.measure(View.MeasureSpec.makeMeasureSpec(w - 1, View.MeasureSpec.EXACTLY),
+                            View.MeasureSpec.makeMeasureSpec(h - 1, View.MeasureSpec.EXACTLY));
+                    surface.postOnAnimation(() -> {
+                        surface.forceLayout();
+                        surface.requestLayout();
+                    });
+                }
+                Log.i(TAG, "PiP feed repair " + pass + ": pager " + pager.getWidth() + "x" + pager.getHeight()
+                        + ", surface " + surface.getWidth() + "x" + surface.getHeight());
+            }
+            // Window, RN surface and Fabric update on separate frames. Catch a stale measurement delivered later.
+            if (pass < 2) {
+                decor.postDelayed(() -> checkPipFeed(activity, decor, exit, pass + 1), pass == 0 ? 180 : 450);
+                return;
+            }
+        } catch (Throwable t) {
+            Log.w(TAG, "PiP feed remeasure failed", t);
+            CrashReporter.report(TAG, "PiP feed remeasure failed", t);
+        }
+        checkHomeAfterPip = null;
+        pipCheckPosted = false;
     }
 
     // #82: the 1080px-wide phone displayed a ~590px-wide, ~166px-high feed after leaving PiP.

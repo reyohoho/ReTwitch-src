@@ -100,6 +100,10 @@ public final class DebugServer {
         }
     }
 
+    static boolean enabled() {
+        return !prop().isEmpty();
+    }
+
     private static String prop() {
         try {
             Object value = Class.forName("android.os.SystemProperties").getMethod("get", String.class).invoke(null, PROP);

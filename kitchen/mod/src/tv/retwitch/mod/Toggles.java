@@ -199,6 +199,13 @@ public final class Toggles {
     public static final Toggle DANMAKU_NICKS = new Toggle("danmaku_nicks", "Показывать ники", "Show nicks", false, true)
             .about("Ник цветом зрителя перед сообщением",
                     "The nick in the viewer's colour before the message").asNew("0.4.18-alpha");
+    public static final Toggle PRIVATE_VIEWING = new Toggle("private_viewing", "Приватный просмотр", "Private viewing", true)
+            .about("Чат и действия аккаунта доступны. Просмотр не обновляет позицию в «Продолжить просмотр»",
+                    "Chat and account actions stay available. Watching does not update your Continue Watching position")
+            .compare("Позиция сохраняется", "Позиция остаётся прежней", "Position saved", "Position stays unchanged")
+            .note("Плеер запрашивает доступ как гость и пропускает события просмотра. Закрытые записи и качество для подписчиков могут быть недоступны, а Drops могут не засчитываться. Twitch может учитывать другие сигналы в рекомендациях.",
+                    "The player requests guest access and skips viewing events. Subscriber-only videos or qualities may be unavailable and Drops may not count. Twitch may use other signals for recommendations.")
+            .asNew("0.5.43-beta");
     public static final Toggle WATCH_LOGGED_OUT = new Toggle("watch_logged_out", "Без аккаунта", "No account", true)
             .about("Смотреть, не входя в Twitch. До 1080p, функции аккаунта недоступны",
                     "Watch without signing in. Up to 1080p, no account features")
@@ -577,10 +584,10 @@ public final class Toggles {
             .compare("Меню рядом с названием", "Название без меню", "Menu beside the title", "Title without the menu")
             .asNew("0.5.42-beta");
     public static final Toggle SYSTEM_PALETTE = new Toggle("settings_system_palette", "Цвета обоев", "Wallpaper colours", true)
-            .about("Системная палитра в настройках ReTwitch и элементах темы Android", "Use system colours in ReTwitch settings and Android themed controls")
+            .about("Цвета обоев для фона, текста и кнопок Twitch и ReTwitch", "Use wallpaper colours for backgrounds, text and controls in Twitch and ReTwitch")
             .compare("Фиолетовые переключатели", "Переключатели в цвет обоев", "Purple switches", "Switches match the wallpaper")
-            .note("У ленты и элементов с собственными цветами Twitch своя палитра", "The feed and controls with explicit Twitch colours keep their own palette")
-            .asNew("0.5.42-beta");
+            .note("Для Android 12 и новее. Цвета статуса эфира, изображений и элементов поверх видео остаются исходными", "Android 12 or later. Live indicators, images and video overlays keep their original colours")
+            .asNew("0.5.43-beta");
     public static final Toggle SEARCH_HISTORY = new Toggle("settings_search_history", "История поиска настроек", "Settings search history", false)
             .about("Показывать недавние запросы при нажатии на пустую строку поиска", "Show recent searches when you tap the empty search field")
             .compare("Пустая строка поиска", "Можно выбрать прошлый запрос", "Empty search field", "Pick a previous search")
@@ -651,6 +658,26 @@ public final class Toggles {
             .look(SettingsPreview.HOME, SettingsPreview.H_SHELF_FOLLOWED).asNew("0.5.1-beta");
     public static final Toggle HIDE_LIVE_CLIPS_SHELF = new Toggle("hide_live_clips_shelf", "Полка «Clips for you»", "\"Clips for you\" shelf", true)
             .look(SettingsPreview.HOME, SettingsPreview.H_SHELF_CLIPS).asNew("0.5.1-beta");
+    public static final Toggle HIDE_LIVE_MUTE = new Toggle("hide_live_mute", "Скрыть кнопку звука", "Hide the mute button", true)
+            .about("Убирает кнопку звука с превью трансляций во вкладке «В эфире»",
+                    "Removes the mute button from stream previews on the Live tab")
+            .look(SettingsPreview.HOME, SettingsPreview.H_LIVE_MUTE).asNew("0.5.43-beta");
+    public static final Toggle HIDE_LIVE_MORE = new Toggle("hide_live_more", "Скрыть меню «Ещё»", "Hide the More menu", true)
+            .about("Убирает кнопку ⋮ с превью трансляций во вкладке «В эфире»",
+                    "Removes the ⋮ button from stream previews on the Live tab")
+            .look(SettingsPreview.HOME, SettingsPreview.H_LIVE_MORE).asNew("0.5.43-beta");
+    public static final Toggle HIDE_LIVE_FOLLOW = new Toggle("hide_live_follow", "Скрыть кнопку «Отслеживать»", "Hide the Follow button", true)
+            .about("Убирает кнопку рядом с именем канала во вкладке «В эфире»",
+                    "Removes the button next to the channel name on the Live tab")
+            .look(SettingsPreview.HOME, SettingsPreview.H_LIVE_FOLLOW).asNew("0.5.43-beta");
+    public static final Toggle DISABLE_BROWSE_HISTORY = new Toggle("disable_browse_history",
+            "Не сохранять историю поиска Twitch", "Disable Twitch search history", true)
+            .about("Скрывает недавние запросы во вкладке «Просмотр» и в поиске Twitch. Новые запросы не сохраняются на телефоне",
+                    "Hides recent searches in Browse and Twitch search. New searches aren't saved on this device")
+            .compare("Под строкой поиска видны недавние запросы", "Строка поиска без списка недавних запросов",
+                    "Recent searches appear below the search box", "The search box has no recent searches underneath")
+            .note("Если выключить настройку, прежние запросы снова станут видны",
+                    "Turning this setting off brings back your earlier searches").asNew("0.5.43-beta");
     public static final Toggle FRIENDS_HOME = new Toggle("friends_home", "Друзья RTE", "RTE friends", true, false)
             .about("Кто из друзей смотрит, под разделом «В эфире»",
                     "Which friends are watching, under the Live section")

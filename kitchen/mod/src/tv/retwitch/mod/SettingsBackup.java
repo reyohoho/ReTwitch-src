@@ -230,7 +230,7 @@ public final class SettingsBackup {
                     String key = it.next();
                     JSONArray pair = values.optJSONArray(key);
                     Object value = pair == null ? null : decode(pair.optString(0), json(pair.opt(1)));
-                    if (value != null && !conflicts(local.get(key), value)) {
+                    if (canRestore(name, key, local.get(key), value)) {
                         put(editor, key, value);
                         written.add(key);
                         restored++;
@@ -324,6 +324,14 @@ public final class SettingsBackup {
             default:
                 return null;
         }
+    }
+
+    static boolean canRestore(String file, String key, Object local, Object value) {
+        if (LandingSettings.PREFS_NAME.equals(file) && LandingSettings.KEY_BOTTOM_ORDER.equals(key)) {
+            // A valid import can also repair a mistyped value left by an older backup.
+            return BottomTabs.valid(value);
+        }
+        return value != null && !conflicts(local, value);
     }
 
     /** Whether {@code value} would change the type of the {@code local} value stored under the same key. */

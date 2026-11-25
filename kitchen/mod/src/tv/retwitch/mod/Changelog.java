@@ -13,6 +13,19 @@ import android.text.TextUtils;
 public final class Changelog {
 
     private static final String[][] ENTRIES = {
+            {"0.5.43-beta",
+                    "Порядок кнопок нижнего меню можно изменить перетаскиванием. Долгое нажатие в поиске настроек открывает нужный пункт, а на версии в разделе о моде копирует её номер\n"
+                            + "На вкладке «В эфире» можно скрыть звук, меню и кнопку отслеживания по отдельности. В разделе «Просмотр» можно отключить сохранение недавних поисков\n"
+                            + "Плеер готовит кнопки глав и скачивания до появления панели управления. При возврате из системного PiP лента повторно проверяет размер\n"
+                            + "Цвета обоев теперь применяются к ленте Twitch и элементам нативных экранов. В истории поиска настроек обновлены разделители и кнопка очистки\n"
+                            + "В разделе «Сеть и доступ» появился приватный просмотр: позиция видео не сохраняется, клипы и потоки через прокси ReYohoho также воспроизводятся с гостевым доступом. Чат остаётся доступен\n"
+                            + "При скачивании клипа в выбранную папку ссылка обновляется при запуске задания. Новая папка сразу видна в настройках",
+                    "Drag to reorder the bottom bar. Long-press a settings search result to open its destination, or long-press the version in About to copy it\n"
+                            + "Hide the mute, menu and follow buttons separately on the Live tab. You can also turn off recent searches in Browse\n"
+                            + "The player prepares the chapter and download buttons before its controls appear. The feed rechecks its size after leaving system PiP\n"
+                            + "Wallpaper colours now apply to the Twitch feed and native controls. Recent settings searches have inset dividers and a centred clear button\n"
+                            + "Private viewing under Network and access stops video progress updates and uses guest playback for clips and streams through ReYohoho proxies as well. Chat stays signed in\n"
+                            + "Clip downloads to a custom folder refresh the media link when the job runs. New folder selections appear immediately in settings"},
             {"0.5.42-beta",
                     "Исправлено падение при открытии списка стартовых вкладок в настройках главной\n"
                             + "Если в импортированных настройках данмаку окажется неверное значение, для него используется значение по умолчанию. Экран настроек открывается без падения\n"

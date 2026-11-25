@@ -26,12 +26,33 @@ public final class RnScript {
     private RnScript() {
     }
 
+    /** The RN bundle exports separate light and dark themes. Supply both, including when Twitch overrides Android's mode. */
+    private static JSONObject wallpaperColours() throws org.json.JSONException {
+        if (android.os.Build.VERSION.SDK_INT < 31 || !Toggles.on(Toggles.SYSTEM_PALETTE)) return null;
+        Context context = AppContext.get();
+        if (context == null) return null;
+        JSONObject colours = new JSONObject();
+        for (String family : new String[]{"neutral1", "neutral2", "accent1"}) {
+            for (int tone : new int[]{0, 10, 50, 100, 200, 300, 400, 500, 600, 700, 800, 900}) {
+                String name = family + "_" + tone;
+                int id = context.getResources().getIdentifier("system_" + name, "color", "android");
+                if (id == 0) return null;
+                colours.put(name, String.format(Locale.ROOT, "#%06x", context.getColor(id) & 0xffffff));
+            }
+        }
+        return colours;
+    }
+
     /** Called at the start of {@code ReactInstance.loadJSBundle}. */
     public static void load(Object reactInstance) {
         try {
+            JSONObject wallpaper = wallpaperColours();
             boolean compactLive = Toggles.on(Toggles.COMPACT_LIVE_TAB);
             boolean hideFollowedShelf = Toggles.on(Toggles.HIDE_LIVE_FOLLOWED_SHELF);
             boolean hideClipsShelf = Toggles.on(Toggles.HIDE_LIVE_CLIPS_SHELF);
+            boolean hideLiveMute = Toggles.on(Toggles.HIDE_LIVE_MUTE);
+            boolean hideLiveMore = Toggles.on(Toggles.HIDE_LIVE_MORE);
+            boolean hideLiveFollow = Toggles.on(Toggles.HIDE_LIVE_FOLLOW);
             boolean hideStoriesEmpty = Toggles.on(Toggles.HIDE_STORIES_EMPTY);
             boolean hideLiveEmpty = Toggles.on(Toggles.HIDE_LIVE_EMPTY);
             boolean hideTags = Toggles.on(Toggles.HIDE_STREAM_TAGS);
@@ -52,17 +73,23 @@ public final class RnScript {
             boolean profileUserClips = Toggles.on(Toggles.HIDE_PROFILE_USER_CLIPS);
             boolean profileCategories = Toggles.on(Toggles.HIDE_PROFILE_CATEGORIES);
             boolean profileStreamers = Toggles.on(Toggles.HIDE_PROFILE_STREAMERS);
-            if (!compactLive && !hideFollowedShelf && !hideClipsShelf && !hideStoriesEmpty && !hideLiveEmpty && !hideTags && !friends
-                    && !hideCategory && !categoryTap && !noHomeSwipe
+            if (!PrivateViewing.ENABLED && wallpaper == null && !compactLive && !hideFollowedShelf && !hideClipsShelf && !hideStoriesEmpty && !hideLiveEmpty && !hideTags && !friends
+                    && !hideCategory && !categoryTap && !noHomeSwipe && !hideLiveMute && !hideLiveMore && !hideLiveFollow
                     && previewSize == 0
                     && !tabIndicator && !hideStories && !hideTabs && !liveToTop && !favorites && !uptime
                     && !profileRecaps && !profileClips && !profileUserClips && !profileCategories && !profileStreamers) {
                 return;
             }
             JSONObject config = new JSONObject()
+                    .put("wallpaper", wallpaper)
+                    .put("privateClipEndpoint", PrivateViewing.ENABLED ? PrivateClipPlayback.endpoint() : null)
+                    .put("privateViewEvents", PrivateViewing.ENABLED ? new org.json.JSONArray(PrivateViewing.EVENTS) : null)
                     .put("compactLive", compactLive)
                     .put("hideFollowedShelf", hideFollowedShelf)
                     .put("hideClipsShelf", hideClipsShelf)
+                    .put("hideLiveMute", hideLiveMute)
+                    .put("hideLiveMore", hideLiveMore)
+                    .put("hideLiveFollow", hideLiveFollow)
                     .put("hideStoriesEmpty", hideStoriesEmpty)
                     .put("hideLiveEmpty", hideLiveEmpty)
                     .put("hideTags", hideTags)

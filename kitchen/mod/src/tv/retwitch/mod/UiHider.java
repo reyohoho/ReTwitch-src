@@ -152,6 +152,7 @@ public final class UiHider {
                 return;
             }
             installed = true;
+            SystemPalette.install(application);
             UiStallLog.startIfEnabled(application);
             BanDiag.startIfEnabled(application);
             tv.retwitch.mod.emotes.RteFriends.install(application);
@@ -190,6 +191,7 @@ public final class UiHider {
             return;
         }
         try {
+            SystemPalette.install(activity);
             boolean dark = (activity.getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK)
                     == Configuration.UI_MODE_NIGHT_YES;
             int style = res(activity, "ThemeOverlay.Material3.DynamicColors." + (dark ? "Dark" : "Light"), "style");

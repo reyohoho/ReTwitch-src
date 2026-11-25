@@ -2,8 +2,16 @@ package tv.retwitch.mod;
 
 import android.app.AlertDialog;
 import android.content.Context;
+import android.graphics.Point;
+import android.view.DragEvent;
+import android.view.Gravity;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.LinearLayout;
+import android.widget.PopupMenu;
+import android.widget.ScrollView;
+import android.widget.TextView;
 
 /** Settings and placement for Twitch's five bottom menu items (#84). */
 final class BottomTabs {
@@ -16,8 +24,10 @@ final class BottomTabs {
 
     private BottomTabs() {}
 
-    static boolean valid(String order) {
-        if (order == null || order.length() != DEFAULT.length()) return false;
+    static boolean valid(Object value) {
+        if (!(value instanceof String)) return false;
+        String order = (String) value;
+        if (order.length() != DEFAULT.length()) return false;
         for (int i = 0; i < DEFAULT.length(); i++) if (order.indexOf(DEFAULT.charAt(i)) < 0) return false;
         return true;
     }
@@ -37,24 +47,116 @@ final class BottomTabs {
     static void edit(SettingsScreen screen) {
         Context c = screen.context;
         String order = LandingSettings.bottomOrder();
-        String[] names = labels(), slots = new String[names.length];
-        for (int i = 0; i < slots.length; i++) slots[i] = (i + 1) + ". " + names[order.charAt(i) - '0'];
-        AlertDialog.Builder dialog = new AlertDialog.Builder(c)
-                .setTitle(Strings.pick("Какую кнопку переместить?", "Which button do you want to move?"))
-                .setItems(slots, (d, from) -> new AlertDialog.Builder(c)
-                        .setTitle(Strings.pick("На какое место?", "Move to which position?"))
-                        .setItems(slots, (pick, to) -> {
-                            if (from != to) {
-                                LandingSettings.setBottomOrder(c, move(order, from, to));
-                                screen.restartNeeded();
+        Editor editor = new Editor(c, order);
+        ScrollView scroll = new ScrollView(c);
+        scroll.addView(editor);
+        AlertDialog dialog = new AlertDialog.Builder(c)
+                .setTitle(Strings.pick("Порядок кнопок нижней панели", "Bottom bar button order"))
+                .setView(scroll)
+                .setPositiveButton(Strings.save(), (d, w) -> {
+                    if (!order.equals(editor.order)) {
+                        LandingSettings.setBottomOrder(c, editor.order);
+                        screen.restartNeeded();
+                    }
+                })
+                .setNegativeButton(Strings.cancel(), null)
+                .setNeutralButton(Strings.reset(), null).show();
+        dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener(v -> editor.showOrder(DEFAULT));
+    }
+
+    private static final class Editor extends LinearLayout {
+        final String[] names = labels();
+        String order;
+        String beforeDrag;
+
+        Editor(Context c, String initial) {
+            super(c);
+            setOrientation(VERTICAL);
+            setOnDragListener((v, event) -> drag(event));
+            showOrder(initial);
+        }
+
+        void showOrder(String value) {
+            order = value;
+            removeAllViews();
+            int size = Math.round(48 * getResources().getDisplayMetrics().density);
+            for (int i = 0; i < order.length(); i++) {
+                String name = names[order.charAt(i) - '0'];
+                LinearLayout row = new LinearLayout(getContext());
+                row.setGravity(Gravity.CENTER_VERTICAL);
+                TextView label = (TextView) View.inflate(getContext(), android.R.layout.simple_list_item_1, null);
+                label.setText(name);
+                row.addView(label, new LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f));
+                TextView handle = new TextView(getContext());
+                handle.setText("≡");
+                handle.setTextSize(24);
+                handle.setGravity(Gravity.CENTER);
+                handle.setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_NO);
+                handle.setOnTouchListener((v, event) -> {
+                    if (event.getActionMasked() == MotionEvent.ACTION_DOWN) {
+                        int x = handle.getLeft() + (int) event.getX();
+                        int y = handle.getTop() + (int) event.getY();
+                        View.DragShadowBuilder shadow = new View.DragShadowBuilder(row) {
+                            @Override public void onProvideShadowMetrics(Point size, Point touch) {
+                                super.onProvideShadowMetrics(size, touch);
+                                touch.set(x, y);
                             }
-                        }).setNegativeButton(Strings.cancel(), null).show())
-                .setNegativeButton(Strings.cancel(), null);
-        if (!DEFAULT.equals(order)) dialog.setNeutralButton(Strings.reset(), (d, w) -> {
-            LandingSettings.setBottomOrder(c, DEFAULT);
-            screen.restartNeeded();
-        });
-        dialog.show();
+                        };
+                        return row.startDragAndDrop(null, shadow, row, 0);
+                    }
+                    return true;
+                });
+                row.addView(handle, new LayoutParams(size, size));
+                row.setContentDescription(name);
+                row.setFocusable(true);
+                row.setOnClickListener(v -> {
+                    // Position picker for keyboard and accessibility services.
+                    PopupMenu slots = new PopupMenu(getContext(), row);
+                    for (int j = 0; j < order.length(); j++) {
+                        slots.getMenu().add(0, j, j, (j + 1) + ". " + names[order.charAt(j) - '0']);
+                    }
+                    slots.setOnMenuItemClickListener(item -> {
+                        showOrder(move(order, indexOfChild(row), item.getItemId()));
+                        return true;
+                    });
+                    slots.show();
+                });
+                addView(row);
+            }
+        }
+
+        private boolean drag(DragEvent event) {
+            if (!(event.getLocalState() instanceof View)) return false;
+            View row = (View) event.getLocalState();
+            int from = indexOfChild(row);
+            if (from < 0) return false;
+            switch (event.getAction()) {
+                case DragEvent.ACTION_DRAG_STARTED:
+                    beforeDrag = order;
+                    row.setAlpha(0f); // Keep its slot while the system draws the drag shadow.
+                    break;
+                case DragEvent.ACTION_DRAG_LOCATION:
+                case DragEvent.ACTION_DROP:
+                    int to = getChildCount() - 1;
+                    for (int i = 0; i < getChildCount(); i++) {
+                        if (event.getY() < getChildAt(i).getBottom()) {
+                            to = i;
+                            break;
+                        }
+                    }
+                    if (to != from) {
+                        order = move(order, from, to);
+                        removeViewAt(from);
+                        addView(row, to);
+                    }
+                    break;
+                case DragEvent.ACTION_DRAG_ENDED:
+                    row.setAlpha(1f);
+                    if (!event.getResult()) showOrder(beforeDrag);
+                    break;
+            }
+            return true;
+        }
     }
 
     static View item(View nav, int tab) {

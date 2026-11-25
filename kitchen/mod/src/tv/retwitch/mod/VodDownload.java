@@ -45,6 +45,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiConsumer;
 
+import okhttp3.Call;
+import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import okhttp3.Protocol;
 import okhttp3.Request;
@@ -121,33 +123,55 @@ final class VodDownload {
         final String vodId = ChannelTracker.getCurrentVodId();
         new Thread(() -> {
             try {
-                List<String[]> options;
-                String[] named;
-                if (source.startsWith("{")) {
-                    String slug = new org.json.JSONObject(new org.json.JSONObject(source)
-                            .getJSONObject("token").getString("value")).optString("clip_slug");
-                    List<String[]> all = new ArrayList<>();
-                    named = clipInfo(slug, all);
-                    // IVS only carries the rendition it plays; GQL has them all.
-                    options = all.isEmpty() ? clipOptions(source) : all;
+                List<Option> options = new ArrayList<>();
+                String[] named = null;
+                boolean ivsClip = source.startsWith("{");
+                org.json.JSONObject ivs = ivsClip ? new org.json.JSONObject(source) : null;
+                String currentUrl = source;
+                if (ivsClip) {
+                    org.json.JSONArray assets = ivs.optJSONArray("assets");
+                    if (assets != null && assets.optJSONObject(0) != null) {
+                        currentUrl = assets.getJSONObject(0).optString("sourceURL");
+                    }
+                }
+                String clipSlug = PrivateClipPlayback.slugFromUrl(currentUrl);
+                boolean guestClip = clipSlug != null && !clipSlug.isEmpty();
+                if (ivsClip || guestClip) {
+                    if (!guestClip) {
+                        clipSlug = new org.json.JSONObject(ivs.getJSONObject("token").getString("value")).optString("clip_slug");
+                    }
+                    if (!clipSlug.isEmpty()) {
+                        try {
+                            org.json.JSONObject clip = lookupClip(HTTP, clipSlug);
+                            String path = guestClip ? PrivateClipPlayback.assetPathFromUrl(currentUrl) : clipPath(currentUrl);
+                            options.addAll(clipRenditions(clip, path));
+                            org.json.JSONObject owner = clip.optJSONObject("broadcaster");
+                            named = new String[]{owner == null ? "" : owner.optString("displayName"), clip.optString("title")};
+                        } catch (Exception e) {
+                            // The private playback endpoint is only valid inside this process.
+                            if (guestClip) throw e;
+                            Log.w(TAG, "clip metadata unavailable, using player renditions", e);
+                        }
+                    }
+                    if (options.isEmpty() && !guestClip) options.addAll(ivsClipRenditions(ivs));
+                    if (options.isEmpty()) throw new IOException("No clip renditions");
                 } else if (source.startsWith("#EXTM3U") || source.contains(".m3u8")) {
                     String id = vodId != null ? vodId : vodIdOf(source);
-                    // Our own master first: every rendition (Twitch's may be capped), via the stream proxy.
-                    options = freshVodOptions(id);
-                    if (options == null) {
-                        // Twitch hands IVS the usher master's text (its manifest cache); variants are absolute.
-                        options = source.startsWith("#EXTM3U") ? variants("https://usher.ttvnw.net/", source)
+                    List<String[]> variants = freshVodOptions(id);
+                    if (variants == null) {
+                        variants = source.startsWith("#EXTM3U") ? variants("https://usher.ttvnw.net/", source)
                                 : variants(source, fetch(HTTP, source));
                     }
+                    for (String[] item : variants) options.add(new Option(item[0], item[1], "", 0));
                     named = vodName(id);
                 } else {
-                    options = new ArrayList<>();
-                    options.add(new String[]{"MP4", source});
-                    named = null;
+                    HttpUrl direct = HttpUrl.parse(source);
+                    if (direct == null || direct.host().equals("127.0.0.1")) throw new IOException("Clip source unavailable");
+                    options.add(new Option("MP4", source, "", 0));
+                    clipSlug = clipSlugFromUrl(source);
                 }
-                final String name = fileName(named);
-                final List<String[]> list = options;
-                main().post(() -> choose(context, list, name, vodId));
+                final String name = fileName(named), slug = clipSlug;
+                main().post(() -> choose(context, options, name, vodId, slug));
             } catch (Throwable t) {
                 Log.w(TAG, "download options failed", t);
                 main().post(() -> Toast.makeText(context, Strings.downloadFailed(), Toast.LENGTH_LONG).show());
@@ -156,18 +180,18 @@ final class VodDownload {
     }
 
     /** Quality right after the tap; a VOD becomes a recording, a file goes to DownloadManager. */
-    private static void choose(final Context context, final List<String[]> options, final String name,
-            final String vodId) {
+    private static void choose(final Context context, final List<Option> options, final String name,
+            final String vodId, final String clipSlug) {
         String[] labels = new String[options.size()];
         boolean vod = false;
         for (int i = 0; i < labels.length; i++) {
-            labels[i] = options.get(i)[0];
-            vod |= options.get(i)[1].contains(".m3u8");
+            labels[i] = options.get(i).label;
+            vod |= options.get(i).url.contains(".m3u8");
         }
         new AlertDialog.Builder(context)
                 .setTitle(vod ? Strings.downloadVodQuality() : Strings.downloadQuality())
                 .setItems(labels, (d, which) -> {
-                    String url = options.get(which)[1];
+                    String url = options.get(which).url;
                     if (url.contains(".m3u8")) {
                         // Our progress notification needs the permission (DownloadManager's doesn't);
                         // without it the progress comes as toasts.
@@ -179,7 +203,7 @@ final class VodDownload {
                                     "This video is already downloading"), Toast.LENGTH_SHORT).show();
                             return;
                         }
-                        String label = options.get(which)[0];
+                        String label = options.get(which).label;
                         askRange(context, (from, to) -> {
                             LiveRecord.Rec rec = LiveRecord.vod(vodId, url, label);
                             rec.clipFrom = from;
@@ -193,7 +217,7 @@ final class VodDownload {
                     try {
                         Uri tree = DownloadFolder.tree(context, RecordSettings.FOLDER_CLIPS);
                         if (tree != null) {
-                            ClipFileJob.enqueue(context, tree, name + ".mp4", url);
+                            ClipFileJob.enqueue(context, tree, name + ".mp4", clipSlug, options.get(which));
                         } else {
                             DownloadManager.Request request = new DownloadManager.Request(Uri.parse(url))
                                     .setTitle(name + ".mp4")
@@ -301,22 +325,55 @@ final class VodDownload {
         return (base.isEmpty() ? "ReTwitch" : base) + " (" + stamp + ")";
     }
 
-    /** A clip's IVS source JSON: one option per asset, tallest first. */
-    static List<String[]> clipOptions(String json) throws org.json.JSONException {
-        org.json.JSONObject source = new org.json.JSONObject(json);
+    /** Display names can round or omit FPS. Persist rendition identity independently of presentation. */
+    static final class Option {
+        final String label, url, quality, assetId;
+        final double fps;
+        Option(String label, String url, String quality, double fps) {
+            this(label, url, quality, fps, "");
+        }
+        Option(String label, String url, String quality, double fps, String assetId) {
+            this.label = label;
+            this.url = url;
+            this.assetId = assetId;
+            this.quality = quality;
+            this.fps = fps;
+        }
+    }
+
+    private static String signedUrl(org.json.JSONObject asset, org.json.JSONObject token) throws Exception {
+        HttpUrl url = HttpUrl.parse(asset.getString("sourceURL"));
+        if (url == null || !url.isHttps()) throw new IOException("Invalid clip asset URL");
+        return url.newBuilder().setQueryParameter("sig", token.getString("signature"))
+                .setQueryParameter("token", token.getString("value")).build().toString();
+    }
+
+    static String clipSlugFromUrl(String url) {
+        HttpUrl parsed = url == null ? null : HttpUrl.parse(url);
+        String token = parsed == null ? null : parsed.queryParameter("token");
+        try {
+            return token == null ? "" : new org.json.JSONObject(token).optString("clip_slug");
+        } catch (org.json.JSONException ignored) {
+            return "";
+        }
+    }
+
+    static String clipPath(String url) {
+        HttpUrl parsed = url == null ? null : HttpUrl.parse(url);
+        return parsed == null ? "" : parsed.encodedPath();
+    }
+
+    private static List<Option> ivsClipRenditions(org.json.JSONObject source) throws Exception {
         org.json.JSONObject token = source.getJSONObject("token");
         org.json.JSONArray assets = source.getJSONArray("assets");
         List<org.json.JSONObject> sorted = new ArrayList<>();
-        for (int i = 0; i < assets.length(); i++) {
-            sorted.add(assets.getJSONObject(i));
-        }
-        java.util.Collections.sort(sorted, (a, b) -> b.optInt("height") - a.optInt("height"));
-        List<String[]> out = new ArrayList<>();
+        for (int i = 0; i < assets.length(); i++) sorted.add(assets.getJSONObject(i));
+        java.util.Collections.sort(sorted, (a, b) -> Integer.compare(b.optInt("height"), a.optInt("height")));
+        List<Option> out = new ArrayList<>();
         for (org.json.JSONObject a : sorted) {
-            String url = a.getString("sourceURL");
-            String name = a.optString("name", a.optInt("height") + "p");
-            out.add(new String[]{name, url + (url.contains("?") ? "&" : "?") + "sig="
-                    + Uri.encode(token.getString("signature")) + "&token=" + Uri.encode(token.getString("value"))});
+            String height = a.optString("height", "");
+            out.add(new Option(a.optString("name", height + "p"), signedUrl(a, token), height,
+                    a.optDouble("frameRate", 0)));
         }
         return out;
     }
@@ -356,38 +413,83 @@ final class VodDownload {
         return m.find() ? m.group(1) : null;
     }
 
-    /**
-     * {channel, title} of a clip, and every rendition into {@code options} (signed with the
-     * clip's playback token, as the web player does); null / nothing on failure.
-     */
-    private static String[] clipInfo(String slug, List<String[]> options) {
-        if (slug == null || slug.isEmpty()) {
-            return null;
+    private static org.json.JSONObject lookupClip(Call.Factory calls, String slug) throws Exception {
+        org.json.JSONObject reply = gqlResponse(calls, "query($s:ID!){clip(slug:$s){title broadcaster{displayName} "
+                + "videoQualities{quality frameRate sourceURL} assets{id videoQualities(params:{supportedCodecs:[AVC,HEVC,AV1]})"
+                + "{quality frameRate sourceURL}} playbackAccessToken(params:{platform:\"web\","
+                + "playerBackend:\"mediaplayer\",playerType:\"site\"}){signature value}}}",
+                new org.json.JSONObject().put("s", slug));
+        org.json.JSONObject data = reply.optJSONObject("data");
+        org.json.JSONObject clip = data == null ? null : data.optJSONObject("clip");
+        if ((clip == null || clip.isNull("playbackAccessToken")) && reply.has("errors")) {
+            throw new IOException("Clip lookup failed");
         }
-        try {
-            org.json.JSONObject clip = gql("query($s:ID!){clip(slug:$s){title broadcaster{displayName} "
-                    + "videoQualities{quality frameRate sourceURL} playbackAccessToken(params:{platform:\"web\","
-                    + "playerBackend:\"mediaplayer\",playerType:\"site\"}){signature value}}}", slug)
-                    .optJSONObject("clip");
-            if (clip == null) {
-                return null;
+        if (clip == null) throw new java.io.FileNotFoundException("Clip unavailable");
+        return clip;
+    }
+
+    static List<Option> clipRenditions(org.json.JSONObject clip, String path) throws Exception {
+        return clipRenditions(clip, path, "");
+    }
+
+    static List<Option> clipRenditions(org.json.JSONObject clip, String path, String assetId) throws Exception {
+        org.json.JSONObject token = clip.getJSONObject("playbackAccessToken");
+        org.json.JSONArray assets = clip.optJSONArray("assets");
+        // Different assets of the same clip (portrait and landscape) can have identical quality and FPS.
+        for (int i = 0; assets != null && i < assets.length(); i++) {
+            org.json.JSONObject asset = assets.optJSONObject(i);
+            if (asset == null) continue;
+            org.json.JSONArray variants = asset.optJSONArray("videoQualities");
+            String id = asset.optString("id");
+            if (!assetId.isEmpty()) {
+                if (assetId.equals(id)) return clipQualities(variants, token, id);
+            } else if (path != null && !path.isEmpty()) {
+                for (int j = 0; variants != null && j < variants.length(); j++) {
+                    org.json.JSONObject v = variants.optJSONObject(j);
+                    if (v != null && path.equals(clipPath(v.optString("sourceURL")))) {
+                        return clipQualities(variants, token, id);
+                    }
+                }
             }
-            org.json.JSONObject token = clip.optJSONObject("playbackAccessToken");
-            org.json.JSONArray qualities = clip.optJSONArray("videoQualities");
-            for (int i = 0; token != null && qualities != null && i < qualities.length(); i++) {
-                org.json.JSONObject q = qualities.getJSONObject(i);
-                String url = q.getString("sourceURL");
-                int fps = (int) Math.round(q.optDouble("frameRate", 0));
-                options.add(new String[]{q.optString("quality") + "p" + (fps > 30 ? fps : ""),
-                        url + (url.contains("?") ? "&" : "?") + "sig=" + Uri.encode(token.getString("signature"))
-                                + "&token=" + Uri.encode(token.getString("value"))});
-            }
-            org.json.JSONObject owner = clip.optJSONObject("broadcaster");
-            return new String[]{owner == null ? "" : owner.optString("displayName"), clip.optString("title")};
-        } catch (Throwable t) {
-            Log.w(TAG, "clip lookup failed: " + t);
-            return null;
         }
+        if (!assetId.isEmpty()) throw new java.io.FileNotFoundException("Selected clip asset unavailable");
+        return clipQualities(clip.optJSONArray("videoQualities"), token, "");
+    }
+
+    private static List<Option> clipQualities(org.json.JSONArray qualities, org.json.JSONObject token, String assetId)
+            throws Exception {
+        List<Option> out = new ArrayList<>();
+        for (int i = 0; qualities != null && i < qualities.length(); i++) {
+            org.json.JSONObject q = qualities.getJSONObject(i);
+            String quality = q.getString("quality");
+            double fps = q.optDouble("frameRate", 0);
+            out.add(new Option(quality + "p" + (fps > 30 ? Long.toString(Math.round(fps)) : ""),
+                    signedUrl(q, token), quality, fps, assetId));
+        }
+        return out;
+    }
+
+    static String freshClipUrl(Call.Factory calls, String slug, String quality, double fps, String path) throws Exception {
+        return freshClipUrl(calls, slug, quality, fps, path, "");
+    }
+
+    static String freshClipUrl(Call.Factory calls, String slug, String quality, double fps, String path, String assetId)
+            throws Exception {
+        return matchClip(clipRenditions(lookupClip(calls, slug), path, assetId), quality, fps, path);
+    }
+
+    static String matchClip(List<Option> options, String quality, double fps, String path) throws IOException {
+        Option only = null;
+        int matches = 0;
+        for (Option option : options) {
+            if (!quality.isEmpty() && !quality.equals(option.quality)) continue;
+            if (fps > 0 && fps != option.fps) continue;
+            if (!path.isEmpty() && path.equals(clipPath(option.url))) return option.url;
+            only = option;
+            matches++;
+        }
+        if (!quality.isEmpty() && matches == 1) return only.url;
+        throw new java.io.FileNotFoundException("Selected clip rendition unavailable");
     }
 
     private static String[] vodName(String id) {
@@ -401,13 +503,18 @@ final class VodDownload {
 
     /** Anonymous GQL (web Client-ID) with any variables; the {@code data} object. */
     static org.json.JSONObject gql(String query, org.json.JSONObject variables) throws Exception {
+        return gqlResponse(HTTP, query, variables).getJSONObject("data");
+    }
+
+    private static org.json.JSONObject gqlResponse(Call.Factory calls, String query, org.json.JSONObject variables) throws Exception {
         org.json.JSONObject body = new org.json.JSONObject().put("query", query).put("variables", variables);
         Request request = new Request.Builder().url("https://gql.twitch.tv/gql")
                 .header("Client-ID", "kimne78kx3ncx6brgo4mv6wki5h1ko")
                 .post(okhttp3.RequestBody.create(okhttp3.MediaType.parse("application/json"), body.toString()))
                 .build();
-        try (Response response = HTTP.newCall(request).execute()) {
-            return new org.json.JSONObject(response.body().string()).getJSONObject("data");
+        try (Response response = calls.newCall(request).execute()) {
+            if (!response.isSuccessful() || response.body() == null) throw new IOException("GraphQL HTTP " + response.code());
+            return new org.json.JSONObject(response.body().string());
         }
     }
 
