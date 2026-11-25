@@ -21,11 +21,14 @@ public final class RnFollowingSelfCheck {
             + "\"currentUser\":{\"id\":\"1\",\"followedVideos\":{\"edges\":[]}}}}";
 
     public static void main(String[] args) throws Exception {
-        // #82: cropped feed from the screen recording; healthy Pixel 7 layout; narrow but full-height window.
-        assert LandingTabHook.pipSizedFeed(1080, 2053, 590, 166);
-        assert !LandingTabHook.pipSizedFeed(1080, 2053, 1080, 2053);
-        assert !LandingTabHook.pipSizedFeed(1080, 2053, 590, 2053);
-        assert !LandingTabHook.pipSizedFeed(1080, 2053, 0, 0);
+        // #82: different PiP sizes, one stale axis, and legitimate insets/actual split-window dimensions.
+        assert LandingTabHook.clippedFeed(1080, 2054, 598, 189, 8, 84);
+        assert LandingTabHook.clippedFeed(1080, 2054, 996, 413, 8, 84); // enlarged Pixel PiP
+        assert LandingTabHook.clippedFeed(1080, 2000, 1080, 1002, 8, 84); // height-only cut, like S22 screenshot
+        assert LandingTabHook.clippedFeed(1080, 2000, 920, 2000, 8, 84);
+        assert !LandingTabHook.clippedFeed(1080, 2000, 1078, 1940, 8, 84);
+        assert !LandingTabHook.clippedFeed(590, 960, 590, 960, 8, 84);
+        assert !LandingTabHook.clippedFeed(1080, 2000, 0, 0, 8, 84);
         // Nothing of ours: the same instance, not reparsed.
         String other = "{\"data\":{\"user\":{\"follows\":{\"edges\":[{\"cursor\":\"a\"}]}}}}";
         assert RnFollowingHook.strip(other, true, true, true, true) == other;

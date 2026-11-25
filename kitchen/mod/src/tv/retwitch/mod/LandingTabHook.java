@@ -2,10 +2,13 @@ package tv.retwitch.mod;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.graphics.Rect;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewParent;
+import android.view.WindowInsets;
 import android.widget.HorizontalScrollView;
 
 import java.lang.ref.WeakReference;
@@ -115,68 +118,135 @@ public final class LandingTabHook {
     /** The RN home opens on Following: the Live content the launch splash waits for won't come. */
     private static volatile int readyPage = -1;
 
-    private static WeakReference<Activity> checkHomeAfterPip;
+    private static PipFeedWatch pipExit;
+    private static final String[] FEED_PAGES = {"following-panel", "live-feed-page", "clips-feed-page"};
 
-    private static boolean pipCheckPosted;
-
-    /** A VOD can keep covering the home after PiP expands. Check once the underlying feed is visible again. */
     public static void systemPipChanged(Activity activity, boolean inPip) {
-        checkHomeAfterPip = inPip ? null : new WeakReference<>(activity);
-        pipCheckPosted = false;
+        pipExit = inPip ? null : new PipFeedWatch(activity);
     }
 
+    /** Called on actual layouts, including Fabric commits well after the mini player has settled. */
     static void checkPipFeed(Activity activity, View decor) {
-        WeakReference<Activity> exit = checkHomeAfterPip;
-        if (exit == null || exit.get() != activity || pipCheckPosted || !ChannelTracker.playerMinimized()) return;
-        pipCheckPosted = true;
-        decor.postOnAnimation(() -> checkPipFeed(activity, decor, exit, 0));
-    }
-
-    private static void checkPipFeed(Activity activity, View decor, WeakReference<Activity> exit, int pass) {
-        if (exit != checkHomeAfterPip) return;
+        PipFeedWatch watch = pipExit;
+        if (watch == null || watch.owner.get() != activity || watch.pending || watch.repairs >= 3) return;
+        if (!ChannelTracker.playerMinimized()) {
+            if (watch.wasMinimized) pipExit = null;
+            return;
+        }
+        watch.wasMinimized = true;
         try {
-            Object fragment = rnHome == null ? null : rnHome.get();
-            View surface = fragment == null ? null : (View) fragment.getClass().getMethod("getView").invoke(fragment);
-            View pager = surface == null ? null : surface.findViewWithTag("home-tabs-pager");
-            if (activity.isInPictureInPictureMode() || !ChannelTracker.playerMinimized() || pager == null
-                    || !pager.isShown() || pager.getWidth() == 0 || pager.getHeight() == 0
-                    || surface.getRootView() != decor || !decor.isAttachedToWindow()) {
-                // The fragment may not be attached/shown on this layout pass. Preserve the exit for its next layout.
-                pipCheckPosted = false;
-                return;
-            }
-            if (pipSizedFeed(decor.getWidth(), decor.getHeight(), pager.getWidth(), pager.getHeight())) {
-                // An unchanged MeasureSpec leaves Fabric's mounted children at the PiP size.
-                // Measure one pixel smaller, then let the real parent restore both exact constraints.
-                int w = surface.getWidth(), h = surface.getHeight();
-                if (w > 1 && h > 1) {
+            View shortView = watch.shortView(decor);
+            if (shortView == null) return;
+            watch.pending = true;
+            watch.expectedAtLayout.set(watch.expected);
+            watch.coveredAtLayout.set(watch.covered);
+            decor.postDelayed(() -> {
+                watch.pending = false;
+                if (pipExit != watch || activity.isInPictureInPictureMode() || !ChannelTracker.playerMinimized()) return;
+                try {
+                    View current = watch.shortView(decor);
+                    if (current == null) return;
+                    if (current != shortView || !watch.expectedAtLayout.equals(watch.expected)
+                            || !watch.coveredAtLayout.equals(watch.covered)) {
+                        checkPipFeed(activity, decor); // The window is still resizing. Confirm its new bounds first.
+                        return;
+                    }
+                    View surface = watch.surface.get();
+                    int w = surface.getWidth(), h = surface.getHeight();
+                    if (w <= 1 || h <= 1) return;
+                    watch.repairs++;
+                    Log.i(TAG, "PiP feed repair " + watch.repairs + ": " + current.getClass().getSimpleName()
+                            + " " + watch.covered.toShortString() + ", viewport " + watch.expected.toShortString());
+                    // Change only height: a width pulse also shifts the horizontal pager's active page.
                     surface.forceLayout();
-                    surface.measure(View.MeasureSpec.makeMeasureSpec(w - 1, View.MeasureSpec.EXACTLY),
+                    surface.measure(View.MeasureSpec.makeMeasureSpec(w, View.MeasureSpec.EXACTLY),
                             View.MeasureSpec.makeMeasureSpec(h - 1, View.MeasureSpec.EXACTLY));
                     surface.postOnAnimation(() -> {
                         surface.forceLayout();
                         surface.requestLayout();
                     });
+                } catch (Throwable t) {
+                    watch.failed(t);
                 }
-                Log.i(TAG, "PiP feed repair " + pass + ": pager " + pager.getWidth() + "x" + pager.getHeight()
-                        + ", surface " + surface.getWidth() + "x" + surface.getHeight());
-            }
-            // Window, RN surface and Fabric update on separate frames. Catch a stale measurement delivered later.
-            if (pass < 2) {
-                decor.postDelayed(() -> checkPipFeed(activity, decor, exit, pass + 1), pass == 0 ? 180 : 450);
-                return;
-            }
+            }, 100);
         } catch (Throwable t) {
-            Log.w(TAG, "PiP feed remeasure failed", t);
-            CrashReporter.report(TAG, "PiP feed remeasure failed", t);
+            watch.failed(t);
         }
-        checkHomeAfterPip = null;
-        pipCheckPosted = false;
     }
 
-    // #82: the 1080px-wide phone displayed a ~590px-wide, ~166px-high feed after leaving PiP.
-    static boolean pipSizedFeed(int hostWidth, int hostHeight, int pageWidth, int pageHeight) {
-        return pageWidth > 0 && pageHeight > 0 && pageWidth * 4L < hostWidth * 3L && pageHeight * 3L < hostHeight;
+    private static final class PipFeedWatch {
+        final WeakReference<Activity> owner;
+        WeakReference<View> surface = new WeakReference<>(null), pager = new WeakReference<>(null);
+        WeakReference<View> page = new WeakReference<>(null);
+        int pageIndex = -1, repairs;
+        boolean pending, wasMinimized;
+        final Rect expected = new Rect(), covered = new Rect();
+        final Rect expectedAtLayout = new Rect(), coveredAtLayout = new Rect();
+        final int[] pagerLocation = new int[2], pageLocation = new int[2];
+
+        PipFeedWatch(Activity activity) { owner = new WeakReference<>(activity); }
+
+        void failed(Throwable t) {
+            if (pipExit == this) pipExit = null;
+            Log.w(TAG, "PiP feed check failed", t);
+            CrashReporter.report(TAG, "PiP feed check failed", t);
+        }
+
+        View shortView(View decor) throws Exception {
+            View root = surface.get(), tabs = pager.get();
+            if (root == null || tabs == null || !tabs.isAttachedToWindow() || root.getRootView() != decor) {
+                Object fragment = rnHome == null ? null : rnHome.get();
+                root = fragment == null ? null : (View) fragment.getClass().getMethod("getView").invoke(fragment);
+                tabs = root == null ? null : root.findViewWithTag("home-tabs-pager");
+                if (tabs == null || root.getRootView() != decor) return null;
+                surface = new WeakReference<>(root);
+                pager = new WeakReference<>(tabs);
+                pageIndex = -1;
+            }
+            if (!tabs.isShown() || tabs.getWidth() == 0 || !root.getGlobalVisibleRect(expected)) return null;
+            // The activity decor includes Twitch's native navigation. The visible RN surface is the actual
+            // home viewport in fullscreen, split screen and letterboxed windows alike.
+            WindowInsets insets = root.getRootWindowInsets();
+            int margin = Math.max(2, Math.round(4 * root.getResources().getDisplayMetrics().density));
+            int horizontal = margin + (insets == null ? 0 : insets.getSystemWindowInsetLeft() + insets.getSystemWindowInsetRight());
+            int bottom = margin + (insets == null ? 0 : insets.getSystemWindowInsetBottom());
+            if (shortBounds(tabs, horizontal, bottom)) return tabs;
+            for (ViewParent p = tabs.getParent(); p instanceof View && p != root; p = p.getParent()) {
+                View parent = (View) p;
+                // RN can clip its Canvas with clipChildren false. Inspect visible bounds only for a
+                // short ancestor; healthy ancestors need no additional coordinate-tree traversal.
+                if ((expected.width() - parent.getWidth() > horizontal || expected.height() - parent.getHeight() > bottom)
+                        && shortBounds(parent, horizontal, bottom)) return parent;
+            }
+            // The pager and stack may already fill their viewport while Fabric still clips just the active page.
+            int width = tabs.getWidth(), scroll = tabs.getScrollX();
+            int index = Math.round(scroll / (float) width);
+            if (index < 0 || index >= FEED_PAGES.length || Math.abs(scroll - (long) index * width) > 2) return null;
+            View panel = page.get();
+            if (index != pageIndex || panel == null || !panel.isAttachedToWindow()) {
+                panel = tabs.findViewWithTag(FEED_PAGES[index]);
+                pageIndex = index;
+                page = new WeakReference<>(panel);
+            }
+            if (panel == null || !panel.isShown()) return null;
+            tabs.getLocationInWindow(pagerLocation);
+            panel.getLocationInWindow(pageLocation);
+            if (Math.abs(pageLocation[0] - pagerLocation[0]) > horizontal) return null; // offscreen or mid-swipe
+            return shortBounds(panel, horizontal, bottom) ? panel : null;
+        }
+
+        private boolean shortBounds(View v, int horizontal, int bottom) {
+            if (v.getWidth() == 0 || v.getHeight() == 0 || !v.getGlobalVisibleRect(covered)) return false;
+            // A header above the pager can legitimately move its top down. Its bottom should still reach
+            // the bottom of the viewport. getGlobalVisibleRect also accounts for clipping by an ancestor.
+            return clippedFeed(expected.width(), expected.bottom, covered.width(), covered.bottom, horizontal, bottom);
+        }
+    }
+
+    static boolean clippedFeed(int viewportWidth, int viewportBottom, int visibleWidth, int visibleBottom,
+            int horizontalAllowance, int bottomAllowance) {
+        return visibleWidth > 0 && (viewportWidth - visibleWidth > horizontalAllowance
+                || viewportBottom - visibleBottom > bottomAllowance);
     }
 
     /** Injected at the entry of {@code DiscoveryFeedRNFragment.onCreateView}. Never throws. */

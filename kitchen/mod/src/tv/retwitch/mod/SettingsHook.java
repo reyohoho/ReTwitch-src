@@ -950,6 +950,8 @@ public final class SettingsHook {
         s.toggle(Toggles.HIDE_LIVE_MUTE);
         s.toggle(Toggles.HIDE_LIVE_MORE);
         s.toggle(Toggles.HIDE_LIVE_FOLLOW);
+        s.section(t("Клипы", "Clips"));
+        s.toggles(Toggles.CLIP_BUTTONS);
         s.section(t("Просмотр", "Browse"));
         s.toggle(Toggles.DISABLE_BROWSE_HISTORY);
     }

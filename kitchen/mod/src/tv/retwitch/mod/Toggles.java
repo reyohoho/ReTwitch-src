@@ -670,6 +670,36 @@ public final class Toggles {
             .about("Убирает кнопку рядом с именем канала во вкладке «В эфире»",
                     "Removes the button next to the channel name on the Live tab")
             .look(SettingsPreview.HOME, SettingsPreview.H_LIVE_FOLLOW).asNew("0.5.43-beta");
+    public static final Toggle HIDE_CLIP_AVATAR = new Toggle("hide_clip_avatar", "Скрыть аватар канала", "Hide the channel avatar", true)
+            .about("Убирает аватар, метку эфира и число зрителей с правого края клипа",
+                    "Removes the channel avatar, live badge and viewer count from the right edge of the clip")
+            .look(SettingsPreview.HOME, SettingsPreview.H_CLIP_AVATAR).asNew("0.5.44-beta");
+    public static final Toggle HIDE_CLIP_REACTIONS = new Toggle("hide_clip_reactions", "Скрыть реакции", "Hide reactions", true)
+            .about("Убирает кнопку реакции и её счётчик", "Removes the reaction button and its count")
+            .look(SettingsPreview.HOME, SettingsPreview.H_CLIP_REACTIONS).asNew("0.5.44-beta");
+    public static final Toggle HIDE_CLIP_COMMENTS = new Toggle("hide_clip_comments", "Скрыть комментарии", "Hide comments", true)
+            .about("Убирает кнопку комментариев и их число", "Removes the comments button and its count")
+            .look(SettingsPreview.HOME, SettingsPreview.H_CLIP_COMMENTS).asNew("0.5.44-beta");
+    public static final Toggle HIDE_CLIP_SHARE = new Toggle("hide_clip_share", "Скрыть кнопку «Поделиться»", "Hide the Share button", true)
+            .about("Убирает кнопку отправки клипа", "Removes the button for sharing the clip")
+            .look(SettingsPreview.HOME, SettingsPreview.H_CLIP_SHARE).asNew("0.5.44-beta");
+    public static final Toggle HIDE_CLIP_MUTE = new Toggle("hide_clip_mute", "Скрыть кнопку звука на клипах", "Hide the mute button on clips", true)
+            .about("Убирает переключатель звука с клипа", "Removes the sound control from the clip")
+            .look(SettingsPreview.HOME, SettingsPreview.H_CLIP_MUTE).asNew("0.5.44-beta");
+    public static final Toggle HIDE_CLIP_ASPECT = new Toggle("hide_clip_aspect", "Скрыть переключатель формата", "Hide the aspect ratio button", true)
+            .about("Убирает переключатель между вертикальной и горизонтальной версиями клипа",
+                    "Removes the button for switching between portrait and landscape versions of the clip")
+            .look(SettingsPreview.HOME, SettingsPreview.H_CLIP_ASPECT).asNew("0.5.44-beta");
+    public static final Toggle HIDE_CLIP_MORE = new Toggle("hide_clip_more", "Скрыть меню «Ещё» на клипах", "Hide the More menu on clips", true)
+            .about("Убирает кнопку ⋮ с действиями для клипа", "Removes the ⋮ menu for clip actions")
+            .look(SettingsPreview.HOME, SettingsPreview.H_CLIP_MORE).asNew("0.5.44-beta");
+    public static final Toggle HIDE_CLIP_FOLLOW = new Toggle("hide_clip_follow", "Скрыть кнопку «Отслеживать» на клипах", "Hide the Follow button on clips", true)
+            .about("Убирает кнопку рядом с названием канала под клипом", "Removes the button next to the channel name below the clip")
+            .look(SettingsPreview.HOME, SettingsPreview.H_CLIP_FOLLOW).asNew("0.5.44-beta");
+    static final Toggle[] CLIP_BUTTONS = {
+            HIDE_CLIP_AVATAR, HIDE_CLIP_REACTIONS, HIDE_CLIP_COMMENTS, HIDE_CLIP_SHARE,
+            HIDE_CLIP_MUTE, HIDE_CLIP_ASPECT, HIDE_CLIP_MORE, HIDE_CLIP_FOLLOW
+    };
     public static final Toggle DISABLE_BROWSE_HISTORY = new Toggle("disable_browse_history",
             "Не сохранять историю поиска Twitch", "Disable Twitch search history", true)
             .about("Скрывает недавние запросы во вкладке «Просмотр» и в поиске Twitch. Новые запросы не сохраняются на телефоне",

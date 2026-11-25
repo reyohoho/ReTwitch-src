@@ -13,6 +13,13 @@ import android.text.TextUtils;
 public final class Changelog {
 
     private static final String[][] ENTRIES = {
+            {"0.5.44-beta",
+                    "Исправлено обрезание главной ленты после выхода из увеличенного окна «картинка в картинке»\n"
+                            + "При изменении порядка кнопок нижнего меню «Сбросить» появляется только тогда, когда текущий порядок отличается от стандартного\n"
+                            + "На вкладке «Клипы» можно по отдельности скрыть аватар канала, реакции, комментарии, кнопку «Поделиться», звук, смену формата, меню и кнопку отслеживания",
+                    "Fixed the home feed staying cropped after expanding a resized picture-in-picture window\n"
+                            + "When reordering the bottom bar, Reset is shown only while the current order differs from the default\n"
+                            + "On the Clips tab, you can hide the channel avatar, reactions, comments, share, mute, aspect ratio, menu and follow controls individually"},
             {"0.5.43-beta",
                     "Порядок кнопок нижнего меню можно изменить перетаскиванием. Долгое нажатие в поиске настроек открывает нужный пункт, а на версии в разделе о моде копирует её номер\n"
                             + "На вкладке «В эфире» можно скрыть звук, меню и кнопку отслеживания по отдельности. В разделе «Просмотр» можно отключить сохранение недавних поисков\n"

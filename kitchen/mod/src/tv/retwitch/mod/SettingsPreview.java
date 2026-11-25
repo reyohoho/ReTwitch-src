@@ -69,7 +69,10 @@ final class SettingsPreview extends View {
             H_COMPACT = 1L << 8, H_SHELF_FOLLOWED = 1L << 9, H_SHELF_CLIPS = 1L << 10, H_ADS = 1L << 11,
             H_PROMO = 1L << 12, H_FRIENDS = 1L << 13, H_PREVIEW_SIZE = 1L << 14, H_FAVORITES = 1L << 15,
             H_PROFILE = 1L << 16, H_TAGS = 1L << 17, H_CATEGORY = 1L << 18,
-            H_LIVE_MUTE = 1L << 19, H_LIVE_MORE = 1L << 20, H_LIVE_FOLLOW = 1L << 21;
+            H_LIVE_MUTE = 1L << 19, H_LIVE_MORE = 1L << 20, H_LIVE_FOLLOW = 1L << 21,
+            H_CLIP_AVATAR = 1L << 22, H_CLIP_REACTIONS = 1L << 23, H_CLIP_COMMENTS = 1L << 24,
+            H_CLIP_SHARE = 1L << 25, H_CLIP_MUTE = 1L << 26, H_CLIP_ASPECT = 1L << 27,
+            H_CLIP_MORE = 1L << 28, H_CLIP_FOLLOW = 1L << 29;
 
     static final long K_FAVORITES = 1L, K_FREQUENT = 1L << 1, K_STICKY = 1L << 2, K_FIRST = 1L << 3, K_NO_GLOBAL = 1L << 4;
 
@@ -1453,14 +1456,15 @@ final class SettingsPreview extends View {
         long f = focus;
         boolean liveButtons = f == H_LIVE_MUTE || f == H_LIVE_MORE || f == H_LIVE_FOLLOW;
         boolean live = f == H_COMPACT || f == H_SHELF_FOLLOWED || f == H_SHELF_CLIPS || liveButtons;
-        boolean following = !live;
+        boolean clips = f >= H_CLIP_AVATAR && f <= H_CLIP_FOLLOW;
+        boolean following = !live && !clips;
         if (f == H_FOLLOWING) {
             following = on(H_FOLLOWING);
         }
         float at = 12;
         String[] tabs = {t("Отслеживаемое", "Following"), t("В эфире", "Live"), t("Клипы", "Clips")};
         for (int i = 0; i < tabs.length; i++) {
-            boolean active = i == (following ? 0 : 1);
+            boolean active = i == (clips ? 2 : following ? 0 : 1);
             float width = label(tabs[i], at, 24, 14, active ? colors.fg : colors.dim, true);
             if (active) {
                 box(at, 30, width, 2, 1, colors.fg);
@@ -1486,7 +1490,9 @@ final class SettingsPreview extends View {
             }
             y += 30;
         }
-        if (live) {
+        if (clips) {
+            clipButtonsPreview();
+        } else if (live) {
             if (f == H_SHELF_FOLLOWED) {
                 shelf(H_SHELF_FOLLOWED, "From channels you follow", false);
             }
@@ -1569,6 +1575,36 @@ final class SettingsPreview extends View {
         box(0, 206, 320, 44, 0, colors.bg);
         box(0, 206, 320, 1, 0, colors.line);
         nav();
+    }
+
+    private void clipButtonsPreview() {
+        video(12, 38, 296, 164, false);
+        box(273, 41, 30, 158, 12, 0xC518181B);
+        if (hides(H_CLIP_AVATAR, 276, 44, 24, 31, 6)) {
+            circle(288, 51, 7, 0xFFA970FF);
+            box(278, 57, 20, 8, 2, LIVE);
+            label("LIVE", 281, 64, 7, WHITE, true);
+            label("1.7K", 280, 73, 8, WHITE, false);
+        }
+        long[] buttons = {H_CLIP_REACTIONS, H_CLIP_COMMENTS, H_CLIP_SHARE, H_CLIP_MUTE, H_CLIP_ASPECT, H_CLIP_MORE};
+        String[] icons = {"like_inactive", "chat", "share_android", "volume_mute", "expand", "more_vertical"};
+        float top = 78;
+        for (int i = 0; i < buttons.length; i++) {
+            int height = i < 2 ? 24 : 17;
+            if (hides(buttons[i], 279, top, 18, height, 4)) {
+                icon(icons[i], 281, top, 14, WHITE);
+                if (i < 2) label(i == 0 ? "58" : "11", 282, top + 22, 8, WHITE, true);
+            }
+            top += height + 1;
+        }
+        label("mira", 22, 174, 14, WHITE, true);
+        String follow = t("Отслеживать", "Follow");
+        float w = width(follow, 11, true) + 12;
+        if (hides(H_CLIP_FOLLOW, 62, 158, w, 21, 10)) {
+            box(62, 158, w, 21, 10, 0xFF35353B);
+            label(follow, 68, 173, 11, WHITE, true);
+        }
+        label(t("Название клипа", "Clip title"), 22, 193, 12, WHITE, false);
     }
 
     /** Following's live rows at a preview size: 0 Twitch's, 1 medium, 2 full width. */

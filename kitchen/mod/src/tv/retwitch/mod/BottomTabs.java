@@ -47,7 +47,7 @@ final class BottomTabs {
     static void edit(SettingsScreen screen) {
         Context c = screen.context;
         String order = LandingSettings.bottomOrder();
-        Editor editor = new Editor(c, order);
+        Editor editor = new Editor(c);
         ScrollView scroll = new ScrollView(c);
         scroll.addView(editor);
         AlertDialog dialog = new AlertDialog.Builder(c)
@@ -61,23 +61,30 @@ final class BottomTabs {
                 })
                 .setNegativeButton(Strings.cancel(), null)
                 .setNeutralButton(Strings.reset(), null).show();
-        dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener(v -> editor.showOrder(DEFAULT));
+        editor.reset = dialog.getButton(AlertDialog.BUTTON_NEUTRAL);
+        editor.reset.setOnClickListener(v -> editor.showOrder(DEFAULT));
+        editor.showOrder(order);
     }
 
     private static final class Editor extends LinearLayout {
         final String[] names = labels();
+        View reset;
         String order;
         String beforeDrag;
 
-        Editor(Context c, String initial) {
+        Editor(Context c) {
             super(c);
             setOrientation(VERTICAL);
             setOnDragListener((v, event) -> drag(event));
-            showOrder(initial);
+        }
+
+        private void setOrder(String value) {
+            order = value;
+            reset.setVisibility(DEFAULT.equals(value) ? View.INVISIBLE : View.VISIBLE);
         }
 
         void showOrder(String value) {
-            order = value;
+            setOrder(value);
             removeAllViews();
             int size = Math.round(48 * getResources().getDisplayMetrics().density);
             for (int i = 0; i < order.length(); i++) {
@@ -145,7 +152,7 @@ final class BottomTabs {
                         }
                     }
                     if (to != from) {
-                        order = move(order, from, to);
+                        setOrder(move(order, from, to));
                         removeViewAt(from);
                         addView(row, to);
                     }

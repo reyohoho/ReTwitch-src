@@ -5,6 +5,7 @@
     var config = global.__retwitchRn;
     var React, RN, core, icons, host, numbers, define, openChannel, contentReady = false;
     var fav = !!config.favorites;
+    var hiddenClipButtons = config.hiddenClipButtons, homeClipsContext;
     var targets = {createSpadeReporter: !!config.privateViewEvents,
         resolveLiveUrl: !!config.privateViewEvents, resolveLiveUrlSync: !!config.privateViewEvents, signClipRenditionUrl: !!config.privateViewEvents,
         FeedStreamItem: config.compactLive, FeedAdItem: config.compactLive, RecapsShelfHeader: config.hideFollowedShelf,
@@ -17,6 +18,7 @@
         StoriesShelf: config.hideStories || config.hideStoriesEmpty,
         CollapsedStoriesIcons: config.hideStories || config.hideStoriesEmpty, FeedTabsRow: config.hideTabs || config.liveToTop,
         FeedTabList: config.liveToTop,
+        ClipsFeedPage: !!hiddenClipButtons, FeedClipItem: !!hiddenClipButtons,
         IconButton: config.hideLiveMute || config.hideLiveMore, FeedFollowButton: config.hideLiveFollow,
         HomeTabsPager: config.noHomeSwipe,
         FreeScrollCellRenderer: config.compactLive, useFeedData: config.compactLive, ChannelProfileRecapsShelf: config.hideProfileRecaps,
@@ -706,7 +708,83 @@
         };
     }
 
+    function homeClips() {
+        return homeClipsContext || (homeClipsContext = React.createContext(false));
+    }
+
+    // TrackedFeedClipItem waits for the first avatar; the clip title also listens for Follow visibility.
+    function HiddenClipButton(props) {
+        React.useEffect(function () {
+            if (props.onAvatarLoad) props.onAvatarLoad();
+            if (props.onVisibilityChange) props.onVisibilityChange(false);
+        }, [props.onAvatarLoad, props.onVisibilityChange]);
+        return null;
+    }
+
+    function filterClipControls(node, slug) {
+        if (Array.isArray(node)) {
+            var changed = false;
+            var items = node.map(function (child) {
+                var mapped = filterClipControls(child, slug);
+                if (mapped !== child) changed = true;
+                return mapped;
+            });
+            return changed ? items : node;
+        }
+        if (!React.isValidElement(node)) return node;
+        var p = node.props, id = p.testID || (p.press && p.press.testID);
+        if (typeof id === 'string' && id.indexOf('feed-clip-') === 0 && id.endsWith('-' + slug)) {
+            var action = id.slice(10, -slug.length - 1);
+            if (action === 'live' || action === 'avatar-press') action = 'avatar';
+            if (hiddenClipButtons['hide_clip_' + action]) {
+                if (action === 'avatar' || action === 'follow') {
+                    return React.createElement(HiddenClipButton, {key: node.key,
+                        onAvatarLoad: p.onAvatarLoad, onVisibilityChange: p.onVisibilityChange});
+                }
+                return null;
+            }
+        }
+        var children = p.children;
+        if (children == null) return node;
+        var filtered = filterClipControls(children, slug);
+        if (filtered === children) return node;
+        // Reactions and comments have their own View with margins in the right-hand column.
+        if (filtered === null && RN && node.type === RN.View) return null;
+        return React.cloneElement(node, {children: filtered});
+    }
+
+    function clipOverlay(tree, slug) {
+        if (!slug || !React.isValidElement(tree) || !Array.isArray(tree.props.children)) return tree;
+        // The card also owns playback, sheets and a scrubber. Only the overlay contains the two button columns.
+        var children = tree.props.children, index = children.findIndex(function (layer) {
+            var region = React.isValidElement(layer) && layer.props.children;
+            return React.isValidElement(region) && region.props.theme === 'overlay';
+        });
+        if (index < 0) return tree;
+        var layer = filterClipControls(children[index], slug);
+        if (layer === children[index]) return tree;
+        var next = children.slice();
+        next[index] = layer;
+        return React.cloneElement(tree, {children: next});
+    }
+
     var adapters = {
+        ClipsFeedPage: function (original) {
+            return function (props) {
+                return React.createElement(homeClips().Provider, {value: true}, React.createElement(original, props));
+            };
+        },
+        FeedClipItem: function (original) {
+            // 31.9 exports React.memo(FeedClipItemComponent). Keep the stock component anywhere outside Home > Clips.
+            if (!original || typeof original.type !== 'function') return original;
+            var filtered = React.memo(function (props) {
+                var tree = original.type(props), content = props.node && props.node.content;
+                return React.useMemo(function () { return clipOverlay(tree, content && content.slug); }, [tree, content]);
+            }, original.compare);
+            return React.memo(function (props) {
+                return React.createElement(React.useContext(homeClips()) ? filtered : original, props);
+            }, original.compare);
+        },
         signClipRenditionUrl: function () {
             // This helper is synchronous. The local endpoint fetches a guest token when the player reads the clip.
             return function (rendition, token) {
@@ -1162,7 +1240,7 @@
         else Object.keys(targets).forEach(function (name) {
             if (targets[name] && name in exports) {
                 // A barrel can expose these buttons via a read-only getter. Patch the component's defining module.
-                if ((name === 'IconButton' || name === 'FeedFollowButton' || name === 'createSpadeReporter' ||
+                if ((name === 'IconButton' || name === 'FeedFollowButton' || name === 'ClipsFeedPage' || name === 'FeedClipItem' || name === 'createSpadeReporter' ||
                         name === 'resolveLiveUrl' || name === 'resolveLiveUrlSync' || name === 'signClipRenditionUrl') &&
                         !(Object.getOwnPropertyDescriptor(exports, name) || {}).writable) return;
                 targets[name] = false;

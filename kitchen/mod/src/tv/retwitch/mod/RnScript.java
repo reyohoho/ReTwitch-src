@@ -53,6 +53,10 @@ public final class RnScript {
             boolean hideLiveMute = Toggles.on(Toggles.HIDE_LIVE_MUTE);
             boolean hideLiveMore = Toggles.on(Toggles.HIDE_LIVE_MORE);
             boolean hideLiveFollow = Toggles.on(Toggles.HIDE_LIVE_FOLLOW);
+            JSONObject clipButtons = new JSONObject();
+            for (Toggles.Toggle button : Toggles.CLIP_BUTTONS) {
+                if (Toggles.on(button)) clipButtons.put(button.key, true);
+            }
             boolean hideStoriesEmpty = Toggles.on(Toggles.HIDE_STORIES_EMPTY);
             boolean hideLiveEmpty = Toggles.on(Toggles.HIDE_LIVE_EMPTY);
             boolean hideTags = Toggles.on(Toggles.HIDE_STREAM_TAGS);
@@ -74,7 +78,7 @@ public final class RnScript {
             boolean profileCategories = Toggles.on(Toggles.HIDE_PROFILE_CATEGORIES);
             boolean profileStreamers = Toggles.on(Toggles.HIDE_PROFILE_STREAMERS);
             if (!PrivateViewing.ENABLED && wallpaper == null && !compactLive && !hideFollowedShelf && !hideClipsShelf && !hideStoriesEmpty && !hideLiveEmpty && !hideTags && !friends
-                    && !hideCategory && !categoryTap && !noHomeSwipe && !hideLiveMute && !hideLiveMore && !hideLiveFollow
+                    && !hideCategory && !categoryTap && !noHomeSwipe && !hideLiveMute && !hideLiveMore && !hideLiveFollow && clipButtons.length() == 0
                     && previewSize == 0
                     && !tabIndicator && !hideStories && !hideTabs && !liveToTop && !favorites && !uptime
                     && !profileRecaps && !profileClips && !profileUserClips && !profileCategories && !profileStreamers) {
@@ -90,6 +94,7 @@ public final class RnScript {
                     .put("hideLiveMute", hideLiveMute)
                     .put("hideLiveMore", hideLiveMore)
                     .put("hideLiveFollow", hideLiveFollow)
+                    .put("hiddenClipButtons", clipButtons.length() == 0 ? null : clipButtons)
                     .put("hideStoriesEmpty", hideStoriesEmpty)
                     .put("hideLiveEmpty", hideLiveEmpty)
                     .put("hideTags", hideTags)
