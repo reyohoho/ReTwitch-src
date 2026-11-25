@@ -78,7 +78,7 @@ public final class SettingsBackup {
     }
 
     static void exportTo(Context context) {
-        String name = "retwitch-settings-" + new SimpleDateFormat("yyyy-MM-dd", Locale.US).format(new Date()) + ".json";
+        String name = "retwitch-settings-" + new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss", Locale.US).format(new Date()) + ".json";
         pick(context, new Intent(Intent.ACTION_CREATE_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE)
                 .setType("application/json").putExtra(Intent.EXTRA_TITLE, name), REQ_EXPORT);
     }

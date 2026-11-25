@@ -768,8 +768,13 @@
         return React.cloneElement(tree, {children: next});
     }
 
-    var offlineMenu, offlineFilter, offlineIconButton;
+    var offlineMenu, offlineFilter, offlineControls;
     var offlineSort = config.offlineSort;
+
+    function OfflineSortIcon() {
+        var theme = offlineControls.useTheme();
+        return React.createElement(offlineFilter, {size: 24, fillColor: theme.colors.textBase});
+    }
 
     // Twitch's offline query fetches follows page by page. Keep the stock rows (including counts, keys and
     // navigation) and reorder only those already rendered. Equal watch times keep Twitch's original order.
@@ -822,7 +827,7 @@
             return {id: 'offline-' + i, children: name, selected: data.mode === i, testID: 'retwitch-offline-mode-' + i,
                 onPress: function () { close(); refresh(i); }};
         });
-        var button = offlineFilter && offlineIconButton ? h(offlineIconButton, {icon: offlineFilter, variant: 'overlay',
+        var button = offlineFilter && offlineControls ? h(offlineControls.IconButton, {icon: h(OfflineSortIcon), variant: 'overlay',
             onPress: open, accessibilityLabel: offlineSort.title, accessibilityState: {expanded: expanded}, testID: 'retwitch-offline-sort'})
             : h(RN.Pressable, {onPress: open, accessibilityRole: 'button', accessibilityLabel: offlineSort.title,
                 accessibilityState: {expanded: expanded}, style: {padding: 8}, testID: 'retwitch-offline-sort'},
@@ -1294,7 +1299,7 @@
         if (offlineSort) {
             if (!offlineMenu && 'DropDownMenu' in exports) offlineMenu = exports.DropDownMenu;
             if (!offlineFilter && 'IconFilter' in exports) offlineFilter = exports.IconFilter;
-            if (!offlineIconButton && 'IconButton' in exports) offlineIconButton = exports.IconButton;
+            if (!offlineControls && 'IconButton' in exports && 'useTheme' in exports) offlineControls = exports;
         }
         if (fav) {
             // One module per icon: the one with IconVerified has no stars.

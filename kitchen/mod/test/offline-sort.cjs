@@ -7,7 +7,8 @@ const source = readFileSync(path.join(__dirname, '../../retwitch-patches/resourc
 const make = (type, props, ...kids) => ({type, props: {...props, ...(kids.length ? {children: kids.length === 1 ? kids[0] : kids} : {})}});
 const clone = (e, props, ...kids) => make(e.type, {...e.props, ...props}, ...kids);
 const url = 'http://localhost/test', config = {mode: 0, url, title: 'Sort', stock: 'Stock', frequency: 'Most watched', alpha: 'A to Z'};
-let serverMode = 0, ranks = {}, calls = 0, state = [], index, effects = [];
+let serverMode = 0, ranks = {}, calls = 0, state = [], index, effects = [], textBase = '#efeff1';
+function IconFilter() {}
 const listeners = new Map();
 const events = {addEventListener: listen, addListener: listen};
 function listen(name, callback) { listeners.set(name, callback); return {remove() { listeners.delete(name); }}; }
@@ -27,7 +28,8 @@ function patch(enabled, original) {
         useEffect(fn, deps) {const k = index++, old = state[k]; if (!old || deps.some((v, i) => v !== old[i])) {state[k] = deps; effects.push(fn);}},
     });
     load({AppRegistry: {}, Pressable: 'Pressable', View: 'View', Text: 'Text', AppState: events, DeviceEventEmitter: events});
-    load({IconButton: 'Button', IconFilter: 'Icon', DropDownMenu: 'Menu'});
+    load({IconFilter});
+    load({IconButton: 'Button', DropDownMenu: 'Menu', useTheme: () => ({colors: {textBase}})});
     return load({FollowingOfflineChannels: original}).FollowingOfflineChannels;
 }
 const visit = () => {};
@@ -50,13 +52,22 @@ function render(enabled = true) {
     const section = shelf.type(shelf.props);
     for (const fn of effects.splice(0)) fn();
     const [header, list] = section.props.children;
-    const menu = header.props.children[0].props.children[1].props.children[1];
-    return {rows: list.props.children, list, menu};
+    const [button, menu] = header.props.children[0].props.children[1].props.children;
+    return {rows: list.props.children, list, button, menu};
 }
 const settle = () => new Promise(r => setImmediate(r));
 const logins = out => Array.from(out.rows, r => r.props.edge.node.login).join(',');
 (async () => {
     let out = render(); await settle(); out = render(); assert.equal(logins(out), 'b,a,c');
+    for (textBase of ['#efeff1', '#0e0e10']) {
+        const icon = out.button.props.icon;
+        assert.equal(typeof icon, 'object', 'Twitch IconButton renders its icon prop as a child');
+        const filter = icon.type(icon.props);
+        assert.equal(filter.type, IconFilter);
+        assert.equal(filter.props.size, 24);
+        assert.equal(filter.props.fillColor, textBase);
+    }
+    out.button.props.onPress(); out = render(); assert.equal(out.menu.props.show, true);
     out.menu.props.items[2].onPress(); await settle(); out = render();
     assert.equal(logins(out), 'a,b,c');
     assert.equal(out.rows[0].props.itemPosition, 0); assert.ok(out.rows[0].props.gatesAppLoad);

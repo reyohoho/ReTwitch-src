@@ -7,11 +7,15 @@ import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.util.getReference
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.instruction.FiveRegisterInstruction
+import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.TwoRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.reference.FieldReference
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
+import com.android.tools.smali.dexlib2.iface.reference.StringReference
+import com.android.tools.smali.dexlib2.iface.reference.TypeReference
 
 private const val REPLAY = "Ltv/retwitch/mod/PipReplay;"
+private val replayActionHandler = fingerprint { strings("replay_button") }
 private val seekableControls = fingerprint {
     strings("processStateUpdate(Ltv/twitch/android/shared/player/overlay/seekable/SeekableOverlayPresenter\$State;" +
             "Ltv/twitch/android/shared/player/overlay/seekable/SeekableOverlayPresenter\$UpdateEvent;)Ltv/twitch/android/core/mvp/presenter/StateAndAction;")
@@ -53,6 +57,27 @@ val retwitchPipReplayPatch = bytecodePatch(
             }
             val show = rc[visibility] as FiveRegisterInstruction
 
+            // The seekable reducer pairs Replay with ShowControls, which opens the channel panel in PiP (#108).
+            val handler = replayActionHandler.method.instructions.toList()
+            val analytics = handler.indexOfFirst { it.getReference<StringReference>()?.string == "replay_button" }
+            val replayAction = handler.take(analytics).last { it.opcode == Opcode.INSTANCE_OF }.getReference<TypeReference>()!!.type
+            val ctor = seekableControls.method.instructions.toList()
+            val signature = ctor.indexOfFirst { it.getReference<StringReference>()?.string?.startsWith("processStateUpdate(") == true }
+            val reducerType = ctor.drop(signature + 1).first { it.getReference<MethodReference>()?.name == "<init>" }
+                .getReference<MethodReference>()!!.definingClass
+            val reducer = mutableClassDefBy(reducerType).methods.single { method ->
+                method.implementation?.instructions?.any { it.opcode == Opcode.SGET_OBJECT &&
+                    it.getReference<FieldReference>()?.type == replayAction } == true
+            }
+            val states = reducer.instructions.toList()
+            val replay = states.indices.single { states[it].opcode == Opcode.SGET_OBJECT &&
+                states[it].getReference<FieldReference>()?.type == replayAction }
+            require(states[replay + 1].opcode == Opcode.APUT_OBJECT && states[replay + 2].opcode == Opcode.APUT_OBJECT &&
+                states[replay + 3].getReference<MethodReference>()?.returnType == "Ljava/util/List;" &&
+                states[replay + 4].opcode == Opcode.MOVE_RESULT_OBJECT &&
+                states[replay + 5].getReference<MethodReference>()?.definingClass == "Ltv/twitch/android/core/mvp/presenter/StateMachineKt;")
+            val actions = (states[replay + 4] as OneRegisterInstruction).registerA
+
             val pip = pipActionsFingerprint.method
             val pc = pip.instructions.toList()
             val setter = pc.indices.single { pc[it].getReference<MethodReference>()?.toString() ==
@@ -69,6 +94,10 @@ val retwitchPipReplayPatch = bytecodePatch(
             }
             attach.addInstructions(constructor+1, "invoke-static {p0, v$box}, ${REPLAY}->attach(Ljava/lang/Object;Landroid/view/View;)V")
             render.addInstructions(visibility+1, "invoke-static {v${show.registerC}, v${show.registerD}}, ${REPLAY}->state(Landroid/view/View;Z)V")
+            reducer.addInstructions(replay + 5, """
+                invoke-static/range {v$actions .. v$actions}, ${REPLAY}->replayActions(Ljava/util/List;)Ljava/util/List;
+                move-result-object v$actions
+            """.trimIndent())
             pip.addInstructions(setter, """
                 iget-object v$host, p0, ${fieldLoad.getReference<FieldReference>()}
                 invoke-static {v$list, v$host}, ${REPLAY}->actions(Ljava/util/List;Landroid/app/Activity;)Ljava/util/List;

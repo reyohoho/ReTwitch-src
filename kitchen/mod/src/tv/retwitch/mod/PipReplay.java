@@ -10,10 +10,12 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.drawable.Icon;
 import android.os.Build;
+import android.util.Log;
 import android.view.View;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.WeakHashMap;
@@ -117,6 +119,21 @@ public final class PipReplay {
         View button = finished.button.get();
         return button != null && button.isAttachedToWindow() && button.getVisibility() == View.VISIBLE &&
                 button.getRootView() == activity.getWindow().getDecorView() ? button : null;
+    }
+
+    /** Twitch's replay button dispatches Restart followed by ShowControls. System PiP supplies its own controls. */
+    public static List<?> replayActions(List<?> actions) {
+        try {
+            Activity activity = host.get();
+            if (actions.size() == 2 && target(activity) != null && activity.isInPictureInPictureMode()
+                    && Toggles.on(Toggles.PIP_REPLAY)) {
+                return Collections.singletonList(actions.get(0));
+            }
+        } catch (Throwable t) {
+            Log.w("RTPipReplay", "replayActions", t);
+            CrashReporter.report("RTPipReplay", "replayActions", t);
+        }
+        return actions;
     }
 
     /** Runs after the optional PiP seek controls have been added. Keep every other action in its original position. */

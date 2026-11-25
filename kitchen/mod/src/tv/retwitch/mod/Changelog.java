@@ -13,6 +13,13 @@ import android.text.TextUtils;
 public final class Changelog {
 
     private static final String[][] ENTRIES = {
+            {"0.5.46-beta",
+                    "В «Отслеживаемом» теперь виден значок сортировки неактивных каналов\n"
+                            + "При повторе записи в окне «картинка в картинке» панель канала больше не закрывает видео\n"
+                            + "В имени файла экспорта настроек теперь указаны дата и время с точностью до секунды",
+                    "The sort icon is now visible beside Your Offline Channels in Following\n"
+                            + "Replaying a past broadcast in picture-in-picture keeps the channel panel off the video\n"
+                            + "Settings export filenames now include the date and time down to the second"},
             {"0.5.45-beta",
                     "В окне обновления можно выбрать, откуда скачивать APK сначала: с Яндекса или GitHub. Выбор сохраняется, при сбое используется второй сервер\n"
                             + "В окне «картинка в картинке» для завершившейся записи можно включить кнопку повтора\n"
