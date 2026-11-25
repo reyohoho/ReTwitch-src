@@ -484,6 +484,7 @@ public final class SettingsHook {
         s.markNew("0.5.38-beta").number(t("В уведомлении вперёд, с", "Notification forward, s"),
                 PlayerSettings.getNotificationSeekSeconds(true), PlayerSettings.DEFAULT_SEEK_FORWARD,
                 v -> PlayerSettings.setNotificationSeekSeconds(c, true, v));
+        s.toggle(Toggles.PIP_REPLAY);
         s.toggle(Toggles.PIP_SEEK);
         s.number(t("В PiP назад, с", "PiP back, s"), PlayerSettings.getPipSeekSeconds(false),
                 PlayerSettings.DEFAULT_SEEK_BACK, v -> PlayerSettings.setPipSeekSeconds(c, false, v));
@@ -927,6 +928,7 @@ public final class SettingsHook {
         s.toggle(Toggles.FRIENDS_HOME);
         s.toggle(Toggles.FOLLOWING_STREAK_TAG);
         s.toggle(Toggles.SORT_FOLLOWED_CATEGORIES);
+        s.toggle(Toggles.OFFLINE_SORT);
         s.toggle(Toggles.SEPARATE_DRAWER_SORT);
         s.toggle(Toggles.HIDE_FOLLOWING_CATEGORIES);
         s.toggle(Toggles.HIDE_FOLLOWING_CONTINUE);

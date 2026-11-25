@@ -6,7 +6,7 @@
     var React, RN, core, icons, host, numbers, define, openChannel, contentReady = false;
     var fav = !!config.favorites;
     var hiddenClipButtons = config.hiddenClipButtons, homeClipsContext;
-    var targets = {createSpadeReporter: !!config.privateViewEvents,
+    var targets = {FollowingOfflineChannels: !!config.offlineSort, createSpadeReporter: !!config.privateViewEvents,
         resolveLiveUrl: !!config.privateViewEvents, resolveLiveUrlSync: !!config.privateViewEvents, signClipRenditionUrl: !!config.privateViewEvents,
         FeedStreamItem: config.compactLive, FeedAdItem: config.compactLive, RecapsShelfHeader: config.hideFollowedShelf,
         FeedShelfContainer: config.hideClipsShelf, FollowingTab: !!config.friends || fav, FollowingCategories: !!config.friends,
@@ -768,7 +768,91 @@
         return React.cloneElement(tree, {children: next});
     }
 
+    var offlineMenu, offlineFilter, offlineIconButton;
+    var offlineSort = config.offlineSort;
+
+    // Twitch's offline query fetches follows page by page. Keep the stock rows (including counts, keys and
+    // navigation) and reorder only those already rendered. Equal watch times keep Twitch's original order.
+    function offlineRows(rows, mode, ranks) {
+        if (!mode) return rows;
+        var gated = rows.filter(function (r) { return r.props.gatesAppLoad; }).length;
+        return rows.map(function (r, i) {
+            var user = r.props.edge.node, login = (user.login || '').toLowerCase();
+            return {row: r, index: i, name: user.displayName || login, time: ranks[login] || 0};
+        }).sort(function (a, b) {
+            var cmp = mode === 1 ? b.time - a.time : a.name.localeCompare(b.name, undefined, {sensitivity: 'base'});
+            return cmp || a.index - b.index;
+        }).map(function (item, i) {
+            return i === item.index ? item.row : React.cloneElement(item.row, {itemPosition: i, gatesAppLoad: i < gated});
+        });
+    }
+
+    function OfflineShelf(props) {
+        var state = React.useState({mode: offlineSort.mode, ranks: {}}), data = state[0], setData = state[1];
+        var menu = React.useState(false), expanded = menu[0], setExpanded = menu[1];
+        var anchor = React.useRef(null), latest = React.useRef(0), saving = React.useRef(false);
+        var section = props.section, kids = section.props.children, list = kids[1], rows = list.props.children;
+
+        function refresh(mode) {
+            if (saving.current) return;
+            var save = typeof mode === 'number', request = ++latest.current;
+            if (save) saving.current = true;
+            fetch(offlineSort.url + (save ? '?mode=' + mode : ''), {method: save ? 'POST' : 'GET'})
+                .then(function (r) { return r.ok ? r.json() : null; }).then(function (next) {
+                    if (request === latest.current && next && next.ranks && next.mode >= 0 && next.mode <= 2) {
+                        setData(next);
+                    }
+                }).catch(function () {}).finally(function () { if (save) saving.current = false; });
+        }
+        React.useEffect(function () {
+            if (props.enabled !== false) refresh();
+        }, [rows, props.enabled]);
+        React.useEffect(function () {
+            var sub = RN.AppState.addEventListener('change', function (s) { if (s === 'active') refresh(); });
+            var feed = RN.DeviceEventEmitter.addListener('TwitchRNFeedVisibility:state', function (e) {
+                if (e && e.visible) refresh();
+            });
+            return function () { ++latest.current; sub.remove(); feed.remove(); };
+        }, []);
+        var sorted = React.useMemo(function () { return offlineRows(rows, data.mode, data.ranks); }, [rows, data]);
+        function open() { if (!expanded) refresh(); setExpanded(!expanded); }
+        function close() { setExpanded(false); }
+        var h = React.createElement;
+        var items = [offlineSort.stock, offlineSort.frequency, offlineSort.alpha].map(function (name, i) {
+            return {id: 'offline-' + i, children: name, selected: data.mode === i, testID: 'retwitch-offline-mode-' + i,
+                onPress: function () { close(); refresh(i); }};
+        });
+        var button = offlineFilter && offlineIconButton ? h(offlineIconButton, {icon: offlineFilter, variant: 'overlay',
+            onPress: open, accessibilityLabel: offlineSort.title, accessibilityState: {expanded: expanded}, testID: 'retwitch-offline-sort'})
+            : h(RN.Pressable, {onPress: open, accessibilityRole: 'button', accessibilityLabel: offlineSort.title,
+                accessibilityState: {expanded: expanded}, style: {padding: 8}, testID: 'retwitch-offline-sort'},
+                label({type: 'hint'}, offlineSort.title));
+        var control = h(RN.View, {ref: anchor, collapsable: false}, button, offlineMenu ? h(offlineMenu, {
+            show: expanded, anchorRef: anchor, onRequestClose: close, items: items,
+            accessibilityLabel: offlineSort.title, testID: 'retwitch-offline-menu'}) : null);
+        var header = h(RN.View, null, h(RN.View, {style: {flexDirection: 'row', alignItems: 'center'}},
+            h(RN.View, {style: {flex: 1}}, kids[0]), control),
+            !offlineMenu && expanded ? items.map(function (item) {
+                return h(RN.Pressable, {key: item.id, testID: item.testID, onPress: item.onPress, accessibilityRole: 'radio',
+                    accessibilityState: {checked: item.selected}, style: {padding: 8}}, label({bold: item.selected}, item.children));
+            }) : null);
+        return React.cloneElement(section, null, header, React.cloneElement(list, {children: sorted}));
+    }
+
     var adapters = {
+        FollowingOfflineChannels: function (original) {
+            return function (props) {
+                var tree = original(props), outer = tree && tree.props && tree.props.children;
+                var section = Array.isArray(outer) && outer[1], kids = section && section.props && section.props.children;
+                var list = Array.isArray(kids) && kids[1], rows = list && list.props && list.props.children;
+                if (!Array.isArray(rows) || !rows.length || !rows.every(function (r) {
+                    return r && r.props && r.props.edge && r.props.edge.node;
+                })) return tree; // loading, hidden or Twitch changed the component shape
+                var children = outer.slice();
+                children[1] = React.createElement(OfflineShelf, {key: 'offline-shelf', section: section, enabled: props.enabled});
+                return React.cloneElement(tree, {children: children});
+            };
+        },
         ClipsFeedPage: function (original) {
             return function (props) {
                 return React.createElement(homeClips().Provider, {value: true}, React.createElement(original, props));
@@ -1207,6 +1291,11 @@
             }
             wallpaper = null;
         }
+        if (offlineSort) {
+            if (!offlineMenu && 'DropDownMenu' in exports) offlineMenu = exports.DropDownMenu;
+            if (!offlineFilter && 'IconFilter' in exports) offlineFilter = exports.IconFilter;
+            if (!offlineIconButton && 'IconButton' in exports) offlineIconButton = exports.IconButton;
+        }
         if (fav) {
             // One module per icon: the one with IconVerified has no stars.
             if (!stars.on && 'IconStar' in exports) stars.on = exports.IconStar;
@@ -1240,7 +1329,7 @@
         else Object.keys(targets).forEach(function (name) {
             if (targets[name] && name in exports) {
                 // A barrel can expose these buttons via a read-only getter. Patch the component's defining module.
-                if ((name === 'IconButton' || name === 'FeedFollowButton' || name === 'ClipsFeedPage' || name === 'FeedClipItem' || name === 'createSpadeReporter' ||
+                if ((name === 'FollowingOfflineChannels' || name === 'IconButton' || name === 'FeedFollowButton' || name === 'ClipsFeedPage' || name === 'FeedClipItem' || name === 'createSpadeReporter' ||
                         name === 'resolveLiveUrl' || name === 'resolveLiveUrlSync' || name === 'signClipRenditionUrl') &&
                         !(Object.getOwnPropertyDescriptor(exports, name) || {}).writable) return;
                 targets[name] = false;

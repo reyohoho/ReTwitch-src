@@ -11,6 +11,7 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.ScrollView;
 
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -23,6 +24,7 @@ import okhttp3.MediaType;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import tv.retwitch.mod.ChatSettings;
@@ -138,7 +140,9 @@ public final class CardCosmetics {
                 return;
             }
             TextView name = (TextView) names.get(0);
-            String id = idOf(name.getText().toString());
+            String id = tv.retwitch.mod.ViewerCardDetails.targetId(name);
+            if ("".equals(id)) return;
+            if (id == null) id = idOf(name.getText().toString());
             if (id == null) {
                 lookup(name.getText().toString(), root);
                 return;
@@ -154,12 +158,16 @@ public final class CardCosmetics {
             if (ChatSettings.isNickPaintsEnabled()) {
                 paintName(name, id);
             }
-            List<View> rows = UiHider.findAll(context, root, "viewer_card_badges");
-            LinearLayout row = !rows.isEmpty() && rows.get(0) instanceof LinearLayout ? (LinearLayout) rows.get(0) : null;
+            LinearLayout publicRow = tv.retwitch.mod.ViewerCardDetails.publicBadgeRow(name);
+            LinearLayout row = publicRow;
+            if (row == null) {
+                List<View> rows = UiHider.findAll(context, root, "viewer_card_badges");
+                if (!rows.isEmpty() && rows.get(0) instanceof LinearLayout) row = (LinearLayout) rows.get(0);
+            }
             if (row != null && ChatSettings.isRteBadgesEnabled()) {
                 syncBadges(row, id);
             }
-            if (row != null && tv.retwitch.mod.Toggles.on(tv.retwitch.mod.Toggles.FRIEND_BUTTON)) {
+            if (row != null && publicRow == null && tv.retwitch.mod.Toggles.on(tv.retwitch.mod.Toggles.FRIEND_BUTTON)) {
                 syncFriendButton(row, id);
             }
         } catch (Throwable t) {
@@ -263,6 +271,60 @@ public final class CardCosmetics {
         SpannableString painted = new SpannableString(text);
         painted.setSpan(new NickPaint.Span(paint), 0, painted.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         name.setText(painted);
+    }
+
+    /** Only the selected user's displayBadges in the selected channel; an empty array is a valid result. */
+    public static void showTwitchBadges(LinearLayout row, JSONArray assigned) {
+        row.removeAllViews();
+        addTwitchBadges(row, assigned, false);
+    }
+
+    /** Create the thumbnail requests for the collection only when it is actually opened. */
+    public static void showEarnedBadges(Context context, String caption, JSONArray earned) {
+        AlertDialog.Builder dialog = new AlertDialog.Builder(context);
+        LinearLayout list = new LinearLayout(dialog.getContext());
+        list.setOrientation(LinearLayout.VERTICAL);
+        int pad = Math.round(16 * context.getResources().getDisplayMetrics().density);
+        list.setPadding(pad, 0, pad, 0);
+        addTwitchBadges(list, earned, true);
+        ScrollView scroll = new ScrollView(dialog.getContext());
+        scroll.addView(list);
+        dialog.setTitle(caption).setView(scroll).setPositiveButton(android.R.string.ok, null).show();
+    }
+
+    private static void addTwitchBadges(LinearLayout row, JSONArray assigned, boolean keepTitles) {
+        if (assigned == null) return;
+        Context context = row.getContext();
+        float density = context.getResources().getDisplayMetrics().density;
+        int size = Math.round(24 * density);
+        for (int i = 0; i < assigned.length(); i++) {
+            JSONObject badge = assigned.optJSONObject(i);
+            if (badge == null || badge.isNull("title")) continue;
+            String name = badge.optString("title");
+            if (name.isEmpty()) continue;
+            TextView view = new TextView(context);
+            view.setText(name);
+            view.setContentDescription(name);
+            if (keepTitles) {
+                view.setGravity(android.view.Gravity.CENTER_VERTICAL);
+                view.setMinHeight(Math.round(40 * density));
+                view.setCompoundDrawablePadding(Math.round(8 * density));
+            } else {
+                view.setTooltipText(name);
+                view.setOnClickListener(v -> android.widget.Toast.makeText(context, name, android.widget.Toast.LENGTH_SHORT).show());
+            }
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            lp.setMarginEnd(Math.round(4 * density));
+            row.addView(view, lp);
+            String url = badge.optString("imageURL");
+            if (!url.startsWith("https://")) continue;
+            EmoteImageCache.loadLarge(url, size, drawable -> {
+                if (drawable == null || view.getParent() != row) return;
+                drawable.setBounds(0, 0, size, size);
+                view.setCompoundDrawablesRelative(drawable, null, null, null);
+                if (!keepTitles) view.setText("");
+            });
+        }
     }
 
     /** The row shows this viewer's badges: the card is reused, so another viewer's go first. */

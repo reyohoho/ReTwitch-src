@@ -14,6 +14,7 @@ public final class SettingsBackupSelfCheck {
         assert SettingsBackup.fileAllowed("retwitch_emote_settings");
         assert !SettingsBackup.fileAllowed("retwitch_launch_promo");
         assert !SettingsBackup.fileAllowed("retwitch_folder_grants");
+        assert !SettingsBackup.fileAllowed("retwitch_offline_watch_time");
         assert !SettingsBackup.fileAllowed("twitch_user_prefs");
         assert !SettingsBackup.fileAllowed("retwitch_../twitch_user_prefs");
         assert !SettingsBackup.fileAllowed(null);

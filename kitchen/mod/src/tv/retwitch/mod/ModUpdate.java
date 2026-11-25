@@ -22,6 +22,10 @@ import android.text.Html;
 import android.util.Log;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
+import android.widget.ScrollView;
+import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -31,15 +35,12 @@ import org.json.JSONObject;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.lang.ref.WeakReference;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Mod updates from the public {@code latest.json} published next to the APK.
@@ -70,19 +71,15 @@ final class ModUpdate {
     private static final String APK_MIME = "application/vnd.android.package-archive";
     private static final String FILE_NAME = "ReTwitch-update.apk";
     private static final int TIMEOUT_MS = 15000;
-    /** Connections one download may take: a dropped one goes on from the byte it stopped at. */
-    private static final int CONNECTIONS = 8;
+    private static final String KEY_GITHUB_FIRST = "github_first";
     /**
      * Yandex's S3 doesn't answer for some users: once a direct connection fails, the rest of the session goes through
      * the RTE emote proxy ({@link tv.retwitch.mod.emotes.EmoteProxy#proxied}, direct when that proxy is off).
      */
     private static volatile boolean viaProxy;
-    /**
-     * The APK's last source, once the proxy fails too: the public repo's GitHub release of that version
-     * ({@code export_public.py --release} uploads the same file publish.py does, so latest.json's hash still checks it).
-     */
     private static final String GITHUB_RELEASES = "https://github.com/reyohoho/ReTwitch-src/releases/download/v";
-    private static volatile boolean viaGithub;
+    /** Accessed on the main thread. Every download uses the same staging file. */
+    private static boolean downloading;
 
     private static final class Release {
         String version;
@@ -90,10 +87,6 @@ final class ModUpdate {
         String sha256;
         long size;
         String notes;
-    }
-
-    private interface Progress {
-        void at(long done);
     }
 
     private static final Handler MAIN = new Handler(Looper.getMainLooper());
@@ -196,7 +189,7 @@ final class ModUpdate {
     /** From UpdateCheckReceiver, off the main thread: one notification per new version. */
     static void notifyIfNewer(Context app) {
         try {
-            Release release = parse(new String(read(BASE_URL + "latest.json"), StandardCharsets.UTF_8));
+            Release release = readRelease();
             SharedPreferences prefs = prefs(app);
             if (!BuildInfo.isNewer(release.version, BuildInfo.VERSION_NAME) || release.version.equals(prefs.getString(KEY_NOTIFIED, null))) {
                 return;
@@ -240,7 +233,7 @@ final class ModUpdate {
         final Context app = context.getApplicationContext();
         new Thread(() -> {
             try {
-                Release release = parse(new String(read(BASE_URL + "latest.json"), StandardCharsets.UTF_8));
+                Release release = readRelease();
                 MAIN.post(() -> {
                     if (BuildInfo.isNewer(release.version, BuildInfo.VERSION_NAME)) {
                         offer(release);
@@ -257,15 +250,23 @@ final class ModUpdate {
         }, "RTUpdateCheck").start();
     }
 
-    private static byte[] read(String url) throws IOException {
-        HttpURLConnection connection = open(url, 0);
+    private static Release readRelease() throws IOException, JSONException {
+        try {
+            return parse(read(open(BASE_URL + "latest.json", 0)));
+        } catch (IOException | JSONException e) {
+            Log.w(TAG, "Update manifest unavailable, checking the GitHub release", e);
+            return parseGithub(read(connect("https://api.github.com/repos/reyohoho/ReTwitch-src/releases/latest", 0)));
+        }
+    }
+
+    private static String read(HttpURLConnection connection) throws IOException {
         try (InputStream in = connection.getInputStream()) {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             byte[] buffer = new byte[8192];
             for (int n; (n = in.read(buffer)) > 0; ) {
                 out.write(buffer, 0, n);
             }
-            return out.toByteArray();
+            return out.toString("UTF-8");
         } finally {
             connection.disconnect();
         }
@@ -290,23 +291,6 @@ final class ModUpdate {
         }
     }
 
-    /** The APK: S3 or the proxy ({@link #open}), then GitHub ({@link #viaGithub}). */
-    private static HttpURLConnection openApk(Release release, long from) throws IOException {
-        if (!viaGithub) {
-            try {
-                return open(BASE_URL + release.apk, from);
-            } catch (IOException e) {
-                Log.w(TAG, "S3 and the proxy failed, going to GitHub", e);
-                viaGithub = true;
-            }
-        }
-        return connect(GITHUB_RELEASES + release.version + "/" + release.apk, from);
-    }
-
-    /**
-     * From byte {@code from} on: a later part must come as one (206), or whole (200, the proxy ignores Range: see
-     * {@link #body}). GitHub answers with a redirect to its file host, which HttpURLConnection follows.
-     */
     private static HttpURLConnection connect(String url, long from) throws IOException {
         HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
         connection.setConnectTimeout(TIMEOUT_MS);
@@ -315,30 +299,16 @@ final class ModUpdate {
         if (from > 0) {
             connection.setRequestProperty("Range", "bytes=" + from + "-");
         }
-        int code = connection.getResponseCode();
-        if (code != HttpURLConnection.HTTP_OK && (from == 0 || code != HttpURLConnection.HTTP_PARTIAL)) {
-            connection.disconnect();
-            throw new IOException("HTTP " + connection.getResponseCode());
-        }
-        return connection;
-    }
-
-    /** The body from byte {@code from}: a whole file (200 to a ranged request) has its first bytes skipped. */
-    private static InputStream body(HttpURLConnection connection, long from) throws IOException {
-        InputStream in = connection.getInputStream();
-        if (from > 0 && connection.getResponseCode() == HttpURLConnection.HTTP_OK) {
-            for (long left = from; left > 0; ) {
-                long skipped = in.skip(left);
-                if (skipped <= 0) {
-                    if (in.read() < 0) {
-                        throw new IOException("whole file shorter than " + from);
-                    }
-                    skipped = 1;
-                }
-                left -= skipped;
+        try {
+            int code = connection.getResponseCode();
+            if (code != HttpURLConnection.HTTP_OK && (from == 0 || code != HttpURLConnection.HTTP_PARTIAL)) {
+                throw new IOException("HTTP " + code);
             }
+            return connection;
+        } catch (IOException e) {
+            connection.disconnect();
+            throw e;
         }
-        return in;
     }
 
     /** The JSON comes from the network: only a plain file name, and no update without a hash. */
@@ -366,16 +336,86 @@ final class ModUpdate {
         return release;
     }
 
+    /** Older releases have no latest.json asset on GitHub. Use the published APK asset's digest and size. */
+    private static Release parseGithub(String body) throws JSONException, IOException {
+        JSONObject json = new JSONObject(body);
+        String tag = json.getString("tag_name");
+        if (!tag.matches("v[0-9]+(?:\\.[0-9]+){2}(?:-[a-zA-Z0-9.-]+)?") || json.getBoolean("draft")
+                || json.getBoolean("prerelease")) throw new IOException("Invalid GitHub release");
+        String version = tag.substring(1);
+        String name = "ReTwitch_" + version + ".apk";
+        JSONArray assets = json.getJSONArray("assets");
+        for (int i = 0; i < assets.length(); i++) {
+            JSONObject asset = assets.getJSONObject(i);
+            if (!name.equals(asset.optString("name")) || !"uploaded".equals(asset.optString("state"))) continue;
+            String digest = asset.optString("digest");
+            if (!digest.matches("sha256:[0-9a-f]{64}")) throw new IOException("Missing GitHub APK checksum");
+            String notes = json.optString("body");
+            String en = githubNotes(notes, "English"), ru = githubNotes(notes, "Русский");
+            JSONObject entry = new JSONObject().put("version", version).put("en", en).put("ru", ru.isEmpty() ? en : ru);
+            return parse(new JSONObject().put("version", version).put("apk", name).put("sha256", digest.substring(7))
+                    .put("size", asset.getLong("size")).put("history", new JSONArray().put(entry)).toString());
+        }
+        throw new IOException("GitHub release has no matching APK");
+    }
+
+    private static String githubNotes(String notes, String language) {
+        StringBuilder bullets = new StringBuilder();
+        boolean inSection = false;
+        for (String line : notes.split("\n")) {
+            line = line.trim();
+            if (line.startsWith("## ") || "EN:".equals(line) || "RU:".equals(line)) {
+                inSection = line.equals("## " + language) || line.equals(language.equals("English") ? "EN:" : "RU:");
+            } else if (inSection && line.startsWith("- ")) {
+                if (bullets.length() > 0) bullets.append('\n');
+                bullets.append(line.substring(2));
+            }
+        }
+        return bullets.toString();
+    }
+
     private static void offer(Release release) {
         Activity activity = top.get();
         if (activity == null || activity.isFinishing() || activity.isDestroyed()) {
             waiting = release;
             return;
         }
-        new AlertDialog.Builder(activity)
-                .setTitle(Strings.updateTitle(release.version))
-                .setMessage(Html.fromHtml(release.notes, Html.FROM_HTML_MODE_LEGACY))
-                .setPositiveButton(Strings.updateNow(), (d, which) -> download(activity, release))
+        AlertDialog.Builder dialog = new AlertDialog.Builder(activity);
+        Context themed = dialog.getContext();
+        int pad = Math.round(20 * themed.getResources().getDisplayMetrics().density);
+        LinearLayout content = new LinearLayout(themed);
+        content.setOrientation(LinearLayout.VERTICAL);
+        content.setPadding(pad, pad / 2, pad, 0);
+        TextView label = new TextView(themed);
+        label.setText(Strings.pick("Сначала скачивать с", "Download first from"));
+        content.addView(label);
+        RadioGroup sources = new RadioGroup(themed);
+        sources.setOrientation(themed.getResources().getConfiguration().fontScale > 1.3f
+                ? LinearLayout.VERTICAL : LinearLayout.HORIZONTAL);
+        RadioButton yandex = new RadioButton(themed), github = new RadioButton(themed);
+        yandex.setId(View.generateViewId());
+        github.setId(View.generateViewId());
+        yandex.setText(sourceLabel(UpdateApk.Source.YANDEX));
+        github.setText(sourceLabel(UpdateApk.Source.GITHUB));
+        sources.addView(yandex);
+        sources.addView(github);
+        sources.setId(View.generateViewId());
+        label.setLabelFor(sources.getId());
+        SharedPreferences settings = activity.getSharedPreferences(SETTINGS, Context.MODE_PRIVATE);
+        sources.check(Boolean.TRUE.equals(settings.getAll().get(KEY_GITHUB_FIRST)) ? github.getId() : yandex.getId());
+        sources.setOnCheckedChangeListener((group, id) -> settings.edit().putBoolean(KEY_GITHUB_FIRST, id == github.getId()).apply());
+        content.addView(sources);
+        TextView notes = new TextView(themed);
+        notes.setTextAppearance(android.R.style.TextAppearance_Material_Body1);
+        notes.setPadding(0, pad / 2, 0, 0);
+        notes.setText(Html.fromHtml(release.notes, Html.FROM_HTML_MODE_LEGACY));
+        content.addView(notes);
+        ScrollView scroll = new ScrollView(themed);
+        scroll.addView(content);
+        dialog.setTitle(Strings.updateTitle(release.version))
+                .setView(scroll)
+                .setPositiveButton(Strings.updateNow(), (d, which) -> download(activity, release,
+                        github.isChecked() ? UpdateApk.Source.GITHUB : UpdateApk.Source.YANDEX))
                 .setNegativeButton(Strings.later(), (d, which) -> prefs(activity).edit()
                         .putLong(KEY_LATER, System.currentTimeMillis() + LATER_MS).apply())
                 .show();
@@ -385,7 +425,12 @@ final class ModUpdate {
         return new File(context.getExternalFilesDir("updates"), FILE_NAME);
     }
 
-    private static void download(Activity activity, Release release) {
+    private static String sourceLabel(UpdateApk.Source source) {
+        return source == UpdateApk.Source.GITHUB ? "GitHub" : Strings.pick("Яндекс", "Yandex");
+    }
+
+    private static void download(Activity activity, Release release, UpdateApk.Source preferred) {
+        if (downloading) return;
         ProgressBar bar = new ProgressBar(activity, null, android.R.attr.progressBarStyleHorizontal);
         bar.setMax(100);
         TextView percent = new TextView(activity);
@@ -393,33 +438,43 @@ final class ModUpdate {
         LinearLayout box = new LinearLayout(activity);
         box.setOrientation(LinearLayout.VERTICAL);
         box.setPadding(pad, pad, pad, 0);
+        TextView sourceName = new TextView(activity);
+        sourceName.setText(sourceLabel(preferred));
+        box.addView(sourceName);
         box.addView(bar);
         box.addView(percent);
-        boolean[] cancelled = {false};
+        AtomicBoolean cancelled = new AtomicBoolean();
         AlertDialog dialog = new AlertDialog.Builder(activity)
                 .setTitle(Strings.updateDownloading(release.version))
                 .setView(box)
                 .setCancelable(false)
-                .setNegativeButton(Strings.cancel(), (d, which) -> cancelled[0] = true)
+                .setNegativeButton(Strings.cancel(), (d, which) -> cancelled.set(true))
                 .show();
         final Context app = activity.getApplicationContext();
         final File file = apkFile(app);
+        ready = null;
+        downloading = true;
         new Thread(() -> {
             boolean ok = false;
             try {
                 final long started = SystemClock.elapsedRealtime();
-                ok = fetch(release, file, cancelled, done -> {
+                ok = UpdateApk.fetch(file, release.size, release.sha256, preferred, cancelled,
+                        (source, offset) -> source == UpdateApk.Source.GITHUB
+                                ? connect(GITHUB_RELEASES + release.version + "/" + release.apk, offset)
+                                : open(BASE_URL + release.apk, offset),
+                        (source, done) -> {
                     long elapsed = SystemClock.elapsedRealtime() - started;
                     // Time left once two seconds of data give a speed.
                     long left = elapsed > 2000 && done > 0 ? (release.size - done) * elapsed / done / 1000 : -1;
                     MAIN.post(() -> {
+                        sourceName.setText(sourceLabel(source));
                         bar.setProgress((int) (done * 100 / release.size));
                         percent.setText(Strings.updateProgress(done, release.size, left));
                     });
                 });
             } catch (IOException | java.security.NoSuchAlgorithmException | RuntimeException e) {
                 Log.w(TAG, "download failed", e);
-                if (!cancelled[0]) {
+                if (!cancelled.get()) {
                     CrashReporter.report(TAG, "download failed", e);
                 }
             }
@@ -430,78 +485,17 @@ final class ModUpdate {
                 } catch (RuntimeException e) {
                     Log.w(TAG, "dismiss failed", e); // the activity went away
                 }
-                if (done) {
+                downloading = false;
+                if (done && !cancelled.get()) {
                     finish(app, file);
                 } else {
                     file.delete();
-                    if (!cancelled[0]) {
+                    if (!cancelled.get()) {
                         Toast.makeText(app, Strings.updateFailed(), Toast.LENGTH_LONG).show();
                     }
                 }
             });
         }, "RTUpdateDownload").start();
-    }
-
-    /**
-     * @return whether the complete file with the published hash is on disk. 200 MB over one connection broke on any
-     * drop or 15 s stall, and the user only saw "update failed": a dropped connection now goes on from where it stopped.
-     */
-    private static boolean fetch(Release release, File file, boolean[] cancelled, Progress progress)
-            throws IOException, java.security.NoSuchAlgorithmException {
-        MessageDigest digest = MessageDigest.getInstance("SHA-256");
-        long total = 0;
-        int shown = -1;
-        long shownAt = 0;
-        try (OutputStream out = new FileOutputStream(file)) {
-            for (int connections = 1; total < release.size; connections++) {
-                try {
-                    HttpURLConnection connection = openApk(release, total);
-                    try (InputStream in = body(connection, total)) {
-                        byte[] buffer = new byte[64 * 1024];
-                        for (int n; (n = in.read(buffer)) > 0; ) {
-                            if (cancelled[0]) {
-                                return false;
-                            }
-                            out.write(buffer, 0, n);
-                            digest.update(buffer, 0, n);
-                            total += n;
-                            int percent = (int) (total * 100 / release.size);
-                            long now = SystemClock.elapsedRealtime();
-                            if (percent != shown || now - shownAt >= 500) {
-                                shown = percent;
-                                shownAt = now;
-                                progress.at(total);
-                            }
-                        }
-                    } finally {
-                        connection.disconnect();
-                    }
-                } catch (IOException e) {
-                    if (connections >= CONNECTIONS || cancelled[0]) {
-                        throw new IOException("stopped at " + total + " of " + release.size + " after " + connections
-                                + " connections" + (viaGithub ? " from GitHub" : viaProxy ? " via the proxy" : ""), e);
-                    }
-                    Log.w(TAG, "download cut at " + total + ", going on", e);
-                    try {
-                        Thread.sleep(2000L * connections);
-                    } catch (InterruptedException interrupted) {
-                        Thread.currentThread().interrupt();
-                        throw e;
-                    }
-                }
-                if (total < release.size && connections >= CONNECTIONS) {
-                    throw new IOException("stream ended at " + total + " of " + release.size);
-                }
-            }
-        }
-        StringBuilder hex = new StringBuilder();
-        for (byte b : digest.digest()) {
-            hex.append(String.format("%02x", b));
-        }
-        if (total != release.size || !hex.toString().equals(release.sha256)) {
-            throw new IOException("got " + total + " bytes, sha256 " + hex);
-        }
-        return true;
     }
 
     private static void finish(Context app, File file) {

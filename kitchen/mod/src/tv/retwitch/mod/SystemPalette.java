@@ -1,6 +1,8 @@
 package tv.retwitch.mod;
 
 import android.content.Context;
+import android.content.res.ColorStateList;
+import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.content.res.loader.ResourcesLoader;
 import android.content.res.loader.ResourcesProvider;
@@ -9,6 +11,9 @@ import android.os.ParcelFileDescriptor;
 import android.system.Os;
 import android.system.OsConstants;
 import android.util.Log;
+import android.view.View;
+import android.widget.ProgressBar;
+import android.widget.TextView;
 
 import java.io.FileDescriptor;
 import java.io.FileOutputStream;
@@ -72,6 +77,34 @@ public final class SystemPalette {
 
     public static long composeColor(boolean enabled, long packed) {
         return enabled && (int) packed == 0 ? color(packed >>> 32) << 32 : packed;
+    }
+
+    /** The landing window sets light system-bar icons in both modes, including the edge-to-edge path. */
+    public static int landingBar(int original) {
+        if (!enabled()) return original;
+        try {
+            Context context = AppContext.get();
+            return context == null ? original : context.getColor(android.R.color.system_neutral1_900);
+        } catch (RuntimeException e) {
+            Log.w(TAG, "landing bar colour unavailable", e);
+            return original;
+        }
+    }
+
+    /** The subscription dialog has its own theme. Change only the bound legal-link text or indeterminate arc. */
+    public static void subscriptionControl(View view) {
+        if (view == null || !enabled()) return;
+        try {
+            Context context = view.getContext();
+            boolean dark = (context.getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK)
+                    == Configuration.UI_MODE_NIGHT_YES;
+            int accent = context.getColor(dark ? android.R.color.system_accent1_300 : android.R.color.system_accent1_700);
+            if (view instanceof TextView) ((TextView) view).setLinkTextColor(accent);
+            else if (view instanceof ProgressBar) ((ProgressBar) view).setIndeterminateTintList(ColorStateList.valueOf(accent));
+        } catch (RuntimeException e) {
+            Log.w(TAG, "subscription control colour unavailable", e);
+            CrashReporter.report(TAG, "subscription control colour unavailable", e);
+        }
     }
 
     static void install(Context context) {

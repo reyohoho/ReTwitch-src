@@ -70,6 +70,7 @@ public final class StreamSwitch {
             // The live pause's layout is up, so a live channel: the player's usher URL, else the chat's channel
             // (a stream proxy's own URL carries no login).
             String login = pauses.isEmpty() ? null : LiveRecord.currentLogin();
+            OfflineChannelSort.liveChannel(!pauses.isEmpty(), login);
             noteOpened(activity, login);
             keepFullscreen(activity, decor, login);
             boolean on = Toggles.on(Toggles.STREAM_ARROWS);

@@ -13,6 +13,17 @@ import android.text.TextUtils;
 public final class Changelog {
 
     private static final String[][] ENTRIES = {
+            {"0.5.45-beta",
+                    "В окне обновления можно выбрать, откуда скачивать APK сначала: с Яндекса или GitHub. Выбор сохраняется, при сбое используется второй сервер\n"
+                            + "В окне «картинка в картинке» для завершившейся записи можно включить кнопку повтора\n"
+                            + "Неактивные каналы в «Отслеживаемом» можно сортировать по алфавиту или по времени просмотра на этом устройстве\n"
+                            + "Цвета обоев применяются также к фону чата, ссылкам, флажкам и другим элементам экрана\n"
+                            + "Если Twitch не заполнил карточку зрителя, в ней показываются публичный профиль и значки зрителя в этом канале. Остальные полученные значки можно открыть отдельно",
+                    "Choose Yandex or GitHub as the first APK mirror in the update dialog. ReTwitch remembers the choice and tries the other mirror if the download fails\n"
+                            + "You can enable a replay button for finished past broadcasts in picture-in-picture\n"
+                            + "Sort your offline channels in Following alphabetically or by time watched on this device\n"
+                            + "Wallpaper colours now cover the chat background, links, checkboxes and more controls\n"
+                            + "If Twitch leaves a viewer card empty, it shows the viewer's public profile and badges for that channel. Open the badge collection to see their other earned badges"},
             {"0.5.44-beta",
                     "Исправлено обрезание главной ленты после выхода из увеличенного окна «картинка в картинке»\n"
                             + "При изменении порядка кнопок нижнего меню «Сбросить» появляется только тогда, когда текущий порядок отличается от стандартного\n"

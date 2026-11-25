@@ -3,8 +3,11 @@ package tv.retwitch.patches
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.extensions.InstructionExtensions.instructions
 import app.morphe.patcher.patch.bytecodePatch
+import app.morphe.patches.all.misc.resources.ResourceType
+import app.morphe.patches.all.misc.resources.getResourceId
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
+import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.TwoRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.WideLiteralInstruction
 import com.android.tools.smali.dexlib2.iface.reference.FieldReference
@@ -20,6 +23,58 @@ val retwitchSystemPalettePatch = bytecodePatch(
     compatibleWith(twitchCompatibility)
     dependsOn(retwitchExtensionPatch, retwitchSystemPaletteResources)
     execute {
+        val sale = getResourceId(ResourceType.ID, "terms_of_sale_text")
+        val terms = getResourceId(ResourceType.ID, "terms_of_service")
+        val loading = getResourceId(ResourceType.ID, "loading_indicator")
+        val grey = getResourceId(ResourceType.COLOR, "hinted_grey_1")
+        val black = getResourceId(ResourceType.COLOR, "black")
+        val legalOwners = mutableListOf<String>()
+        classDefForEach { cls ->
+            if (cls.methods.any { m -> m.name == "<init>" && m.implementation?.instructions?.any {
+                    val literal = (it as? WideLiteralInstruction)?.wideLiteral
+                    literal == sale || literal == terms
+                } == true }) legalOwners += cls.type
+        }
+        var controls = 0
+        for (owner in legalOwners) {
+            for (method in mutableClassDefBy(owner).methods.filter { it.name == "<init>" }) {
+                val code = method.instructions.toList()
+                if (code.none { (it as? WideLiteralInstruction)?.wideLiteral in setOf(sale, terms) }) continue
+                for (i in (0 until code.size - 2).reversed()) {
+                    val literal = (code[i] as? WideLiteralInstruction)?.wideLiteral
+                    if (literal != sale && literal != terms && literal != loading) continue
+                    val call = (code[i + 1] as? ReferenceInstruction)?.reference as? MethodReference ?: continue
+                    // Generated view binding's findChildViewById(int, View) and Android's View.findViewById(int).
+                    if (call.returnType != "Landroid/view/View;" || !(call.name == "findViewById" ||
+                        call.parameterTypes.map(CharSequence::toString) == listOf("I", "Landroid/view/View;"))) continue
+                    if (code[i + 2].opcode != Opcode.MOVE_RESULT_OBJECT) continue
+                    val reg = (code[i + 2] as OneRegisterInstruction).registerA
+                    method.addInstructions(i + 3, "invoke-static/range {v$reg .. v$reg}, $SYSTEM_PALETTE->subscriptionControl(Landroid/view/View;)V")
+                    controls++
+                }
+            }
+        }
+        var bars = 0
+        val landing = mutableClassDefBy("Ltv/twitch/android/feature/viewer/landing/ViewerLandingActivity;")
+        for (method in landing.methods) {
+            val code = method.implementation?.instructions?.toList() ?: continue
+            for (i in (0 until code.size - 2).reversed()) {
+                val call = (code[i] as? ReferenceInstruction)?.reference as? MethodReference ?: continue
+                val paint = (code[i + 2] as? ReferenceInstruction)?.reference as? MethodReference ?: continue
+                if (call.name != "getColor" || call.returnType != "I" || code[i + 1].opcode != Opcode.MOVE_RESULT) continue
+                val literal = (i - 3).coerceAtLeast(0) until i
+                val matches = when (paint.name) {
+                    "setBackgroundColor" -> literal.any { (code[it] as? WideLiteralInstruction)?.wideLiteral == grey }
+                    "setStatusBarColor" -> literal.any { (code[it] as? WideLiteralInstruction)?.wideLiteral == black }
+                    else -> false
+                }
+                if (!matches) continue
+                val reg = (code[i + 1] as OneRegisterInstruction).registerA
+                method.addInstructions(i + 2, "invoke-static/range {v$reg .. v$reg}, $SYSTEM_PALETTE->landingBar(I)I\nmove-result v$reg")
+                bars++
+            }
+        }
+        println("[ReTwitch] wallpaper colours: $controls subscription controls, $bars landing bar writes")
         try {
             val swatches = setOf(0xff9147ffL, 0xff18181bL, 0xffefeff1L, 0xfff7262dL)
             val ramps = mutableListOf<String>()

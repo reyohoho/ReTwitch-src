@@ -363,8 +363,11 @@ final class LiveRecord {
 
     /** The channel of the live usher master the player plays; null for a VOD, a clip or a proxy's own URL. */
     static String playerLogin() {
+        return playerLogin(PlayerHook.currentPlayer());
+    }
+
+    static String playerLogin(Object player) {
         try {
-            Object player = PlayerHook.currentPlayer();
             Object path = player == null ? null : player.getClass().getMethod("getPath").invoke(player);
             if (path instanceof String) {
                 Matcher m = HLS_LOGIN.matcher(Uri.decode((String) path));

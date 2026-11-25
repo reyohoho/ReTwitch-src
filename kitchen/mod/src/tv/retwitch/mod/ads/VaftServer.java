@@ -159,6 +159,10 @@ public final class VaftServer {
         }
     }
 
+    public static String offlineSortEndpoint() throws IOException {
+        return baseUrl() + "offline-sort";
+    }
+
     public static String clipEndpoint() throws IOException {
         return baseUrl() + "clip.mp4";
     }
@@ -236,6 +240,14 @@ public final class VaftServer {
             Uri request = Uri.parse("http://" + HOST + parts[1]);
             List<String> path = request.getPathSegments();
             String kind = path.size() == 2 && path.get(0).equals(secret) ? path.get(1) : null;
+            if ("offline-sort".equals(kind)) {
+                if ("GET".equals(parts[0]) || "POST".equals(parts[0])) {
+                    respond(client, 200, "application/json", tv.retwitch.mod.OfflineChannelSort.response(request, "POST".equals(parts[0])), false);
+                } else {
+                    respond(client, 405, "text/plain", "method not allowed", head);
+                }
+                return;
+            }
             if ("clip.mp4".equals(kind)) {
                 if (head || "GET".equals(parts[0])) {
                     PrivateClipPlayback.serve(client, request, range, head);

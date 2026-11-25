@@ -70,6 +70,7 @@ public final class RnScript {
             boolean hideStories = Toggles.on(Toggles.HIDE_HOME_STORIES);
             boolean hideTabs = Toggles.on(Toggles.HIDE_FEED_TABS);
             boolean favorites = Toggles.on(Toggles.FAVORITE_CHANNELS);
+            JSONObject offlineSort = OfflineChannelSort.config();
             boolean liveToTop = Toggles.on(Toggles.LIVE_TAB_TO_TOP);
             boolean uptime = Toggles.on(Toggles.STREAM_UPTIME);
             boolean profileRecaps = Toggles.on(Toggles.HIDE_PROFILE_RECAPS);
@@ -77,7 +78,7 @@ public final class RnScript {
             boolean profileUserClips = Toggles.on(Toggles.HIDE_PROFILE_USER_CLIPS);
             boolean profileCategories = Toggles.on(Toggles.HIDE_PROFILE_CATEGORIES);
             boolean profileStreamers = Toggles.on(Toggles.HIDE_PROFILE_STREAMERS);
-            if (!PrivateViewing.ENABLED && wallpaper == null && !compactLive && !hideFollowedShelf && !hideClipsShelf && !hideStoriesEmpty && !hideLiveEmpty && !hideTags && !friends
+            if (offlineSort == null && !PrivateViewing.ENABLED && wallpaper == null && !compactLive && !hideFollowedShelf && !hideClipsShelf && !hideStoriesEmpty && !hideLiveEmpty && !hideTags && !friends
                     && !hideCategory && !categoryTap && !noHomeSwipe && !hideLiveMute && !hideLiveMore && !hideLiveFollow && clipButtons.length() == 0
                     && previewSize == 0
                     && !tabIndicator && !hideStories && !hideTabs && !liveToTop && !favorites && !uptime
@@ -85,6 +86,7 @@ public final class RnScript {
                 return;
             }
             JSONObject config = new JSONObject()
+                    .put("offlineSort", offlineSort)
                     .put("wallpaper", wallpaper)
                     .put("privateClipEndpoint", PrivateViewing.ENABLED ? PrivateClipPlayback.endpoint() : null)
                     .put("privateViewEvents", PrivateViewing.ENABLED ? new org.json.JSONArray(PrivateViewing.EVENTS) : null)

@@ -506,7 +506,7 @@ final class VodDownload {
         return gqlResponse(HTTP, query, variables).getJSONObject("data");
     }
 
-    private static org.json.JSONObject gqlResponse(Call.Factory calls, String query, org.json.JSONObject variables) throws Exception {
+    static org.json.JSONObject gqlResponse(Call.Factory calls, String query, org.json.JSONObject variables) throws Exception {
         org.json.JSONObject body = new org.json.JSONObject().put("query", query).put("variables", variables);
         Request request = new Request.Builder().url("https://gql.twitch.tv/gql")
                 .header("Client-ID", "kimne78kx3ncx6brgo4mv6wki5h1ko")

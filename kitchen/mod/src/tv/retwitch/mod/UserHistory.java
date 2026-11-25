@@ -42,13 +42,17 @@ public final class UserHistory {
     private static final class Line {
         final long time;
         final String text;
+        final String room, senderId, displayName;
 
         /** The chat row as shown (badges, nick, emotes); null until the row is bound. */
         CharSequence rendered;
 
-        Line(long time, String text) {
+        Line(long time, String text, String room, Object senderId, String displayName) {
             this.time = time;
             this.text = text;
+            this.room = room;
+            this.senderId = senderId == null ? "" : senderId.toString();
+            this.displayName = displayName;
         }
     }
 
@@ -111,7 +115,7 @@ public final class UserHistory {
                 lines = new ArrayDeque<>();
                 users.put(key, lines);
             }
-            Line line = new Line(time, text);
+            Line line = new Line(time, text, room.toString(), tags.get("user-id"), name.toString());
             if (!lines.isEmpty() && time < lines.peekLast().time) {
                 // An older line (RecentMessages): keep the user's lines in time order.
                 List<Line> all = new ArrayList<>(lines);
@@ -197,8 +201,16 @@ public final class UserHistory {
         }
     }
 
-    private static List<Line> lines(String shownName) {
-        String channel = ChannelTracker.getCurrentChannelId();
+    static String[] tappedSender(String room, String userId, String messageId) {
+        synchronized (ROOMS) {
+            Line selected = BY_ID.get(messageId);
+            return selected != null && !room.isEmpty() && room.equals(selected.room) && !selected.senderId.isEmpty() &&
+                    (userId.isEmpty() || userId.equals(selected.senderId)) ? new String[]{selected.senderId, selected.displayName} : null;
+        }
+    }
+
+    private static List<Line> lines(String shownName, ViewerCardDetails card) {
+        String channel = card != null ? card.room : ChannelTracker.getCurrentChannelId();
         if (channel == null || shownName == null) {
             return new ArrayList<>();
         }
@@ -210,7 +222,9 @@ public final class UserHistory {
             if (lines == null && users != null && login > 0) {
                 lines = users.get(name.substring(0, login)); // "Display (login)" of non-ASCII names
             }
-            return lines == null ? new ArrayList<>() : new ArrayList<>(lines);
+            List<Line> result = lines == null ? new ArrayList<>() : new ArrayList<>(lines);
+            if (card != null && !card.userId.isEmpty()) result.removeIf(line -> !card.userId.equals(line.senderId));
+            return result;
         }
     }
 
@@ -257,7 +271,10 @@ public final class UserHistory {
             if (names.isEmpty() || !(names.get(0) instanceof TextView)) {
                 return;
             }
-            final String name = ((TextView) names.get(0)).getText().toString();
+            TextView title = (TextView) names.get(0);
+            ViewerCardDetails card = ViewerCardDetails.of(title);
+            final String name = card != null && title.length() == 0 ? card.historyName : title.getText().toString();
+            if (name.isEmpty()) return;
             TextView row = null;
             for (int i = 0; i < list.getChildCount(); i++) {
                 if (list.getChildAt(i).getTag(ROW_TAG_KEY) != null) {
@@ -279,12 +296,12 @@ public final class UserHistory {
                 list.addView(row, list.indexOfChild(message) + 1, new LinearLayout.LayoutParams(
                         ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
             }
-            int count = lines(name).size();
+            int count = lines(name, card).size();
             String label = Strings.userHistoryRow(count);
             if (!label.contentEquals(row.getText())) {
                 row.setText(label);
             }
-            row.setOnClickListener(v -> show(v.getContext(), name));
+            row.setOnClickListener(v -> show(v.getContext(), name, card));
             RecentMessages.load(ChannelTracker.getCurrentChannelLogin(), () -> attach(context, message));
         } catch (Throwable t) {
             Log.w(TAG, "attach failed", t);
@@ -292,8 +309,8 @@ public final class UserHistory {
     }
 
     /** The viewer's lines as the chat shows them, newest at the bottom. */
-    private static void show(Context context, String name) {
-        List<Line> lines = lines(name);
+    private static void show(Context context, String name, ViewerCardDetails card) {
+        List<Line> lines = lines(name, card);
         // Theme.Material is dark whatever the system is; the card itself is dark.
         AlertDialog.Builder builder = new AlertDialog.Builder(context, android.R.style.Theme_Material_Dialog_Alert);
         Context themed = builder.getContext();

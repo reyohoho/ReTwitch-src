@@ -91,6 +91,7 @@ public final class PlayerHook {
             LiveScreenOn.onTheatreOpened();
         }
         if (theatreOpen && !open) {
+            OfflineChannelSort.stop();
             ChannelTracker.noteVod(null); // the next VOD's chapters button doesn't show the last one's answer (#55)
             synchronized (THEATRE_PLAYERS) {
                 ORPHANS.addAll(THEATRE_PLAYERS);
@@ -118,6 +119,7 @@ public final class PlayerHook {
     /** Injected into IVS's state dispatch (main thread). Never throws. */
     public static void onStateChanged(Object player, Object state) {
         try {
+            if (player != null && state != null) OfflineChannelSort.state(player, state.toString());
             if (player == null || state == null || isReplay(player) || !isAudible(player)) {
                 return;
             }

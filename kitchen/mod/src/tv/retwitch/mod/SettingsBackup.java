@@ -62,7 +62,7 @@ public final class SettingsBackup {
     private static final String PREFIX = "retwitch_";
     /** Device state, not settings. */
     private static final Set<String> EXCLUDED = new HashSet<>(Arrays.asList("retwitch_launch_promo", "retwitch_update",
-            "retwitch_feedback", LiveRecord.STATE, StreamSwitch.STATE, QuickSetup.PREFS, DownloadFolder.PREFS));
+            "retwitch_feedback", LiveRecord.STATE, StreamSwitch.STATE, QuickSetup.PREFS, DownloadFolder.PREFS, OfflineChannelSort.WATCH_TIME));
     /** A picked file larger than this is not a settings backup. */
     private static final int MAX_BYTES = 1 << 20;
     // 16-bit codes: FragmentActivity rejects larger ones.
@@ -395,6 +395,8 @@ public final class SettingsBackup {
      */
     static void resetAll(Context context) {
         SettingsSearchHistory.clear(context);
+        OfflineChannelSort.stop();
+        context.getSharedPreferences(OfflineChannelSort.WATCH_TIME, Context.MODE_PRIVATE).edit().clear().apply();
         // Reset new file destinations but keep the Android grants used by existing recordings.
         context.getSharedPreferences(DownloadFolder.PREFS, Context.MODE_PRIVATE).edit().clear().commit();
         for (String name : localFiles(context)) {

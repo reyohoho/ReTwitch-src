@@ -12,6 +12,8 @@ import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.Method
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.WideLiteralInstruction
+import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
+import com.android.tools.smali.dexlib2.iface.reference.StringReference
 
 /**
  * Twitch's viewer card (tap on a chatter) opens in a bottom sheet dialog, a window of its own that the
@@ -53,6 +55,28 @@ val retwitchViewerCardPatch = bytecodePatch(
             println("[ReTwitch] viewer card: $owner")
         } catch (throwable: Throwable) {
             println("[ReTwitch] viewer card skipped: $throwable")
+        }
+        try {
+            val fragment = mutableClassDefBy("Ltv/twitch/android/feature/viewer/card/ViewerCardBottomSheetDialogFragment;")
+            val getter = fragment.methods.single { it.parameterTypes.isEmpty() && it.returnType.startsWith("L") }
+            val vm = mutableClassDefBy(getter.returnType)
+            val query = vm.methods.single { it.returnType == "V" &&
+                it.parameterTypes.map(CharSequence::toString) == List(3) { "Ljava/lang/String;" } &&
+                it.instructions.any { ins -> ins.opcode == Opcode.NEW_INSTANCE &&
+                    classDefByOrNull { c -> c.type == (ins as ReferenceInstruction).reference.toString() }
+                        ?.methods?.any { m -> m.implementation?.instructions?.any {
+                            ((it as? ReferenceInstruction)?.reference as? StringReference)?.string == "ViewerCardInfo"
+                        } == true } == true } }
+            val bind = fragment.methods.single { it.name == "onViewCreated" }
+            check(bind.implementation!!.registerCount in 5..15)
+            bind.addInstructions(0, """
+                const-string v0, "${getter.name}"
+                const-string v1, "${query.name}"
+                invoke-static {p0, p1, v0, v1}, Ltv/retwitch/mod/ViewerCardDetails;->bind(Ljava/lang/Object;Landroid/view/View;Ljava/lang/String;Ljava/lang/String;)V
+            """.trimIndent())
+            println("[ReTwitch] viewer card details: native retry ${vm.type}->${query.name}")
+        } catch (t: Exception) {
+            println("[ReTwitch] viewer card details skipped: $t")
         }
     }
 }

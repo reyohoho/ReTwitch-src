@@ -495,6 +495,13 @@ public final class Toggles {
             "Broadcaster options", false)
             .about("Заблокировать, пожаловаться, сообщить о проблеме", "Block, report, report a playback issue")
             .asNew("0.5.39-beta");
+    public static final Toggle PIP_REPLAY = new Toggle("pip_replay", "Повтор записи в PiP", "Replay finished VODs in PiP", false)
+            .about("Когда запись закончится, нажмите «Повторить» в окне PiP, чтобы посмотреть её с начала",
+                    "When a VOD ends, tap Replay in the PiP window to watch it from the beginning")
+            .compare("В конце записи остаётся кнопка воспроизведения", "В центре окна появляется кнопка повтора",
+                    "Play stays on screen at the end", "Replay appears in the center")
+            .asNew("0.5.45-beta");
+
     /** Issue #58: back / forward around Twitch's play/pause in the native theatre's PiP window (VodSeek.pipActions). */
     public static final Toggle PIP_SEEK = new Toggle("pip_seek", "Перемотка в окне PiP", "Seek in the PiP window", false)
             .about("Кнопки назад и вперёд рядом с паузой, когда видео играет в маленьком окне",
@@ -729,6 +736,13 @@ public final class Toggles {
                     "On channels where the streak isn't extended yet")
             .look(SettingsPreview.HOME, SettingsPreview.H_STREAK).asNew("0.4.11-alpha");
     /** RnFollowingHook.strip: the server sends them oldest follow first. */
+    public static final Toggle OFFLINE_SORT = new Toggle("offline_channel_sort_menu", "Сортировка неактивных каналов", "Sort offline channels", true)
+            .about("Кнопка сортировки появится рядом с заголовком неактивных каналов в «Отслеживаемом»",
+                    "Adds a sort button beside Your Offline Channels in Following")
+            .note("Сортируются загруженные каналы. Время просмотра эфиров на этом устройстве считается с выбора «Чаще смотрю». В приватном режиме время не записывается.",
+                    "Sorts loaded channels. Local live watch time starts accumulating when you choose Most watched. Private viewing is excluded.")
+            .compare("Порядок Twitch", "Порядок на выбор", "Twitch order", "Choose the order").asNew("0.5.45-beta");
+
     public static final Toggle SORT_FOLLOWED_CATEGORIES = new Toggle("sort_followed_categories", "Категории по алфавиту", "Categories A to Z", true)
             .about("Отслеживаемые категории в «Отслеживаемом»", "Followed categories in Following")
             .compare("В порядке подписки, сначала самые старые", "По названию, от А до Я",
@@ -1416,6 +1430,7 @@ public final class Toggles {
 
     static void set(Context context, Toggle toggle, boolean value) {
         prefs(context).edit().putBoolean(toggle.key, value).apply();
+        if (toggle == OFFLINE_SORT && !value) OfflineChannelSort.stop();
         if (toggle == SEARCH_HISTORY && !value) {
             SettingsSearchHistory.clear(context);
         }
