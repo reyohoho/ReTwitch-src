@@ -13,6 +13,13 @@ import android.text.TextUtils;
 public final class Changelog {
 
     private static final String[][] ENTRIES = {
+            {"0.5.42-beta",
+                    "Исправлено падение при открытии списка стартовых вкладок в настройках главной\n"
+                            + "Если в импортированных настройках данмаку окажется неверное значение, для него используется значение по умолчанию. Экран настроек открывается без падения\n"
+                            + "Пункты из 0.5.41 по-прежнему отмечены как NEW",
+                    "Fixed a crash when opening the launch tab selector in Home settings\n"
+                            + "Invalid danmaku settings in imported backups now use their defaults, so the settings preview opens without crashing\n"
+                            + "Settings introduced in 0.5.41 still carry the NEW badge"},
             {"0.5.41-beta",
                     "В «Продолжить просмотр» остаётся до пяти недосмотренных видео. Когда избранный канал выходит в эфир, раздел «В эфире» больше не дублируется\n"
                             + "Выберите стартовую вкладку и порядок кнопок нижнего меню в разделе «Главная». Скрытие вкладок применяется после перезапуска. Кнопка «Создать» выровнена при скрытом профиле\n"

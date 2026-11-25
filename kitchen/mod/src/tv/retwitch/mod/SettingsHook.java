@@ -440,10 +440,10 @@ public final class SettingsHook {
     private static void syncDanmaku(SettingsPreview preview) {
         preview.state = flag(Toggles.on(Toggles.DANMAKU), SettingsPreview.P_DANMAKU)
                 | flag(Toggles.on(Toggles.DANMAKU_NICKS), SettingsPreview.P_DANMAKU_NICKS);
-        preview.values[SettingsPreview.VALUE_DM_SPEED] = Danmaku.setting(Danmaku.KEY_SPEED, 1);
-        preview.values[SettingsPreview.VALUE_DM_AREA] = Danmaku.setting(Danmaku.KEY_AREA, 1);
-        preview.values[SettingsPreview.VALUE_DM_SIZE] = Danmaku.setting(Danmaku.KEY_SIZE, 1);
-        preview.values[SettingsPreview.VALUE_DM_OPACITY] = Danmaku.setting(Danmaku.KEY_OPACITY, 2);
+        preview.values[SettingsPreview.VALUE_DM_SPEED] = Danmaku.setting(Danmaku.KEY_SPEED, 1, Danmaku.SPEEDS.length);
+        preview.values[SettingsPreview.VALUE_DM_AREA] = Danmaku.setting(Danmaku.KEY_AREA, 1, Danmaku.AREAS.length);
+        preview.values[SettingsPreview.VALUE_DM_SIZE] = Danmaku.setting(Danmaku.KEY_SIZE, 1, Danmaku.SIZES.length);
+        preview.values[SettingsPreview.VALUE_DM_OPACITY] = Danmaku.setting(Danmaku.KEY_OPACITY, 2, Danmaku.OPACITIES.length);
     }
 
     private static void danmakuPage(SettingsScreen s) {
@@ -459,7 +459,7 @@ public final class SettingsHook {
 
     private static void danmakuLevel(SettingsScreen s, String title, String[] labels, String key, int fallback) {
         final Context c = s.context;
-        s.slider(title, labels, Danmaku.setting(key, fallback), false, i -> Toggles.prefs(c).edit().putInt(key, i).apply());
+        s.slider(title, labels, Danmaku.setting(key, fallback, labels.length), false, i -> Toggles.prefs(c).edit().putInt(key, i).apply());
     }
 
     /** VODs and clips: the lists, watching them, the extra buttons of their player. */
@@ -892,7 +892,7 @@ public final class SettingsHook {
     /** The home screen is React Native: these act on its data, so most take a restart. */
     private static void homePage(SettingsScreen s) {
         final Context c = s.context;
-        s.markNew("0.5.41-beta").look(SettingsPreview.HOME, SettingsPreview.H_FOLLOWING)
+        s.markNew("0.5.42-beta")
                 .note(t("Скрытая вкладка уступает место главной. Ссылки по-прежнему открывают свой экран.",
                         "Hidden tabs fall back to Home. Links still open their own destination."))
                 .choice(t("Стартовая вкладка", "Launch tab"), t("Что открыть при запуске", "Where to start the app"),
@@ -909,7 +909,7 @@ public final class SettingsHook {
                         t("Не сбрасывать горизонтальный режим после стрима", "Don't drop landscape after a stream"),
                         new String[]{t("Как в Twitch", "As in Twitch"), t("По автоповороту", "Auto-rotate"), t("Не менять", "Keep as is")},
                         LandingSettings.getHomeOrientationMode(), false, i -> LandingSettings.setHomeOrientationMode(c, i));
-        s.markNew("0.5.41-beta").compare(t("Обычный порядок кнопок", "Default button order"),
+        s.markNew("0.5.42-beta").compare(t("Обычный порядок кнопок", "Default button order"),
                 t("Кнопки на выбранных местах", "Buttons in your chosen positions"))
                 .action(t("Порядок кнопок нижнего меню", "Bottom bar button order"),
                         t("Выберите кнопку и её новое место", "Choose a button and its new position"), () -> BottomTabs.edit(s));

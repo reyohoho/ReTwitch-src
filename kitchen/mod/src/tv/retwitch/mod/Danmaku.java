@@ -78,9 +78,16 @@ public final class Danmaku {
         return current != null;
     }
 
-    static int setting(String key, int fallback) {
+    static int setting(String key, int fallback, int levels) {
         Context c = AppContext.get();
-        return c == null ? fallback : Toggles.prefs(c).getInt(key, fallback);
+        if (c == null) return fallback;
+        try {
+            int index = Toggles.prefs(c).getInt(key, fallback);
+            return index >= 0 && index < levels ? index : fallback;
+        } catch (ClassCastException ignored) {
+            // An imported setting can have a different preference type.
+            return fallback;
+        }
     }
 
     private static void attach(final Activity activity) {
@@ -303,12 +310,8 @@ public final class Danmaku {
         }
 
         private float textSize() {
-            return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, SIZES[clamp(setting(KEY_SIZE, 1), SIZES.length)],
+            return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, SIZES[setting(KEY_SIZE, 1, SIZES.length)],
                     getResources().getDisplayMetrics());
-        }
-
-        private static int clamp(int i, int n) {
-            return Math.max(0, Math.min(i, n - 1));
         }
 
         private float measure(Item item, float size) {
@@ -334,15 +337,15 @@ public final class Danmaku {
             fill.setTextSize(size);
             stroke.setTextSize(size);
             stroke.setStrokeWidth(Math.max(2f, size / 8f));
-            int alpha = Math.round(255 * OPACITIES[clamp(setting(KEY_OPACITY, 2), OPACITIES.length)] / 100f);
+            int alpha = Math.round(255 * OPACITIES[setting(KEY_OPACITY, 2, OPACITIES.length)] / 100f);
             fill.setAlpha(alpha);
             stroke.setAlpha(alpha);
             float lineHeight = size * 1.5f;
-            int lanes = Math.max(1, (int) (getHeight() * AREAS[clamp(setting(KEY_AREA, 1), AREAS.length)] / lineHeight));
+            int lanes = Math.max(1, (int) (getHeight() * AREAS[setting(KEY_AREA, 1, AREAS.length)] / lineHeight));
             if (lastInLane.length != lanes) {
                 lastInLane = new Item[lanes];
             }
-            long duration = SPEEDS[clamp(setting(KEY_SPEED, 1), SPEEDS.length)] * 1000L;
+            long duration = SPEEDS[setting(KEY_SPEED, 1, SPEEDS.length)] * 1000L;
             long now = SystemClock.uptimeMillis();
             int width = getWidth();
             float gap = size;

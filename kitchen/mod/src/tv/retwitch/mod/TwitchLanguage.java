@@ -38,7 +38,7 @@ public final class TwitchLanguage {
             labels[i] = i == 0 ? TranslationFiles.name("") : locale.getDisplayName(locale);
             if (TAGS[i].equalsIgnoreCase(current)) index = i;
         }
-        s.markNew("0.5.41-beta").compare(Strings.pick("Язык телефона", "Phone language"),
+        s.markNew("0.5.42-beta").compare(Strings.pick("Язык телефона", "Phone language"),
                         Strings.pick("Выбранный язык Twitch", "Selected Twitch language"))
                 .choice(Strings.pick("Язык Twitch", "Twitch language"),
                         Strings.pick("Лента, плеер и другие экраны Twitch", "Feed, player and other Twitch screens"),

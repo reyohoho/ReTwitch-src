@@ -1344,7 +1344,7 @@ final class SettingsScreen {
         for (String label : labels) {
             chars += label.length();
         }
-        if (extra.scene == 0 && chars <= 32 + 4 * labels.length) {
+        if (extra.scene == 0 && extra.note == null && chars <= 32 + 4 * labels.length) {
             chips(rowTitle, summary, labels, current, change, extra, restart);
             return;
         }
@@ -1369,7 +1369,7 @@ final class SettingsScreen {
 
     private View option(String label, Extra extra, int which, BooleanSupplier selected, View.OnClickListener click) {
         View content = null;
-        if (extra.scene != 0) {
+        if (extra.scene != 0 && extra.slot >= 0) {
             SettingsPreview preview = new SettingsPreview(context, extra.scene, extra.focus, colors, icons);
             preview.values[extra.slot] = which;
             content = preview;

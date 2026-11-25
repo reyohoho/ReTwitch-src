@@ -293,7 +293,7 @@ public final class Toggles {
                     "Video details fade over the messages when you tap the player. Chat stays in place")
             .compare("Описание сдвигает чат", "Чат остаётся на месте", "Details resize the chat", "Chat stays in place")
             .note("В записях при вертикальном положении телефона", "For past broadcasts in portrait")
-            .asNew("0.5.41-beta");
+            .asNew("0.5.42-beta");
     public static final Toggle CHAPTERS_BUTTON = new Toggle("chapters_button", "Главы", "Chapters", false)
             .about("Список категорий записи с переходом к нужной",
                     "The VOD's categories, jump to any of them")
@@ -505,7 +505,7 @@ public final class Toggles {
     /** The mini player's buttons, shown after a tap on it (issues #47, #48): INVISIBLE, the others keep their places. */
     public static final Toggle HIDE_MINI_LATENCY = new Toggle("hide_mini_latency", "Скрыть задержку в мини-плеере", "Hide latency in mini player", false)
             .about("Показывать задержку только в развёрнутом плеере", "Show the latency badge only in the expanded player")
-            .look(SettingsPreview.PLAYER, SettingsPreview.P_LATENCY).asNew("0.5.41-beta");
+            .look(SettingsPreview.PLAYER, SettingsPreview.P_LATENCY).asNew("0.5.42-beta");
     public static final Toggle HIDE_MINI_CLOSE = new Toggle("hide_mini_close", "Закрыть (✕)", "Close (✕)", false)
             .about("Крестик мини-плеера. Закрыть можно и смахнув его, если это включено в жестах",
                     "The mini player's cross. Swiping it away still closes it if that's on in Gestures")
@@ -575,16 +575,16 @@ public final class Toggles {
     public static final Toggle HIDE_VIDEO_CARD_MENU = new Toggle("hide_video_card_menu", "Меню под видео", "Menu under videos", false)
             .about("Убрать троеточие под обложками записей", "Hide the three dots below video thumbnails")
             .compare("Меню рядом с названием", "Название без меню", "Menu beside the title", "Title without the menu")
-            .asNew("0.5.41-beta");
+            .asNew("0.5.42-beta");
     public static final Toggle SYSTEM_PALETTE = new Toggle("settings_system_palette", "Цвета обоев", "Wallpaper colours", true)
             .about("Системная палитра в настройках ReTwitch и элементах темы Android", "Use system colours in ReTwitch settings and Android themed controls")
             .compare("Фиолетовые переключатели", "Переключатели в цвет обоев", "Purple switches", "Switches match the wallpaper")
             .note("У ленты и элементов с собственными цветами Twitch своя палитра", "The feed and controls with explicit Twitch colours keep their own palette")
-            .asNew("0.5.41-beta");
+            .asNew("0.5.42-beta");
     public static final Toggle SEARCH_HISTORY = new Toggle("settings_search_history", "История поиска настроек", "Settings search history", false)
             .about("Показывать недавние запросы при нажатии на пустую строку поиска", "Show recent searches when you tap the empty search field")
             .compare("Пустая строка поиска", "Можно выбрать прошлый запрос", "Empty search field", "Pick a previous search")
-            .note("При выключении история удаляется", "Turning this off deletes the search history").asNew("0.5.41-beta");
+            .note("При выключении история удаляется", "Turning this off deletes the search history").asNew("0.5.42-beta");
     public static final Toggle HIDE_PROFILE_STREAMERS = new Toggle("hide_profile_streamers", "Советует стримеров", "Suggested streamers", true)
             .about("Список стримеров, которых советует канал", "The list of streamers the channel suggests")
             .compare("Аватарки стримеров со зрителями или «Не в сети»", "Списка нет",
@@ -751,7 +751,7 @@ public final class Toggles {
     /** FeedTopChrome's FeedTabsRow (and the launch cover's placeholder tabs); RnScript. */
     public static final Toggle LIVE_TAB_TO_TOP = new Toggle("live_tab_to_top", "В начало по нажатию", "Tap Live to scroll to top", true)
             .about("Нажмите «В эфире» ещё раз, чтобы вернуться к началу списка", "Tap the active Live tab again to scroll to the first stream")
-            .look(SettingsPreview.HOME, SettingsPreview.H_FOLLOWING).asNew("0.5.41-beta");
+            .look(SettingsPreview.HOME, SettingsPreview.H_FOLLOWING).asNew("0.5.42-beta");
     public static final Toggle HIDE_FEED_TABS = new Toggle("hide_feed_tabs", "Вкладки главной", "Home tabs", true)
             .about("Строка «Отслеживаемое · В эфире · Клипы» над лентой", "The Following · Live · Clips row above the feed")
             .compare("Вкладки над лентой", "Ленты листаются свайпом вбок, начинается с вкладки из настройки «Открывать «Отслеживаемое»»",
