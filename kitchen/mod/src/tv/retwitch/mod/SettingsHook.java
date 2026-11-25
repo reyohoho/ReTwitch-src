@@ -176,11 +176,10 @@ public final class SettingsHook {
 
     private static void mainPage(SettingsScreen s) {
         final Context c = s.context;
-        s.hero("ReTwitch", BuildInfo.VERSION_NAME + " · " + t("о моде и что нового", "about and what's new"), AboutPage::build);
-        s.goal();
+        s.hero("ReTwitch", ModUpdate.homeSubtitle(c, BuildInfo.VERSION_NAME + " · " + t("о моде и что нового", "about and what's new")), AboutPage::build);
         RecordSettings.cards(s);
         s.markNew("0.5.22-beta").tile("ic_lightning_bolt", 0xFF9147FF).action(t("Быстрая настройка", "Quick setup"),
-                t("Главное за 8 вопросов", "The main things in 8 questions"), () -> QuickSetup.show(c));
+                t("Выбрать, что скрыть и какие функции включить", "Choose what to hide and which features to enable"), () -> QuickSetup.show(c));
         s.links(t("Новости / поддержать разработку", "News / support the development"), new SettingsScreen.Link[]{
                 new SettingsScreen.Link("Telegram", SettingsLogos.mark(SettingsLogos.TELEGRAM, 4, 4.5f, 16), 0xFF229ED9, false,
                         () -> openLink(c, LINK_TELEGRAM)),
@@ -193,7 +192,12 @@ public final class SettingsHook {
                 new SettingsScreen.Link("GitHub", tinted(c, "ic_github"), 0xFF24292F, false,
                         () -> openLink(c, LINK_GITHUB)),
         });
+        s.tile("ic_grid", 0xFFE8590C).nav(t("Скрыть элементы", "Hide elements"),
+                t("Кнопки, вкладки, части чата и баннеры Twitch", "Twitch buttons, tabs, chat elements and banners"), SettingsHook::hidePage);
+        s.goal();
         s.section(t("Просмотр", "Watching"));
+        s.tile("home_filled", 0xFF2FA84F).nav(t("Главная", "Home"),
+                t("Вкладки, Отслеживаемое, В эфире", "Tabs, Following, Live"), SettingsHook::homePage);
         s.tile("ic_no_prohibit_cancel", 0xFFEB5757).nav(t("Реклама", "Ads"), adsState(), SettingsHook::adsPage);
         s.tile("ic_play_arrow", 0xFF9147FF).nav(Strings.playerMenuItem(),
                 t("Качество, кнопки, жесты, звук", "Quality, buttons, gestures, sound"), SettingsHook::playerPage);
@@ -207,21 +211,21 @@ public final class SettingsHook {
                 t("Внешний вид, упоминания, фильтры", "Look, mentions, filters"), SettingsHook::chatPage);
         s.tile("ic_emotes", 0xFFE2A400).nav(t("Эмоуты", "Emotes"),
                 t("7TV, BTTV, FFZ и панель эмоутов", "7TV, BTTV, FFZ and the emote panel"), SettingsHook::emotesPage);
+        s.tile("ic_users", 0xFFE64980).nav(Strings.rteTitle(), Strings.rteSummary(), SettingsHook::rtePage);
         s.section(t("Приложение", "App"));
-        s.tile("ic_grid", 0xFFE8590C).nav(Strings.uiMenuItem(),
-                t("Что убрать с экрана, иконка", "What to remove from the screen, icon"), SettingsHook::uiPage);
-        s.tile("home_filled", 0xFF2FA84F).nav(t("Главная", "Home"),
-                t("Вкладки, Отслеживаемое, В эфире", "Tabs, Following, Live"), SettingsHook::homePage);
+        s.tile("ic_grid", 0xFFE8590C).nav(t("Оформление приложения", "App appearance"),
+                t("Иконка, цвета, вид страницы канала", "App icon, colours and channel layout"), SettingsHook::appearancePage);
         s.tile("ic_broadcast", 0xFF3B82C4).nav(t("Сеть и доступ", "Network and access"),
                 ProxySettings.getSelected() == ProxyBackend.DISABLED ? t("Прокси, вход без аккаунта", "Proxy, no-account access")
                         : t("Прокси: ", "Proxy: ") + ProxySettings.getSelected().label(), SettingsHook::networkPage);
-        s.section(t("Сервис", "Service"));
-        s.tile("ic_wrench", 0xFF6B6B76).nav(Strings.fixesTitle(), Strings.fixesSummary(), SettingsHook::fixesPage);
-        s.tile("ic_users", 0xFFE64980).nav(Strings.rteTitle(), Strings.rteSummary(), SettingsHook::rtePage);
-        s.markNew("0.5.27-beta").tile("ic_polls", 0xFFE2A400).external(t("Идеи и баги", "Ideas and bugs"),
-                t("На GitHub, в Issues", "On GitHub, in Issues"), () -> openLink(c, LINK_ISSUES));
+        s.tile("ic_settings", 0xFF6B6B76).nav(t("Конфиденциальность", "Privacy"),
+                t("Приватный просмотр, история поиска, трекеры", "Private viewing, search history and trackers"), SettingsHook::privacyPage);
         s.markNew("0.5.14-beta").tile("language", 0xFF0E9F9A).nav(t("Язык и перевод", "Language and translation"),
                 translationState(c), SettingsHook::translationPage);
+        s.section(t("Сервис", "Service"));
+        s.tile("ic_wrench", 0xFF6B6B76).nav(Strings.fixesTitle(), Strings.fixesSummary(), SettingsHook::fixesPage);
+        s.markNew("0.5.27-beta").tile("ic_polls", 0xFFE2A400).external(t("Идеи и баги", "Ideas and bugs"),
+                t("На GitHub, в Issues", "On GitHub, in Issues"), () -> openLink(c, LINK_ISSUES));
         s.tile("ic_download", 0xFF6B6B76).nav(Strings.backupTitle(), Strings.backupSummary(), SettingsHook::backupPage);
         s.tile("bug", 0xFF6B6B76).nav(Strings.diagnosticsTitle(), Strings.diagnosticsSummary(), SettingsHook::diagnosticsPage);
     }
@@ -276,21 +280,15 @@ public final class SettingsHook {
                                 + "Работает на телефоне (VAFT), внешний сервер не нужен; с прокси трансляций тоже.",
                         "During a break the mod switches to a clean backup stream (sometimes 360p) or cuts the ad segments. "
                                 + "It runs on the phone (VAFT), no external server needed; with a stream proxy too."))
-                .toggle(t("Реклама в трансляциях", "Ads in streams"), t("Вшитая в поток реклама", "Ads stitched into the stream"),
+                .toggle(t("Блокировать рекламу в трансляциях", "Block ads in streams"), t("Вшитая в поток реклама", "Ads stitched into the stream"),
                         AdSettings.isBlockSsaiAdsEnabled(), true, on -> AdSettings.setBlockSsaiAdsEnabled(c, on));
         s.compare(t("Приложение само запускает видео- и аудиоролики", "The app starts video and audio ads by itself"),
                 t("Эти ролики не запускаются", "These ads don't start"))
-                .toggle(t("Реклама в приложении", "Ads in the app"), t("Ролики, которые запускает само приложение", "Ads the app plays itself"),
+                .toggle(t("Блокировать ролики в приложении", "Block in-app video ads"), t("Ролики, которые запускает само приложение", "Ads the app plays itself"),
                         AdSettings.isBlockClientAdsEnabled(), true, on -> AdSettings.setBlockClientAdsEnabled(c, on));
-        s.toggle(Toggles.BLOCK_DISPLAY_ADS);
-        s.toggle(Toggles.HIDE_PROMOTIONS);
-        if (UiHider.res(c, "social_gift_subs_banner_compose", "id") != 0) { // Twitch 32.0.0+
-            s.toggle(Toggles.HIDE_SOCIAL_GIFT_SUBS);
-        }
         s.toggle(Toggles.VAFT_BLOCKING_LABEL);
+        s.shortcut(t("Скрыть рекламные баннеры", "Hide promotional banners"), SettingsHook::hidePromosPage);
         s.section(t("Дополнительно", "Advanced"));
-        s.toggle(Toggles.BLOCK_TRACKERS);
-        s.toggle(Toggles.HIDE_COOKIE_CONSENT);
         s.note(t("Какой плеер мод называет Twitch, запрашивая стрим. Менять стоит, только если реклама прорывается.",
                 "Which player the mod tells Twitch it is when requesting a stream. Change it only if ads get through."))
                 .choice(t("Тип плеера", "Player type"), t("Для запроса трансляции", "For stream requests"),
@@ -322,8 +320,9 @@ public final class SettingsHook {
         s.toggle(Toggles.NORMAL_LATENCY);
         s.toggle(Toggles.SCREEN_OFF_STALLED);
         s.section(t("Разделы", "More"));
-        s.nav(t("Кнопки на плеере", "Player buttons"), t("Перезагрузка, таймер, статистика", "Reload, timer, stats"),
+        s.nav(t("Добавить кнопки и показатели", "Add buttons and readouts"), t("Перезагрузка, таймер, статистика", "Reload, timer, stats"),
                 SettingsHook::playerButtonsPage);
+        s.shortcut(t("Скрыть элементы плеера", "Hide player elements"), SettingsHook::uiPlayerPage);
         s.nav(t("Жесты", "Gestures"), t("Яркость, громкость, полный экран", "Brightness, volume, fullscreen"),
                 SettingsHook::gesturesPage);
         s.nav(t("Полный экран", "Fullscreen"), t("Вырез камеры, ambilight, ширина чата", "Camera cutout, ambilight, chat width"),
@@ -360,7 +359,6 @@ public final class SettingsHook {
         s.toggle(Toggles.LATENCY_LABEL);
         s.toggle(Toggles.SHOW_CHATTERS_COUNT);
         s.toggle(Toggles.BATTERY_LABEL);
-        s.toggle(Toggles.LATENCY_HINT);
         // The actions duplicate the player buttons: offered only while that button is off.
         boolean reloadAction = !RefreshSettings.isButtonEnabled();
         boolean timerAction = !TimerSettings.isButtonEnabled();
@@ -465,6 +463,7 @@ public final class SettingsHook {
     /** VODs and clips: the lists, watching them, the extra buttons of their player. */
     private static void vodPage(SettingsScreen s) {
         final Context c = s.context;
+        s.shortcut(t("Скрыть кнопки на клипах", "Hide clip buttons"), SettingsHook::hideClipsPage);
         s.section(t("Списки видео", "Video lists"));
         s.toggle(Toggles.VOD_ABSOLUTE_DATES);
         s.toggle(Toggles.VOD_CATEGORY_FILTER);
@@ -472,6 +471,7 @@ public final class SettingsHook {
         s.toggle(Toggles.SUB_VODS);
         s.toggle(Toggles.NO_AUTOPLAY);
         s.toggle(Toggles.SKIP_UP_NEXT);
+        s.section(t("Кнопки перемотки", "Seek buttons"));
         // Any number of seconds (reyohoho/ReTwitch-src#38): the buttons draw it as digits.
         s.markNew("0.5.37-beta").number(t("Перемотка назад, с", "Seek back, s"), PlayerSettings.getSeekBackSeconds(),
                 PlayerSettings.DEFAULT_SEEK_BACK, v -> PlayerSettings.setSeekSeconds(c, false, v));
@@ -484,6 +484,7 @@ public final class SettingsHook {
         s.markNew("0.5.38-beta").number(t("В уведомлении вперёд, с", "Notification forward, s"),
                 PlayerSettings.getNotificationSeekSeconds(true), PlayerSettings.DEFAULT_SEEK_FORWARD,
                 v -> PlayerSettings.setNotificationSeekSeconds(c, true, v));
+        s.section(t("Картинка в картинке", "Picture in picture"));
         s.toggle(Toggles.PIP_REPLAY);
         s.toggle(Toggles.PIP_SEEK);
         s.number(t("В PiP назад, с", "PiP back, s"), PlayerSettings.getPipSeekSeconds(false),
@@ -493,6 +494,7 @@ public final class SettingsHook {
         s.section(t("Кнопки на плеере", "Player buttons"));
         s.toggle(Toggles.CHAPTERS_BUTTON);
         s.toggle(Toggles.VOD_DETAILS_OVER_CHAT);
+        s.section(t("Повтор чата", "Chat replay"));
         s.toggle(Toggles.VOD_CHAT_SYNC);
     }
 
@@ -517,15 +519,14 @@ public final class SettingsHook {
     }
 
     private static void chatPage(SettingsScreen s) {
-        s.toggle(Toggles.CHAT_OFF);
         s.nav(t("Внешний вид", "Look"), t("Размер текста, время, чередование", "Text size, time, alternating rows"),
                 SettingsHook::chatLookPage);
         s.nav(t("Значки и ники", "Badges and nicks"), t("Значки других клиентов, раскраски", "Other clients' badges, paints"),
                 SettingsHook::chatBadgesPage);
         s.nav(Strings.sectionMentions(), t("Подсветка, вибрация, свои слова", "Highlight, vibration, your own words"),
                 SettingsHook::chatMentionsPage);
-        s.nav(Strings.chatFiltersMenuItem(), t("Что не показывать в чате", "What not to show in chat"),
-                SettingsHook::chatFiltersPage);
+        s.shortcut(t("Скрыть элементы чата", "Hide chat elements"), SettingsHook::hideChatPage);
+        s.shortcut(t("Фильтры сообщений и чёрные списки", "Message filters and blocklists"), SettingsHook::chatFiltersPage);
         s.nav(Strings.sectionMessages(), t("Скорость, прокрутка, удалённые, ссылки", "Speed, scrolling, deleted, links"),
                 SettingsHook::chatMessagesPage);
         s.nav(t("Модерация", "Moderation"), t("Мод-логи, AutoMod, очистка чата", "Mod logs, AutoMod, chat clears"),
@@ -570,6 +571,9 @@ public final class SettingsHook {
                 i -> ChatSettings.setTimestampFormat(c, i));
         s.strip(t("Ники не латиницей", "Non-Latin nicks"), t("Если ник написан кириллицей, иероглифами...", "When a nick is in Cyrillic, kanji..."),
                 Strings.nameFormats(), ChatSettings.getNameFormat(), false, i -> ChatSettings.setNameFormat(c, i));
+        s.section(Strings.sectionChatInput());
+        s.toggle(Toggles.LATENCY_HINT);
+        s.group(Toggles.POINTS_BALANCE_LANDSCAPE, () -> s.toggle(Toggles.POINTS_BALANCE_UNDER_ICON));
         s.section(t("Выделение", "Emphasis"));
         s.toggle(Toggles.CHAT_ALTERNATING);
         s.toggle(Toggles.COLORED_ME);
@@ -793,32 +797,68 @@ public final class SettingsHook {
     }
 
     /** Everything the mod hides, by where it is on screen; each thing in one place only. */
-    private static void uiPage(SettingsScreen s) {
-        final Context c = s.context;
-        s.section(t("Что убрать с экрана", "What to remove from the screen"));
-        s.nav(Strings.playerMenuItem(), t("Кнопки, подписки, предупреждение 18+", "Buttons, follow, 18+ warning"), SettingsHook::uiPlayerPage);
+    private static void hidePage(SettingsScreen s) {
+        s.hint(t("Включите переключатель, чтобы скрыть элемент. Выключите, чтобы вернуть его.",
+                "Turn a switch on to hide an element. Turn it off to bring it back."));
+        s.section(t("Главная и каналы", "Home and channels"));
+        s.nav(t("Скрыть на главной", "Hide on Home"), t("Нижнее меню, Отслеживаемое, В эфире", "Bottom bar, Following, Live"), SettingsHook::hideHomePage);
+        s.nav(t("Скрыть на клипах", "Hide on clips"), t("Аватар, реакции и кнопки клипа", "Avatar, reactions and clip buttons"), SettingsHook::hideClipsPage);
+        s.nav(t("Скрыть на странице канала", "Hide on channel pages"), t("Подписки, записи и рекомендации", "Subscriptions, videos and recommendations"), SettingsHook::hideChannelPage);
+        s.section(t("Просмотр", "Watching"));
+        s.nav(t("Скрыть элементы плеера", "Hide player elements"), t("Кнопки, мини-плеер и меню шестерёнки", "Buttons, mini player and gear menu"), SettingsHook::uiPlayerPage);
+        s.nav(t("Скрыть элементы чата", "Hide chat elements"), t("Шапка, баннеры, ввод и сообщения", "Header, banners, input and messages"), SettingsHook::hideChatPage);
+        s.nav(t("Скрыть рекламные баннеры", "Hide promotional banners"), t("Предложения Twitch и окно cookie", "Twitch offers and the cookie dialog"), SettingsHook::hidePromosPage);
+    }
+
+    private static void hideChatPage(SettingsScreen s) {
+        s.toggle(Toggles.CHAT_OFF);
         s.nav(Strings.sectionChatHeader(), t("Заголовок, кнопки, лидеры", "Title, buttons, leaders"), SettingsHook::uiHeaderPage);
         s.nav(t("Закрепы и баннеры", "Pins and banners"), t("Всё, что висит над сообщениями", "Everything above the messages"), SettingsHook::uiBannersPage);
-        s.nav(Strings.sectionChatInput(), t("Кнопки и поле в полном экране", "Buttons and the field in fullscreen"), SettingsHook::uiInputPage);
-        s.section(t("Страница канала", "Channel page"));
-        s.markNew("0.5.27-beta").choice(t("Вид страницы канала", "Channel page type"),
-                new String[]{t("Как решит Twitch", "As Twitch decides"), t("Нативная", "Native"), "React Native"},
-                LandingSettings.getChannelPageMode(), true, i -> LandingSettings.setChannelPageMode(c, i));
+        s.nav(Strings.sectionChatInput(), t("Кнопка Bits, баллы канала и строка ввода", "Bits, channel points and the input field"), SettingsHook::uiInputPage);
+        s.nav(t("Фильтры сообщений и чёрные списки", "Message filters and blocklists"),
+                t("Боты, объявления, слова и пользователи", "Bots, announcements, words and users"), SettingsHook::chatFiltersPage);
+    }
+
+    private static void hidePromosPage(SettingsScreen s) {
+        final Context c = s.context;
+        s.toggle(Toggles.BLOCK_DISPLAY_ADS);
+        s.toggle(Toggles.HIDE_PROMOTIONS);
+        if (UiHider.res(c, "social_gift_subs_banner_compose", "id") != 0) { // Twitch 32.0.0+
+            s.toggle(Toggles.HIDE_SOCIAL_GIFT_SUBS);
+        }
+        s.toggle(Toggles.HIDE_COOKIE_CONSENT);
+    }
+
+    private static void hideClipsPage(SettingsScreen s) {
+        s.stage(SettingsPreview.HOME, SettingsPreview.H_CLIP_AVATAR, p -> p.state = flags(p, Toggles.CLIP_BUTTONS));
+        s.toggles(Toggles.CLIP_BUTTONS);
+    }
+
+    private static void hideChannelPage(SettingsScreen s) {
+        s.section(t("Скрыть кнопки", "Hide buttons"));
         s.toggle(Toggles.HIDE_PROFILE_FOLLOW);
         s.toggle(Toggles.HIDE_PROFILE_SUBSCRIBE);
         s.toggle(Toggles.HIDE_PROFILE_GIFT);
         s.toggle(Toggles.HIDE_PROFILE_STREAM_MANAGER);
+        s.toggle(Toggles.HIDE_VIDEO_CARD_MENU);
+        s.section(t("Скрыть разделы канала", "Hide channel sections"));
         s.toggle(Toggles.HIDE_PROFILE_RECAPS);
         s.toggle(Toggles.HIDE_PROFILE_FEATURED_CLIPS);
         s.toggle(Toggles.HIDE_PROFILE_USER_CLIPS);
         s.toggle(Toggles.HIDE_PROFILE_CATEGORIES);
         s.toggle(Toggles.HIDE_PROFILE_STREAMERS);
-        s.toggle(Toggles.HIDE_VIDEO_CARD_MENU);
-        s.section(t("Настройки ReTwitch", "ReTwitch settings"));
+    }
+
+    private static void appearancePage(SettingsScreen s) {
+        final Context c = s.context;
+        s.section(t("Страница канала", "Channel page"));
+        s.markNew("0.5.27-beta").choice(t("Вид страницы канала", "Channel page type"),
+                new String[]{t("Как решит Twitch", "As Twitch decides"), t("Нативная", "Native"), "React Native"},
+                LandingSettings.getChannelPageMode(), true, i -> LandingSettings.setChannelPageMode(c, i));
         if (android.os.Build.VERSION.SDK_INT >= 31) {
+            s.section(t("Цвета", "Colours"));
             s.toggle(Toggles.SYSTEM_PALETTE);
         }
-        s.toggle(Toggles.SEARCH_HISTORY);
         s.section(Strings.sectionAppIcon());
         s.markNew("0.4.17-alpha").icons(Strings.appIconLabel(), Strings.appIconModes(), AppIcon.DRAWABLES, AppIcon.current(c),
                 i -> AppIcon.set(c, i));
@@ -830,6 +870,7 @@ public final class SettingsHook {
 
     private static void uiPlayerPage(SettingsScreen s) {
         s.stage(SettingsPreview.PLAYER, SettingsHook::syncUiPlayer);
+        s.section(t("Скрыть на плеере", "Hide on the player"));
         s.toggles(Toggles.UI_PLAYER);
         s.section(t("Шторка «Параметры» (шестерёнка)", "Options sheet (the gear)"));
         s.toggles(Toggles.UI_OPTIONS);
@@ -854,14 +895,14 @@ public final class SettingsHook {
                 Strings.chatHeaderModes(), ChatHeaderSetting.choice(), false, i -> ChatHeaderSetting.setChoice(c, i));
         s.section(t("Скрыть в шапке", "Hide in the header"));
         s.toggles(Toggles.UI_CHAT_HEADER);
-        s.section(t("Чат видео", "Video chat"));
+        s.section(t("Скрыть в повторе чата", "Hide in chat replay"));
         s.toggle(Toggles.HIDE_VOD_CHAT_HEADER);
         s.toggle(Toggles.HIDE_VOD_ROW_MENU);
     }
 
     private static void uiBannersPage(SettingsScreen s) {
         final Context c = s.context;
-        s.section(t("Закрепы", "Pins"));
+        s.section(t("Закреплённые сообщения", "Pinned messages"));
         s.toggle(Toggles.HIDE_PINNED_CHEERS);
         s.lookEach(SettingsPreview.BANNERS, SettingsPreview.B_PIN, SettingsPreview.VALUE_PINNED)
                 .choice(t("Закрепы стримера и модераторов", "Streamer and mod pins"), Strings.pinnedMessagesModes(), ChatFilters.pinnedMode(), false,
@@ -886,13 +927,39 @@ public final class SettingsHook {
         s.toggle(Toggles.HIDE_LANDSCAPE_CHAT_INPUT);
         s.toggle(Toggles.HIDE_ONE_CHAT_INPUT);
         s.toggle(Toggles.HIDE_CHAT_RESTRICTIONS);
-        s.section(t("Показать", "Show"));
-        s.group(Toggles.POINTS_BALANCE_LANDSCAPE, () -> s.toggle(Toggles.POINTS_BALANCE_UNDER_ICON));
+    }
+
+    private static void hideHomePage(SettingsScreen s) {
+        s.section(t("Нижнее меню: скрыть", "Bottom menu: hide"));
+        s.toggle(Toggles.HIDE_TAB_BROWSE);
+        s.toggle(Toggles.HIDE_TAB_ACTIVITY);
+        s.toggle(Toggles.HIDE_TAB_CREATE);
+        s.toggle(Toggles.HIDE_TAB_PROFILE);
+        s.section(t("Шапка главной: скрыть", "Home header: hide"));
+        s.toggle(Toggles.HIDE_HOME_STORIES);
+        s.toggle(Toggles.HIDE_FEED_TABS);
+        s.toggle(Toggles.HIDE_STORIES_EMPTY);
+        s.section(t("Скрыть в «Отслеживаемом»", "Hide in Following"));
+        s.toggle(Toggles.HIDE_FOLLOWING_CATEGORIES);
+        s.toggle(Toggles.HIDE_FOLLOWING_CONTINUE);
+        s.toggle(Toggles.HIDE_FINISHED_CONTINUE);
+        s.toggle(Toggles.HIDE_FOLLOWING_OFFLINE);
+        s.toggle(Toggles.HIDE_LIVE_EMPTY);
+        s.toggle(Toggles.HIDE_STREAM_TAGS);
+        s.toggle(Toggles.HIDE_FOLLOWING_CATEGORY);
+        s.section(t("Скрыть во вкладке «В эфире»", "Hide on the Live tab"));
+        s.toggle(Toggles.HIDE_LIVE_FOLLOWED_SHELF);
+        s.toggle(Toggles.HIDE_LIVE_CLIPS_SHELF);
+        s.toggle(Toggles.HIDE_LIVE_MUTE);
+        s.toggle(Toggles.HIDE_LIVE_MORE);
+        s.toggle(Toggles.HIDE_LIVE_FOLLOW);
     }
 
     /** The home screen is React Native: these act on its data, so most take a restart. */
     private static void homePage(SettingsScreen s) {
         final Context c = s.context;
+        s.shortcut(t("Скрыть на главной", "Hide on Home"), SettingsHook::hideHomePage);
+        s.section(t("Запуск и навигация", "Startup and navigation"));
         s.markNew("0.5.42-beta")
                 .note(t("Скрытая вкладка уступает место главной. Ссылки по-прежнему открывают свой экран.",
                         "Hidden tabs fall back to Home. Links still open their own destination."))
@@ -910,15 +977,11 @@ public final class SettingsHook {
                         t("Не сбрасывать горизонтальный режим после стрима", "Don't drop landscape after a stream"),
                         new String[]{t("Как в Twitch", "As in Twitch"), t("По автоповороту", "Auto-rotate"), t("Не менять", "Keep as is")},
                         LandingSettings.getHomeOrientationMode(), false, i -> LandingSettings.setHomeOrientationMode(c, i));
+        s.toggle(Toggles.NO_HOME_SWIPE);
         s.markNew("0.5.43-beta").compare(t("Обычный порядок кнопок", "Default button order"),
                 t("Кнопки на выбранных местах", "Buttons in your chosen positions"))
                 .action(t("Порядок кнопок нижнего меню", "Bottom bar button order"),
                         t("Перетащите кнопку за маркер справа", "Drag a button by its handle"), () -> BottomTabs.edit(s));
-        s.section(t("Нижнее меню: скрыть", "Bottom menu: hide"));
-        s.toggle(Toggles.HIDE_TAB_BROWSE);
-        s.toggle(Toggles.HIDE_TAB_ACTIVITY);
-        s.toggle(Toggles.HIDE_TAB_CREATE);
-        s.toggle(Toggles.HIDE_TAB_PROFILE);
         s.section(t("Отслеживаемое", "Following"));
         s.markNew("0.5.10-beta").lookEach(SettingsPreview.HOME, SettingsPreview.H_PREVIEW_SIZE, SettingsPreview.VALUE_PREVIEW)
                 .choice(t("Превью каналов в эфире", "Live channel previews"),
@@ -930,32 +993,11 @@ public final class SettingsHook {
         s.toggle(Toggles.SORT_FOLLOWED_CATEGORIES);
         s.toggle(Toggles.OFFLINE_SORT);
         s.toggle(Toggles.SEPARATE_DRAWER_SORT);
-        s.toggle(Toggles.HIDE_FOLLOWING_CATEGORIES);
-        s.toggle(Toggles.HIDE_FOLLOWING_CONTINUE);
-        s.toggle(Toggles.HIDE_FINISHED_CONTINUE);
-        s.toggle(Toggles.HIDE_FOLLOWING_OFFLINE);
-        s.toggle(Toggles.HIDE_STORIES_EMPTY);
-        s.toggle(Toggles.HIDE_LIVE_EMPTY);
-        s.toggle(Toggles.HIDE_STREAM_TAGS);
-        s.toggle(Toggles.HIDE_FOLLOWING_CATEGORY);
         s.section(t("Превью стримов", "Stream previews"));
         s.toggle(Toggles.STREAM_UPTIME);
-        s.section(t("Шапка главной: скрыть", "Home header: hide"));
-        s.toggle(Toggles.HIDE_HOME_STORIES);
-        s.toggle(Toggles.HIDE_FEED_TABS);
-        s.toggle(Toggles.NO_HOME_SWIPE);
         s.section(t("В эфире", "Live"));
         s.toggle(Toggles.LIVE_TAB_TO_TOP);
         s.toggle(Toggles.COMPACT_LIVE_TAB);
-        s.toggle(Toggles.HIDE_LIVE_FOLLOWED_SHELF);
-        s.toggle(Toggles.HIDE_LIVE_CLIPS_SHELF);
-        s.toggle(Toggles.HIDE_LIVE_MUTE);
-        s.toggle(Toggles.HIDE_LIVE_MORE);
-        s.toggle(Toggles.HIDE_LIVE_FOLLOW);
-        s.section(t("Клипы", "Clips"));
-        s.toggles(Toggles.CLIP_BUTTONS);
-        s.section(t("Просмотр", "Browse"));
-        s.toggle(Toggles.DISABLE_BROWSE_HISTORY);
     }
 
     private static void networkPage(SettingsScreen s) {
@@ -967,8 +1009,15 @@ public final class SettingsHook {
                 "A proxy helps when Twitch is slow or unreachable. It doesn't remove ads: the Ads section does."));
         s.section(t("Доступ", "Access"));
         s.toggle(Toggles.WATCH_LOGGED_OUT);
-        s.toggle(Toggles.PRIVATE_VIEWING);
         s.toggle(Toggles.BAN_BYPASS);
+    }
+
+    private static void privacyPage(SettingsScreen s) {
+        s.toggle(Toggles.PRIVATE_VIEWING);
+        s.toggle(Toggles.BLOCK_TRACKERS);
+        s.section(t("История поиска", "Search history"));
+        s.toggle(Toggles.DISABLE_BROWSE_HISTORY);
+        s.toggle(Toggles.SEARCH_HISTORY);
     }
 
     private static void fixesPage(SettingsScreen s) {

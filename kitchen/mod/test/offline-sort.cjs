@@ -27,7 +27,7 @@ function patch(enabled, original) {
         useMemo(fn) {return fn();},
         useEffect(fn, deps) {const k = index++, old = state[k]; if (!old || deps.some((v, i) => v !== old[i])) {state[k] = deps; effects.push(fn);}},
     });
-    load({AppRegistry: {}, Pressable: 'Pressable', View: 'View', Text: 'Text', AppState: events, DeviceEventEmitter: events});
+    load({AppRegistry: {}, Pressable: 'Pressable', StyleSheet: {flatten: s => s}, View: 'View', Text: 'Text', AppState: events, DeviceEventEmitter: events});
     load({IconFilter});
     load({IconButton: 'Button', DropDownMenu: 'Menu', useTheme: () => ({colors: {textBase}})});
     return load({FollowingOfflineChannels: original}).FollowingOfflineChannels;
@@ -35,9 +35,10 @@ function patch(enabled, original) {
 const visit = () => {};
 function row(login, name, i) {return make('Row', {edge: {node: {login, displayName: name}}, newVideoCount: 5 - i, onOpenProfile: visit, itemPosition: i, gatesAppLoad: i === 0});}
 let rows = [row('b', 'Bee', 0), row('a', 'Alpha', 1), row('c', 'Sea', 2)], empty = false;
+let shelfMargin = -8;
 function original() {
     if (empty) return null;
-    return make('Fragment', {}, null, make('Section', {testID: 'following-offline'},
+    return make('Fragment', {}, null, make('Section', {testID: 'following-offline', style: {marginHorizontal: shelfMargin}},
         make('Title', {}), make('List', {onLayout: visit, children: rows})), null);
 }
 const wrapped = patch(true, original);
@@ -53,12 +54,17 @@ function render(enabled = true) {
     for (const fn of effects.splice(0)) fn();
     const [header, list] = section.props.children;
     const [button, menu] = header.props.children[0].props.children[1].props.children;
-    return {rows: list.props.children, list, button, menu};
+    return {rows: list.props.children, list, button, menu, header, section};
 }
 const settle = () => new Promise(r => setImmediate(r));
 const logins = out => Array.from(out.rows, r => r.props.edge.node.login).join(',');
 (async () => {
     let out = render(); await settle(); out = render(); assert.equal(logins(out), 'b,a,c');
+    for (shelfMargin of [-8, -12, 0]) {
+        out = render();
+        assert.ok(out.header.props.style.marginHorizontal + shelfMargin === 0);
+        assert.equal(out.section.props.style.marginHorizontal, shelfMargin);
+    }
     for (textBase of ['#efeff1', '#0e0e10']) {
         const icon = out.button.props.icon;
         assert.equal(typeof icon, 'object', 'Twitch IconButton renders its icon prop as a child');

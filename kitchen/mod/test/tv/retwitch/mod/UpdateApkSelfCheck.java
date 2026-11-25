@@ -41,6 +41,7 @@ public final class UpdateApkSelfCheck {
     }
 
     private static void verify(File f, UpdateApk.Source first, String expected, HttpURLConnection... replies) throws Exception {
+        Files.deleteIfExists(f.toPath());
         List<String> requests = new ArrayList<>();
         boolean ok = UpdateApk.fetch(f, APK.length, sha(), first, new AtomicBoolean(), (mirror, offset) -> {
             HttpURLConnection answer = replies[requests.size()];
@@ -66,6 +67,18 @@ public final class UpdateApkSelfCheck {
                 verify(f, first, a+"@0,"+b+"@3,"+b+"@0", response(200, null, new byte[]{9,9,9}),
                         response(206, "bytes 3-5/6", TAIL), response(200, null, APK));
             }
+            Files.write(f.toPath(), CUT);
+            assert UpdateApk.fetch(f, APK.length, sha(), GITHUB, new AtomicBoolean(), (source, offset) -> {
+                assert offset == CUT.length;
+                return response(206, "bytes 3-5/6", TAIL);
+            }, (source, bytes) -> {});
+            assert UpdateApk.fetch(f, APK.length, sha(), GITHUB, new AtomicBoolean(),
+                    (source, offset) -> { throw new AssertionError("Downloaded a verified APK twice"); }, (source, bytes) -> {});
+            Files.write(f.toPath(), WRONG);
+            assert UpdateApk.fetch(f, APK.length, sha(), GITHUB, new AtomicBoolean(), (source, offset) -> {
+                assert offset == 0; return response(200, null, APK);
+            }, (source, bytes) -> {});
+            Files.delete(f.toPath());
             AtomicBoolean cancel = new AtomicBoolean();
             assert !UpdateApk.fetch(f, APK.length, sha(), GITHUB, cancel, (mirror, offset) -> {
                 cancel.set(true); return response(200, null, APK);

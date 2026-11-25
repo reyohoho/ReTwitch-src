@@ -1,6 +1,7 @@
 package tv.retwitch.mod;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -27,7 +28,23 @@ final class UpdateApk {
         Source source = preferred;
         long total = 0;
         IOException failure = null;
-        try (FileOutputStream out = new FileOutputStream(destination)) {
+        // A system stop or process death leaves a prefix. Hash it again before issuing a Range request.
+        try (FileOutputStream out = new FileOutputStream(destination, true)) {
+            if (destination.length() <= size) {
+                try (InputStream prefix = new FileInputStream(destination)) {
+                    for (int n; (n = prefix.read(buffer)) >= 0; ) {
+                        if (cancelled.get()) return false;
+                        digest.update(buffer, 0, n);
+                        total += n;
+                    }
+                }
+                if (total == size && matches(digest.digest(), hash)) return !cancelled.get();
+            }
+            if (destination.length() > size || total == size) {
+                out.getChannel().truncate(0);
+                digest.reset();
+                total = 0;
+            }
             for (int attempt = 0; attempt < CONNECTIONS && !cancelled.get(); attempt++) {
                 long from = total;
                 int shown = -1;

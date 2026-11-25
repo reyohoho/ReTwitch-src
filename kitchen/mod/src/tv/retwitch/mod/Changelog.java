@@ -13,6 +13,17 @@ import android.text.TextUtils;
 public final class Changelog {
 
     private static final String[][] ENTRIES = {
+            {"0.5.47-beta",
+                    "В разделе «Скрыть элементы» кнопки, вкладки и баннеры сгруппированы по экранам. В поиске настроек можно набрать, например, «скрыть Cast»\n"
+                            + "Мастер быстрой настройки сразу показывает флажки. При повторном запуске он учитывает ваш выбор. Размер превью в «Отслеживаемом» теперь меняется только в разделе «Главная»\n"
+                            + "Обновления скачиваются в фоне. В разделе «О моде» > «Обновления мода» можно следить за загрузкой, отменить её или установить готовое обновление\n"
+                            + "Можно включить автозагрузку обновлений по сети без тарификации и получить уведомление, когда APK готов к установке\n"
+                            + "В «Отслеживаемом» кнопки сортировки активных и неактивных каналов теперь выровнены",
+                    "Hide elements groups buttons, tabs and banners by screen. Settings search now accepts queries like 'hide Cast'\n"
+                            + "Quick setup shows the checkboxes on each step and remembers your choices the next time you open it. You can change the Following preview size in Home settings\n"
+                            + "Updates download in the background. Open About the mod > Mod updates to see progress, cancel a download or install the update when you are ready\n"
+                            + "You can turn on automatic downloads on unmetered networks and get a notification when the APK is ready to install\n"
+                            + "The Live Now and offline channel sort buttons now line up in Following"},
             {"0.5.46-beta",
                     "В «Отслеживаемом» теперь виден значок сортировки неактивных каналов\n"
                             + "При повторе записи в окне «картинка в картинке» панель канала больше не закрывает видео\n"

@@ -10,17 +10,11 @@ public final class UpdateCheckReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
         final Context app = context.getApplicationContext();
-        if (!Toggles.on(Toggles.UPDATE_NOTIFY)) {
+        if (!ModUpdate.backgroundChecks()) {
             ModUpdate.schedule(app);
             return;
         }
         final PendingResult result = goAsync();
-        new Thread(() -> {
-            try {
-                ModUpdate.notifyIfNewer(app);
-            } finally {
-                result.finish();
-            }
-        }, "RTUpdateNotify").start();
+        ModUpdate.backgroundCheck(app, result::finish);
     }
 }

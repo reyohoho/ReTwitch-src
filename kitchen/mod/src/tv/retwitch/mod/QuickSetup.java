@@ -39,8 +39,8 @@ import tv.retwitch.mod.emotes.EmoteSettings;
 /**
  * Quick setup: a few yes/no questions about the main features, each with a drawn preview. Shown once on the
  * first landing screen after install or update, and from the settings root. A step changes nothing until
- * "Turn on": then its ticked items go on and the unticked ones off. Items start ticked if recommended or
- * already on, so turning a step on never switches off what the user had. "Skip" leaves the step as it is.
+ * Apply. On the first run we suggest a few defaults. Later runs start from the saved settings.
+ * Skip leaves the step's preferences untouched.
  */
 final class QuickSetup {
 
@@ -87,6 +87,7 @@ final class QuickSetup {
         final String about;
         final int scene;
         final Item[] items;
+        boolean[] selection;
 
         /** Null items (not in this Twitch build) are left out. */
         Step(String title, String about, int scene, Item... items) {
@@ -98,8 +99,16 @@ final class QuickSetup {
     }
 
     private static Item toggle(Toggles.Toggle toggle) {
+        return toggle(toggle, true);
+    }
+
+    private static Item optional(Toggles.Toggle toggle) {
+        return toggle(toggle, false);
+    }
+
+    private static Item toggle(Toggles.Toggle toggle, boolean recommended) {
         return new Item(toggle.label(), () -> Toggles.on(toggle), (c, on) -> Toggles.set(c, toggle, on),
-                toggle.scene, toggle.focus, toggle.restart, true);
+                toggle.scene, toggle.focus, toggle.restart, recommended);
     }
 
     private static String t(String ru, String en) {
@@ -110,15 +119,24 @@ final class QuickSetup {
         List<Step> steps = new ArrayList<>();
         // The gift subs banner exists from Twitch 32.0.0.
         Item giftSubs = UiHider.res(context, "social_gift_subs_banner_compose", "id") != 0 ? toggle(Toggles.HIDE_SOCIAL_GIFT_SUBS) : null;
-        steps.add(new Step(t("Чистый интерфейс", "A clean interface"),
-                t("Убирает кнопки, баннеры и подсказки, которыми почти никто не пользуется: Cast, «Поделиться», таблицы лидеров, "
-                                + "Bits, предложения Turbo и прочее",
-                        "Removes buttons, banners and hints hardly anyone uses: Cast, Share, leaderboards, Bits, Turbo offers and more"),
-                SettingsPreview.PLAYER,
-                toggle(Toggles.HIDE_PLAYER_CAST), toggle(Toggles.HIDE_PLAYER_SHARE), toggle(Toggles.HIDE_CHAT_MODE_POPUP),
-                toggle(Toggles.HIDE_LEADERBOARDS), toggle(Toggles.HIDE_EXTENSIONS), toggle(Toggles.HIDE_BITS_BUTTON),
-                toggle(Toggles.HIDE_PROMOTIONS), giftSubs, toggle(Toggles.HIDE_STORIES_EMPTY),
-                toggle(Toggles.HIDE_COOKIE_CONSENT)));
+        steps.add(new Step(t("Что скрыть в плеере?", "What should the player hide?"),
+                t("Отметьте кнопки и подсказки, которые хотите убрать с видео.", "Select the buttons and hints to remove from the video."),
+                SettingsPreview.PLAYER, toggle(Toggles.HIDE_PLAYER_CAST), toggle(Toggles.HIDE_PLAYER_SHARE),
+                toggle(Toggles.HIDE_CHAT_MODE_POPUP), optional(Toggles.HIDE_PLAYER_CLIP), optional(Toggles.HIDE_PLAYER_ROTATE),
+                optional(Toggles.HIDE_MINI_LATENCY)));
+        steps.add(new Step(t("Что скрыть в чате?", "What should chat hide?"),
+                t("Отмеченные элементы исчезнут из шапки, поля ввода или повтора чата.", "Checked items disappear from the header, chat input or chat replay."),
+                SettingsPreview.HEADER, toggle(Toggles.HIDE_LEADERBOARDS), toggle(Toggles.HIDE_EXTENSIONS),
+                toggle(Toggles.HIDE_BITS_BUTTON), optional(Toggles.HIDE_CHAT_RESTRICTIONS), optional(Toggles.HIDE_VOD_CHAT_HEADER),
+                optional(Toggles.HIDE_VOD_ROW_MENU)));
+        steps.add(new Step(t("Что скрыть на главной?", "What should Home hide?"),
+                t("Выберите, что убрать из «Отслеживаемого» и с карточек во вкладке «В эфире».", "Choose what to remove from Following and from stream cards on the Live tab."),
+                SettingsPreview.HOME, toggle(Toggles.HIDE_STORIES_EMPTY), optional(Toggles.HIDE_LIVE_EMPTY),
+                optional(Toggles.HIDE_FINISHED_CONTINUE), optional(Toggles.HIDE_STREAM_TAGS), optional(Toggles.HIDE_FOLLOWING_CATEGORY),
+                optional(Toggles.HIDE_LIVE_MUTE), optional(Toggles.HIDE_LIVE_MORE), optional(Toggles.HIDE_LIVE_FOLLOW)));
+        steps.add(new Step(t("Что скрыть на клипах?", "What should clips hide?"),
+                t("Отметьте элементы, которые хотите убрать с вкладки «Клипы».", "Select the controls to remove from the Clips tab."),
+                SettingsPreview.HOME, java.util.Arrays.stream(Toggles.CLIP_BUTTONS).map(QuickSetup::optional).toArray(Item[]::new)));
         steps.add(new Step(t("Смайлы 7TV, BTTV и FFZ", "7TV, BTTV and FFZ emotes"),
                 t("Смайлы как в браузере с расширениями: в чате, с анимацией, в панели смайлов и в поле ввода",
                         "Emotes as in a browser with extensions: in chat, animated, in the emote panel and in the input field"),
@@ -130,15 +148,15 @@ final class QuickSetup {
                 new Item("FrankerFaceZ (FFZ)", EmoteSettings::isFfzEnabled, EmoteSettings::setFfzEnabled,
                         SettingsPreview.CHAT, SettingsPreview.C_FFZ, false, true),
                 toggle(Toggles.EMOTE_INPUT_IMAGES), toggle(Toggles.EMOTE_FAVORITES)));
-        steps.add(new Step(t("Без рекламы", "No ads"),
-                t("Вырезает рекламу из трансляций и не даёт приложению запускать ролики. Баннеры и спонсорские карточки тоже уходят",
-                        "Cuts ads out of streams and stops the app from playing ad videos. Banners and sponsored cards go too"),
+        steps.add(new Step(t("Что блокировать?", "What should be blocked?"),
+                t("Выберите типы рекламы, предложения и окна Twitch, которые хотите убрать.", "Choose the ads, offers and pop-ups you want to block."),
                 SettingsPreview.PLAYER,
-                new Item(t("Реклама в трансляциях", "Ads in streams"), AdSettings::isBlockSsaiAdsEnabled,
+                new Item(t("Блокировать рекламу в трансляциях", "Block ads in streams"), AdSettings::isBlockSsaiAdsEnabled,
                         AdSettings::setBlockSsaiAdsEnabled, SettingsPreview.PLAYER, SettingsPreview.P_AD, true, true),
-                new Item(t("Реклама в приложении", "Ads in the app"), AdSettings::isBlockClientAdsEnabled,
+                new Item(t("Блокировать ролики в приложении", "Block in-app video ads"), AdSettings::isBlockClientAdsEnabled,
                         AdSettings::setBlockClientAdsEnabled, 0, 0, true, true),
-                toggle(Toggles.BLOCK_DISPLAY_ADS), toggle(Toggles.BLOCK_TRACKERS)));
+                toggle(Toggles.BLOCK_DISPLAY_ADS), toggle(Toggles.HIDE_PROMOTIONS), giftSubs, toggle(Toggles.HIDE_COOKIE_CONSENT),
+                toggle(Toggles.BLOCK_TRACKERS)));
         steps.add(new Step(t("Удобный чат", "A handier chat"),
                 t("Сообщения сразу, а не пачками раз в секунду, счётчик новых сообщений, подсветка ответов вам и первых сообщений "
                                 + "зрителей, цветные /me и упоминания",
@@ -147,7 +165,7 @@ final class QuickSetup {
                 SettingsPreview.CHAT,
                 toggle(Toggles.CHAT_REALTIME), toggle(Toggles.NEW_MESSAGES_COUNT), toggle(Toggles.REPLY_ALERTS),
                 toggle(Toggles.FIRST_MESSAGE), toggle(Toggles.COLORED_ME), toggle(Toggles.COLORED_MENTIONS),
-                toggle(Toggles.COPY_SEND)));
+                toggle(Toggles.COPY_SEND), optional(Toggles.CHAT_PINCH_TEXT), optional(Toggles.SWIPE_REPLY)));
         steps.add(new Step(t("Плеер", "Player"),
                 t("Сразу максимальное качество по Wi-Fi, яркость и громкость свайпом по краям в полном экране, свайп в полный экран, "
                                 + "перезапуск зависшего стрима",
@@ -163,7 +181,7 @@ final class QuickSetup {
                             }
                         }, 0, 0, false, true),
                 toggle(Toggles.PLAYER_GESTURES), toggle(Toggles.PLAYER_SWIPE_FULLSCREEN), toggle(Toggles.AUTO_RELOAD),
-                toggle(Toggles.NO_AUTOPLAY)));
+                toggle(Toggles.NO_AUTOPLAY), optional(Toggles.BATTERY_LABEL), optional(Toggles.PIP_REPLAY)));
         steps.add(new Step(t("Прокси трансляций", "Stream proxy"),
                 t("Из России Twitch отдаёт только транскоды до 720p, исходное качество (1080p и выше) приходит через прокси. "
                                 + "Мод сам проверит прокси ReYohoho и выберет работающий",
@@ -173,19 +191,13 @@ final class QuickSetup {
                 new Item(t("Прокси ReYohoho", "ReYohoho proxy"), () -> ProxySettings.getSelected() != ProxyBackend.DISABLED,
                         QuickSetup::setProxy, 0, 0, false, Strings.isRussian())));
         steps.add(new Step(t("Главная", "Home"),
-                t("Открывается сразу на «Отслеживаемом», «В эфире» компактным списком, превью каналов крупнее",
-                        "Opens right on Following, Live as a compact list, bigger channel previews"),
+                t("Выберите стартовую вкладку «Отслеживаемое», компактную ленту или дополнительные сведения о каналах.",
+                        "Choose Following at startup, a compact Live feed or more information about channels."),
                 SettingsPreview.HOME,
                 new Item(t("Открывать «Отслеживаемое»", "Open Following"), LandingSettings::isFollowingDefaultEnabled,
                         LandingSettings::setFollowingDefaultEnabled, SettingsPreview.HOME, SettingsPreview.H_FOLLOWING, true, true),
-                toggle(Toggles.COMPACT_LIVE_TAB),
-                new Item(t("Крупные превью в «Отслеживаемом»", "Large previews in Following"),
-                        () -> LandingSettings.getFollowingPreviewSize() == 2,
-                        (c, on) -> {
-                            if (on || LandingSettings.getFollowingPreviewSize() == 2) {
-                                LandingSettings.setFollowingPreviewSize(c, on ? 2 : 0);
-                            }
-                        }, 0, 0, true, true)));
+                toggle(Toggles.COMPACT_LIVE_TAB), optional(Toggles.FAVORITE_CHANNELS), optional(Toggles.OFFLINE_SORT),
+                optional(Toggles.STREAM_UPTIME)));
         steps.add(new Step(t("Скачивание и запись", "Downloads and recording"),
                 t("Кнопки на плеере: скачать VOD или клип в выбранном качестве, записать трансляцию на телефон",
                         "Player buttons: download a VOD or a clip in the quality you pick, record a stream to the phone"),
@@ -291,8 +303,9 @@ final class QuickSetup {
 
     static void show(Context context) {
         try {
-            prefs(context).edit().putBoolean(KEY_SHOWN, true).apply();
-            new QuickSetup(context).dialog.show();
+            SharedPreferences state = prefs(context);
+            new QuickSetup(context, !state.getBoolean(KEY_SHOWN, false)).dialog.show();
+            state.edit().putBoolean(KEY_SHOWN, true).apply();
         } catch (Throwable t) {
             Log.w(TAG, "quick setup failed", t);
             CrashReporter.report(TAG, "quick setup failed", t);
@@ -302,6 +315,7 @@ final class QuickSetup {
     private final Context context;
     private final Dialog dialog;
     private final List<Step> steps;
+    private final boolean firstRun;
     private final LinearLayout page;
     private final int bg;
     private final int surface;
@@ -315,7 +329,8 @@ final class QuickSetup {
     private int index;
     private boolean restartNeeded;
 
-    private QuickSetup(Context context) {
+    private QuickSetup(Context context, boolean firstRun) {
+        this.firstRun = firstRun;
         this.context = context;
         steps = steps(context);
         bg = SettingsScreen.themeColor(context, android.R.attr.colorBackground, 0xFF0E0E10);
@@ -369,18 +384,29 @@ final class QuickSetup {
     }
 
     private void renderStep(Step step) {
-        boolean[] ticked = new boolean[step.items.length];
-        for (int i = 0; i < ticked.length; i++) {
-            ticked[i] = step.items[i].recommended || step.items[i].get.get();
+        if (step.selection == null) {
+            step.selection = new boolean[step.items.length];
+            for (int i = 0; i < step.items.length; i++) {
+                Item item = step.items[i];
+                step.selection[i] = item.get.get() || (firstRun && item.recommended);
+            }
         }
+        boolean[] ticked = step.selection;
 
         LinearLayout top = new LinearLayout(context);
         top.setGravity(Gravity.CENTER_VERTICAL);
         top.setPadding(dp(20), dp(12), dp(8), dp(4));
         TextView count = text((index + 1) + "/" + steps.size(), 14, fgDim);
         top.addView(count, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
-        TextView skipAll = button(t("Пропустить всё", "Skip all"), false);
-        skipAll.setOnClickListener(v -> dialog.dismiss());
+        TextView skipAll = button(index == 0 ? t("Пропустить всё", "Skip all") : t("Завершить", "Finish setup"), false);
+        skipAll.setOnClickListener(v -> {
+            if (index == 0 && !restartNeeded) {
+                dialog.dismiss();
+            } else {
+                index = steps.size();
+                render();
+            }
+        });
         top.addView(skipAll);
         page.addView(top);
 
@@ -409,8 +435,9 @@ final class QuickSetup {
         about.setPadding(0, dp(8), 0, 0);
         body.addView(about);
 
-        SettingsPreview preview = new SettingsPreview(context, step.scene, 0, colors, icons);
-        preview.state = state(step, ticked);
+        long focus = step.items[0].scene == step.scene ? step.items[0].flag : 0;
+        SettingsPreview preview = new SettingsPreview(context, step.scene, focus, colors, icons);
+        preview.state = state(step, preview.scene);
         if (step.scene != 0) {
             FrameLayout card = new FrameLayout(context);
             card.setBackground(rounded(surface, dp(16)));
@@ -422,10 +449,6 @@ final class QuickSetup {
             body.addView(card, cardLp);
         }
 
-        // "What exactly": the items, each its own tick.
-        LinearLayout details = new LinearLayout(context);
-        details.setOrientation(LinearLayout.VERTICAL);
-        details.setVisibility(View.GONE);
         for (int i = 0; i < step.items.length; i++) {
             final int which = i;
             CheckBox box = new CheckBox(context);
@@ -436,28 +459,22 @@ final class QuickSetup {
             box.setChecked(ticked[i]);
             box.setOnCheckedChangeListener((b, on) -> {
                 ticked[which] = on;
-                preview.state = state(step, ticked);
+                if (step.items[which].scene != 0) {
+                    preview.scene = step.items[which].scene;
+                    preview.focus = step.items[which].flag;
+                }
+                preview.state = state(step, preview.scene);
                 preview.refresh();
             });
-            details.addView(box);
+            box.setMinHeight(dp(48));
+            body.addView(box);
         }
-        TextView more = button(t("Дополнительно: что включится", "More: what gets turned on"), false);
-        more.setGravity(Gravity.START | Gravity.CENTER_VERTICAL);
-        more.setPadding(0, dp(12), 0, dp(4));
-        more.setOnClickListener(v -> {
-            boolean open = details.getVisibility() != View.VISIBLE;
-            details.setVisibility(open ? View.VISIBLE : View.GONE);
-            more.setText(open ? t("Скрыть список", "Hide the list") : t("Дополнительно: что включится", "More: what gets turned on"));
-        });
-        body.addView(more);
-        body.addView(details);
-
         LinearLayout actions = new LinearLayout(context);
         actions.setPadding(dp(16), dp(8), dp(16), dp(16));
         TextView skip = button(t("Пропустить", "Skip"), false);
         skip.setOnClickListener(v -> next());
         actions.addView(skip, new LinearLayout.LayoutParams(0, dp(52), 1f));
-        TextView apply = button(t("Включить", "Turn on"), true);
+        TextView apply = button(t("Применить", "Apply"), true);
         apply.setOnClickListener(v -> {
             apply(step, ticked);
             next();
@@ -528,10 +545,10 @@ final class QuickSetup {
         }
     }
 
-    private static long state(Step step, boolean[] ticked) {
+    private static long state(Step step, int scene) {
         long state = 0;
         for (int i = 0; i < step.items.length; i++) {
-            if (ticked[i] && step.items[i].scene == step.scene) {
+            if (step.selection[i] && step.items[i].scene == scene) {
                 state |= step.items[i].flag;
             }
         }

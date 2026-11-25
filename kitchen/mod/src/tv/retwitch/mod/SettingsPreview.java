@@ -111,7 +111,7 @@ final class SettingsPreview extends View {
     private static final int LIVE = 0xFFEB0400;
     private static final int[] NICKS = {0xFFFF7F50, 0xFF1EC8A5, 0xFFB98CFF, 0xFFFFC34D};
 
-    final int scene;
+    int scene;
     long state;
     long focus;
     final int[] values = new int[VALUES];

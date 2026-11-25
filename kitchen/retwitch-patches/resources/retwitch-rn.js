@@ -835,7 +835,11 @@
         var control = h(RN.View, {ref: anchor, collapsable: false}, button, offlineMenu ? h(offlineMenu, {
             show: expanded, anchorRef: anchor, onRequestClose: close, items: items,
             accessibilityLabel: offlineSort.title, testID: 'retwitch-offline-menu'}) : null);
-        var header = h(RN.View, null, h(RN.View, {style: {flexDirection: 'row', alignItems: 'center'}},
+        // Twitch widens the offline shelf relative to the feed. Undo that margin for the header only.
+        var sectionStyle = RN.StyleSheet.flatten(section.props.style);
+        var inset = sectionStyle && sectionStyle.marginHorizontal;
+        var header = h(RN.View, {style: {marginHorizontal: typeof inset === 'number' ? -inset : 0}},
+            h(RN.View, {style: {flexDirection: 'row', alignItems: 'center'}},
             h(RN.View, {style: {flex: 1}}, kids[0]), control),
             !offlineMenu && expanded ? items.map(function (item) {
                 return h(RN.Pressable, {key: item.id, testID: item.testID, onPress: item.onPress, accessibilityRole: 'radio',

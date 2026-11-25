@@ -148,10 +148,11 @@ final class SettingsScreen {
     private final FrameLayout searchBox;
     private final EditText search;
     /** Normalized search text; null while the field is empty. */
-    private String query;
+    private String[] query;
     /** Breadcrumb of the page and section being searched, and the last one shown. */
     private String searchPath;
     private String searchSection;
+    private String searchScope; // path in both search languages
     private String searchShown;
     private final HashSet<Class<?>> searched = new HashSet<>();
     /** While searching: the pages (title, page) from the root down to the one being built, for the long press. */
@@ -170,13 +171,22 @@ final class SettingsScreen {
     private boolean restartForced;
 
     static void show(Context context, String title, Page page) {
+        show(context, title, page, null);
+    }
+
+    static void show(Context context, String title, Page page, Runnable onClose) {
         try {
             SettingsScreen screen = new SettingsScreen(context);
+            if (onClose != null) screen.dialog.setOnDismissListener(ignored -> {
+                screen.rememberSearch();
+                onClose.run();
+            });
             screen.open(title, page);
             screen.dialog.show();
         } catch (Throwable t) {
             Log.w(TAG, "settings screen failed", t);
             CrashReporter.report(TAG, "settings screen failed", t);
+            if (onClose != null) onClose.run();
         }
     }
 
@@ -424,7 +434,7 @@ final class SettingsScreen {
         stageSlot.removeAllViews();
         stageSlot.setVisibility(View.GONE);
         String q = normalize(search.getText().toString().trim());
-        query = q.isEmpty() ? null : q;
+        query = q.isEmpty() ? null : q.split("\\s+");
         title.setText(titles.get(titles.size() - 1));
         // Search lives on the root page only (and stays while it has text).
         searchBox.setVisibility(pages.size() == 1 || query != null ? View.VISIBLE : View.GONE);
@@ -442,6 +452,10 @@ final class SettingsScreen {
             CrashReporter.report(TAG, "page build failed", t);
         }
         scroll.post(() -> scroll.scrollTo(0, keepScroll ? y : 0));
+    }
+
+    void refreshIfVisible() {
+        if (dialog.isShowing()) render(true);
     }
 
     void refreshAfterPicker(Activity host) {
@@ -515,6 +529,7 @@ final class SettingsScreen {
     /** Builds every page reachable from the root; {@link #skip} keeps the matching rows. */
     private void searchAll() {
         searchPath = "";
+        searchScope = "";
         searchSection = null;
         searchShown = null;
         searched.clear();
@@ -531,16 +546,26 @@ final class SettingsScreen {
         }
     }
 
-    private boolean matches(String value) {
-        if (value == null) {
-            return false;
-        }
-        if (normalize(value).contains(query)) {
-            return true;
-        }
+    private static String searchable(String... fields) {
+        StringBuilder words = new StringBuilder();
         Map<String, String> other = Strings.otherLanguage;
-        String translated = other != null ? other.get(value) : null;
-        return translated != null && normalize(translated).contains(query);
+        for (String field : fields) {
+            if (field == null) continue;
+            words.append(' ').append(field);
+            String translated = other == null ? null : other.get(field);
+            if (translated != null) words.append(' ').append(translated);
+        }
+        return normalize(words.toString());
+    }
+
+    // A place or action may qualify the query, but at least one word must describe the row itself.
+    static boolean matches(String[] terms, String row, String scope) {
+        boolean foundInRow = false;
+        for (String term : terms) {
+            if (row.contains(term)) foundInRow = true;
+            else if (!scope.contains(term)) return false;
+        }
+        return foundInRow;
     }
 
     private static String normalize(String value) {
@@ -566,8 +591,8 @@ final class SettingsScreen {
         if (query == null) {
             return false;
         }
-        if (!matches(rowTitle) && !matches(summary) && !matches(extra.note) && !matches(extra.before)
-                && !matches(extra.after)) {
+        if (!matches(query, searchable(rowTitle, summary, extra.note, extra.before, extra.after),
+                searchScope + searchable(searchSection))) {
             return true;
         }
         String crumb = join(searchPath, searchSection);
@@ -583,12 +608,14 @@ final class SettingsScreen {
         if (query == null || value == null) {
             return value;
         }
-        int at = normalize(value).indexOf(query);
-        if (at < 0 || at + query.length() > value.length()) {
-            return value;
-        }
+        String normalized = normalize(value);
         SpannableString marked = new SpannableString(value);
-        marked.setSpan(new BackgroundColorSpan(0x669147FF), at, at + query.length(), 0);
+        for (String term : query) {
+            int at = normalized.indexOf(term);
+            if (at >= 0 && at + term.length() <= value.length()) {
+                marked.setSpan(new BackgroundColorSpan(0x669147FF), at, at + term.length(), 0);
+            }
+        }
         return marked;
     }
 
@@ -1658,6 +1685,11 @@ final class SettingsScreen {
 
     // ---- navigation and actions ----
 
+    /** Another route to an existing page. Index and count its controls only under their main location. */
+    void shortcut(String title, Page page) {
+        if (!searching()) nav(title, null, page);
+    }
+
     void nav(final String rowTitle, String summary, final Page page) {
         Extra extra = take();
         if (probing) {
@@ -1692,6 +1724,8 @@ final class SettingsScreen {
         }
         if (query != null && searched.add(page.getClass())) {
             String path = searchPath;
+            String scope = searchScope;
+            searchScope += searchable(searchSection, rowTitle);
             String section = searchSection;
             searchPath = join(join(path, section), rowTitle);
             searchSection = null;
@@ -1701,6 +1735,7 @@ final class SettingsScreen {
             } finally {
                 searchTrail.remove(searchTrail.size() - 1);
                 searchPath = path;
+                searchScope = scope;
                 searchSection = section;
                 card = null;
             }
@@ -1820,7 +1855,7 @@ final class SettingsScreen {
         boolean savedProbing = probing;
         int savedNew = probeNew;
         int savedOn = probeOn;
-        String savedQuery = query;
+        String[] savedQuery = query;
         next = new Extra();
         probing = true;
         probeNew = 0;

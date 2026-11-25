@@ -429,7 +429,7 @@ public final class Toggles {
             .look(SettingsPreview.BANNERS, SettingsPreview.B_GIFTS);
     public static final Toggle HIDE_SHARED_CHAT = new Toggle("hide_shared_chat", "Shared Chat и Stream Together", "Shared Chat and Stream Together", false)
             .look(SettingsPreview.BANNERS, SettingsPreview.B_SHARED);
-    public static final Toggle HIDE_PINNED_CHEERS = new Toggle("hide_pinned_cheers", "Платные закрепы", "Paid pins", false)
+    public static final Toggle HIDE_PINNED_CHEERS = new Toggle("hide_pinned_cheers", "Скрыть платные закрепы", "Hide paid pins", false)
             .about("Серая полоса над сообщениями, даже пустая",
                     "The grey strip above the messages, even when empty")
             .look(SettingsPreview.BANNERS, SettingsPreview.B_PAID_PIN);
@@ -595,7 +595,7 @@ public final class Toggles {
             .compare("Фиолетовые переключатели", "Переключатели в цвет обоев", "Purple switches", "Switches match the wallpaper")
             .note("Для Android 12 и новее. Цвета статуса эфира, изображений и элементов поверх видео остаются исходными", "Android 12 or later. Live indicators, images and video overlays keep their original colours")
             .asNew("0.5.43-beta");
-    public static final Toggle SEARCH_HISTORY = new Toggle("settings_search_history", "История поиска настроек", "Settings search history", false)
+    public static final Toggle SEARCH_HISTORY = new Toggle("settings_search_history", "Запоминать поиск в настройках", "Save settings searches", false)
             .about("Показывать недавние запросы при нажатии на пустую строку поиска", "Show recent searches when you tap the empty search field")
             .compare("Пустая строка поиска", "Можно выбрать прошлый запрос", "Empty search field", "Pick a previous search")
             .note("При выключении история удаляется", "Turning this off deletes the search history").asNew("0.5.42-beta");
@@ -871,8 +871,8 @@ public final class Toggles {
             .asNew("0.5.7-beta");
     public static final Toggle UPDATE_CHECK = new Toggle("update_check",
             "Проверять обновления", "Check for updates", false, true)
-            .about("При запуске. Перед установкой мод спросит, а после «Позже» не будет напоминать сутки",
-                    "At launch. The mod asks before installing, and after Later it stays quiet for a day")
+            .about("Искать новую версию при запуске приложения",
+                    "Look for a new version when the app starts")
             .asNew("0.5.1-beta");
     /** A notification about a new version while the app is closed (UpdateCheckReceiver, twice a day). */
     public static final Toggle UPDATE_NOTIFY = new Toggle("update_notify",
@@ -882,6 +882,13 @@ public final class Toggles {
             .note("Без разрешения на уведомления Android их не покажет",
                     "Android won't show it without the notification permission")
             .asNew("0.5.30-beta");
+    public static final Toggle UPDATE_AUTO_DOWNLOAD = new Toggle("update_auto_download",
+            "Загружать обновления в фоне", "Download updates in the background", false)
+            .about("Автоматически по сети без тарификации. Уведомление придёт, когда APK готов к установке",
+                    "Download automatically on an unmetered network. Get notified when the APK is ready to install")
+            .compare("Скачивание по нажатию", "Обновление уже скачано к моменту уведомления",
+                    "Tap to download", "The update is downloaded before the notification appears")
+            .asNew("0.5.47-beta");
     public static final Toggle HIDE_LANDSCAPE_CHAT_INPUT = new Toggle("hide_landscape_chat_input", "Поле ввода в полном экране", "Input in fullscreen", false)
             .look(SettingsPreview.INPUT, SettingsPreview.I_FULLSCREEN);
     public static final Toggle HIDE_PORTRAIT_CHAT_INPUT = new Toggle("hide_portrait_chat_input", "Поле ввода в портрете", "Input in portrait", false)
@@ -1051,7 +1058,7 @@ public final class Toggles {
                     "Latency is the same as without ad blocking");
 
     /** A label on the video while VAFT replaces or cuts an ad break (ads/AdBreakLabel). */
-    public static final Toggle VAFT_BLOCKING_LABEL = new Toggle("vaft_blocking_label", "Плашка «Реклама блокируется»", "\"Blocking ads\" label", false)
+    public static final Toggle VAFT_BLOCKING_LABEL = new Toggle("vaft_blocking_label", "Показывать плашку блокировки", "Show the ad blocking label", false)
             .about("Надпись на видео, пока идёт подмена",
                     "A label on the video during an ad break")
             .look(SettingsPreview.PLAYER, SettingsPreview.P_AD_LABEL);
@@ -1125,7 +1132,7 @@ public final class Toggles {
                     "A choice made earlier stays. Where Twitch shows it, the choice is also in its settings: \"Cookies and ad preferences\".")
             .asNew("0.5.14-beta");
 
-    public static final Toggle BLOCK_TRACKERS = new Toggle("block_trackers", "Трекеры", "Trackers", true)
+    public static final Toggle BLOCK_TRACKERS = new Toggle("block_trackers", "Блокировать трекеры", "Block trackers", true)
             .about("Comscore, Sentry, Crashlytics, Open Measurement",
                     "Comscore, Sentry, Crashlytics, Open Measurement")
             .compare("Приложение отправляет статистику сторонним сервисам",
@@ -1434,9 +1441,11 @@ public final class Toggles {
         if (toggle == SEARCH_HISTORY && !value) {
             SettingsSearchHistory.clear(context);
         }
+        if (toggle == UPDATE_AUTO_DOWNLOAD) ModUpdate.autoChanged(context);
         if (toggle == UPDATE_NOTIFY) {
             // The alarm was set only on the next app start, so a fresh "on" missed releases until then (issue #22).
             ModUpdate.schedule(context);
+            ModUpdate.refresh();
         }
     }
 

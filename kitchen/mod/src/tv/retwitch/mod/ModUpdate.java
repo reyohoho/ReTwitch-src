@@ -20,13 +20,6 @@ import android.os.SystemClock;
 import android.provider.Settings;
 import android.text.Html;
 import android.util.Log;
-import android.widget.LinearLayout;
-import android.widget.ProgressBar;
-import android.widget.RadioButton;
-import android.widget.RadioGroup;
-import android.widget.ScrollView;
-import android.view.View;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import org.json.JSONArray;
@@ -40,7 +33,6 @@ import java.io.InputStream;
 import java.lang.ref.WeakReference;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Mod updates from the public {@code latest.json} published next to the APK.
@@ -67,9 +59,7 @@ final class ModUpdate {
     private static final int[] OLD_INTERVAL_HOURS = {1, 3, 6, 12, 24};
     private static final String CHANNEL = "retwitch_update";
     private static final int NOTIFICATION_ID = 0x7e7001;
-    private static final long LATER_MS = 24 * 60 * 60 * 1000L;
     private static final String APK_MIME = "application/vnd.android.package-archive";
-    private static final String FILE_NAME = "ReTwitch-update.apk";
     private static final int TIMEOUT_MS = 15000;
     private static final String KEY_GITHUB_FIRST = "github_first";
     /**
@@ -78,10 +68,13 @@ final class ModUpdate {
      */
     private static volatile boolean viaProxy;
     private static final String GITHUB_RELEASES = "https://github.com/reyohoho/ReTwitch-src/releases/download/v";
-    /** Accessed on the main thread. Every download uses the same staging file. */
-    private static boolean downloading;
+    private static final String TRANSFER = "download_request";
+    private static final String FAILED = "download_failed";
+    private static final String SKIPPED = "download_skipped";
+    private static WeakReference<SettingsScreen> screen = new WeakReference<>(null);
+    private static boolean checking;
 
-    private static final class Release {
+    static final class Release {
         String version;
         String apk;
         String sha256;
@@ -90,12 +83,10 @@ final class ModUpdate {
     }
 
     private static final Handler MAIN = new Handler(Looper.getMainLooper());
-    private static WeakReference<Activity> top = new WeakReference<>(null);
     private static boolean checked;
-    /** Found while no activity could show it. */
-    private static Release waiting;
-    /** Downloaded, waiting for the "install unknown apps" permission. */
-    private static File ready;
+    /** Only an explicit Install tap may continue after the system permission dialog. */
+    private static String permissionFor;
+    private static WeakReference<Activity> permissionHost = new WeakReference<>(null);
 
     private ModUpdate() {
     }
@@ -115,26 +106,32 @@ final class ModUpdate {
     /** First resume, not Application.onCreate: that one runs in Twitch's background processes too. */
     private static void resumed(Activity activity) {
         try {
-            top = new WeakReference<>(activity);
             if (!checked) {
                 checked = true;
-                apkFile(activity).delete();
-                schedule(activity);
-                if ((Toggles.on(Toggles.UPDATE_CHECK) || Toggles.on(Toggles.UPDATE_NOTIFY)) && System.currentTimeMillis() >= prefs(activity).getLong(KEY_LATER, 0)) {
-                    check(activity, false);
+                SharedPreferences state = prefs(activity);
+                String version = state.getString("version", "");
+                if (!version.isEmpty() && !BuildInfo.isNewer(version, BuildInfo.VERSION_NAME)) {
+                    discard(activity);
+                    state.edit().clear().apply();
+                } else if (pending(activity) && !UpdateDownloadJob.scheduled(activity)) {
+                    // Android may discard a scheduled job on a force stop.
+                    queue(activity, stored(activity), state.getBoolean("unmetered", false));
                 }
+                schedule(activity);
+                if ((Toggles.on(Toggles.UPDATE_CHECK) || Toggles.on(Toggles.UPDATE_NOTIFY) || Toggles.on(Toggles.UPDATE_AUTO_DOWNLOAD))
+                        && System.currentTimeMillis() >= state.getLong(KEY_LATER, 0)) checkNow(activity, false);
             }
-            if (ready != null && activity.getPackageManager().canRequestPackageInstalls()) {
-                File file = ready;
-                ready = null;
-                openInstaller(activity, file);
-            } else if (waiting != null) {
-                Release release = waiting;
-                waiting = null;
-                offer(release);
+            if (permissionFor != null && permissionHost.get() == activity) {
+                String hash = permissionFor;
+                permissionFor = null;
+                Release r = stored(activity);
+                if (r != null && hash.equals(r.sha256) && ready(activity, r) && activity.getPackageManager().canRequestPackageInstalls()) {
+                    openInstaller(activity, file(activity, r, false));
+                }
             }
         } catch (Throwable t) {
             Log.w(TAG, "resume failed", t);
+            CrashReporter.report(TAG, "resume failed", t);
         }
     }
 
@@ -148,7 +145,7 @@ final class ModUpdate {
             AlarmManager alarms = app.getSystemService(AlarmManager.class);
             PendingIntent check = PendingIntent.getBroadcast(app, 0, new Intent(app, UpdateCheckReceiver.class),
                     PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
-            if (Toggles.on(Toggles.UPDATE_NOTIFY)) {
+            if (backgroundChecks()) {
                 long every = INTERVAL_MINUTES[intervalIndex(app)] * 60_000L;
                 alarms.setInexactRepeating(AlarmManager.ELAPSED_REALTIME, SystemClock.elapsedRealtime() + every, every, check);
             } else {
@@ -186,66 +183,54 @@ final class ModUpdate {
         schedule(context);
     }
 
-    /** From UpdateCheckReceiver, off the main thread: one notification per new version. */
-    static void notifyIfNewer(Context app) {
-        try {
-            Release release = readRelease();
-            SharedPreferences prefs = prefs(app);
-            if (!BuildInfo.isNewer(release.version, BuildInfo.VERSION_NAME) || release.version.equals(prefs.getString(KEY_NOTIFIED, null))) {
-                return;
-            }
-            NotificationManager notifications = app.getSystemService(NotificationManager.class);
-            notifications.createNotificationChannel(new NotificationChannel(CHANNEL,
-                    Strings.pick("Обновления мода", "Mod updates"), NotificationManager.IMPORTANCE_DEFAULT));
-            Intent launch = app.getPackageManager().getLaunchIntentForPackage(app.getPackageName());
-            Notification.Builder builder = new Notification.Builder(app, CHANNEL)
-                    .setSmallIcon(AppContext.notificationIcon(app, android.R.drawable.stat_sys_download_done))
-                    .setContentTitle(Strings.updateTitle(release.version))
-                    .setContentText(Strings.pick("Откройте приложение, чтобы обновить", "Open the app to update"))
-                    .setAutoCancel(true);
-            if (launch != null) {
-                builder.setContentIntent(PendingIntent.getActivity(app, 0, launch, PendingIntent.FLAG_IMMUTABLE));
-            }
-            notifications.notify(NOTIFICATION_ID, builder.build());
-            // The tap opens the app: the update dialog comes up then, "Later" from yesterday or not.
-            prefs.edit().putString(KEY_NOTIFIED, release.version).remove(KEY_LATER).apply();
-            // Not before the first resume: its own check offers the release, and this would make it a second dialog.
-            MAIN.post(() -> {
-                if (checked) {
-                    waiting = release;
-                }
-            });
-        } catch (IOException | JSONException | RuntimeException e) {
-            Log.w(TAG, "background check failed", e);
-        }
-    }
-
-    /** From the settings: says what it found, even if there is nothing. */
-    static void checkNow(Context context) {
-        check(context, true);
-    }
-
-    private static SharedPreferences prefs(Context context) {
-        return context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
-    }
-
-    private static void check(Context context, boolean manual) {
-        final Context app = context.getApplicationContext();
+    /** Keep the receiver alive until the manifest result has been recorded and its job scheduled. */
+    static void backgroundCheck(Context app, Runnable finished) {
         new Thread(() -> {
             try {
-                Release release = readRelease();
+                Release r = readRelease();
                 MAIN.post(() -> {
-                    if (BuildInfo.isNewer(release.version, BuildInfo.VERSION_NAME)) {
-                        offer(release);
-                    } else if (manual) {
-                        Toast.makeText(app, Strings.updateLatest(), Toast.LENGTH_SHORT).show();
+                    try {
+                        if (backgroundChecks()) found(app, r, false);
+                    } finally {
+                        finished.run();
                     }
                 });
-            } catch (IOException | JSONException | RuntimeException e) {
+            } catch (Exception e) {
+                Log.w(TAG, "background check failed", e);
+                CrashReporter.report(TAG, "background check failed", e);
+                finished.run();
+            }
+        }, "RTUpdateNotify").start();
+    }
+
+    private static SharedPreferences prefs(Context c) {
+        return c.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+    }
+
+    static boolean backgroundChecks() {
+        return Toggles.on(Toggles.UPDATE_NOTIFY) || Toggles.on(Toggles.UPDATE_AUTO_DOWNLOAD);
+    }
+
+    private static void checkNow(Context context, boolean manual) {
+        if (checking) return;
+        checking = true;
+        refresh();
+        Context app = context.getApplicationContext();
+        new Thread(() -> {
+            try {
+                Release r = readRelease();
+                MAIN.post(() -> {
+                    checking = false;
+                    found(app, r, manual);
+                });
+            } catch (Exception e) {
                 Log.w(TAG, "check failed", e);
-                if (manual) {
-                    MAIN.post(() -> Toast.makeText(app, Strings.updateCheckFailed(), Toast.LENGTH_SHORT).show());
-                }
+                CrashReporter.report(TAG, "check failed", e);
+                MAIN.post(() -> {
+                    checking = false;
+                    if (manual) Toast.makeText(app, Strings.updateCheckFailed(), Toast.LENGTH_SHORT).show();
+                    refresh();
+                });
             }
         }, "RTUpdateCheck").start();
     }
@@ -319,7 +304,7 @@ final class ModUpdate {
         release.apk = json.getString("apk");
         release.sha256 = json.getString("sha256");
         release.size = json.getLong("size");
-        if (!release.apk.matches("[A-Za-z0-9._-]+\\.apk") || !release.sha256.matches("[0-9a-f]{64}") || release.size <= 0) {
+        if (!release.version.matches("[0-9]+(?:\\.[0-9]+){2}(?:-[a-zA-Z0-9.-]+)?") || !release.apk.matches("[A-Za-z0-9._-]+\\.apk") || !release.sha256.matches("[0-9a-f]{64}") || release.size <= 0) {
             throw new IOException("malformed latest.json");
         }
         StringBuilder notes = new StringBuilder();
@@ -374,143 +359,253 @@ final class ModUpdate {
         return bullets.toString();
     }
 
-    private static void offer(Release release) {
-        Activity activity = top.get();
-        if (activity == null || activity.isFinishing() || activity.isDestroyed()) {
-            waiting = release;
+    private static Release stored(Context c) {
+        SharedPreferences p = prefs(c);
+        String version = p.getString("version", "");
+        if (!BuildInfo.isNewer(version, BuildInfo.VERSION_NAME)) return null;
+        Release r = new Release();
+        r.version = version;
+        r.sha256 = p.getString("hash", "");
+        r.size = p.getLong("size", 0);
+        r.apk = p.getString("apk", "");
+        r.notes = p.getString("notes", "");
+        return r;
+    }
+
+    static File file(Context c, Release r, boolean partial) {
+        return new File(new File(c.getCacheDir(), "retwitch-updates"), r.sha256 + (partial ? ".part" : ".apk"));
+    }
+
+    static boolean ready(Context c, Release r) {
+        return file(c, r, false).length() == r.size && r.size > 0;
+    }
+
+    static boolean pending(Context c) {
+        return prefs(c).contains(TRANSFER);
+    }
+
+    static Release requested(Context c, String request) {
+        return request != null && request.equals(prefs(c).getString(TRANSFER, null)) ? stored(c) : null;
+    }
+
+    private static void discard(Context c) {
+        UpdateDownloadJob.cancel(c);
+        String hash = prefs(c).getString("hash", "");
+        if (!hash.isEmpty()) {
+            Release old = new Release();
+            old.sha256 = hash;
+            file(c, old, true).delete();
+            file(c, old, false).delete();
+        }
+        c.getSystemService(NotificationManager.class).cancel(NOTIFICATION_ID);
+        permissionFor = null;
+    }
+
+    private static void found(Context c, Release r, boolean manual) {
+        try {
+            acceptRelease(c, r, manual);
+        } catch (Throwable t) {
+            Log.w(TAG, "update check result failed", t);
+            CrashReporter.report(TAG, "update check result failed", t);
+            if (manual) Toast.makeText(c, Strings.updateCheckFailed(), Toast.LENGTH_SHORT).show();
+        } finally {
+            refresh();
+        }
+    }
+
+    private static void acceptRelease(Context c, Release r, boolean manual) {
+        if (!BuildInfo.isNewer(r.version, BuildInfo.VERSION_NAME)) {
+            if (manual) Toast.makeText(c, Strings.updateLatest(), Toast.LENGTH_SHORT).show();
             return;
         }
-        AlertDialog.Builder dialog = new AlertDialog.Builder(activity);
-        Context themed = dialog.getContext();
-        int pad = Math.round(20 * themed.getResources().getDisplayMetrics().density);
-        LinearLayout content = new LinearLayout(themed);
-        content.setOrientation(LinearLayout.VERTICAL);
-        content.setPadding(pad, pad / 2, pad, 0);
-        TextView label = new TextView(themed);
-        label.setText(Strings.pick("Сначала скачивать с", "Download first from"));
-        content.addView(label);
-        RadioGroup sources = new RadioGroup(themed);
-        sources.setOrientation(themed.getResources().getConfiguration().fontScale > 1.3f
-                ? LinearLayout.VERTICAL : LinearLayout.HORIZONTAL);
-        RadioButton yandex = new RadioButton(themed), github = new RadioButton(themed);
-        yandex.setId(View.generateViewId());
-        github.setId(View.generateViewId());
-        yandex.setText(sourceLabel(UpdateApk.Source.YANDEX));
-        github.setText(sourceLabel(UpdateApk.Source.GITHUB));
-        sources.addView(yandex);
-        sources.addView(github);
-        sources.setId(View.generateViewId());
-        label.setLabelFor(sources.getId());
-        SharedPreferences settings = activity.getSharedPreferences(SETTINGS, Context.MODE_PRIVATE);
-        sources.check(Boolean.TRUE.equals(settings.getAll().get(KEY_GITHUB_FIRST)) ? github.getId() : yandex.getId());
-        sources.setOnCheckedChangeListener((group, id) -> settings.edit().putBoolean(KEY_GITHUB_FIRST, id == github.getId()).apply());
-        content.addView(sources);
-        TextView notes = new TextView(themed);
-        notes.setTextAppearance(android.R.style.TextAppearance_Material_Body1);
-        notes.setPadding(0, pad / 2, 0, 0);
-        notes.setText(Html.fromHtml(release.notes, Html.FROM_HTML_MODE_LEGACY));
-        content.addView(notes);
-        ScrollView scroll = new ScrollView(themed);
-        scroll.addView(content);
-        dialog.setTitle(Strings.updateTitle(release.version))
-                .setView(scroll)
-                .setPositiveButton(Strings.updateNow(), (d, which) -> download(activity, release,
-                        github.isChecked() ? UpdateApk.Source.GITHUB : UpdateApk.Source.YANDEX))
-                .setNegativeButton(Strings.later(), (d, which) -> prefs(activity).edit()
-                        .putLong(KEY_LATER, System.currentTimeMillis() + LATER_MS).apply())
-                .show();
+        SharedPreferences p = prefs(c);
+        Release old = stored(c);
+        if (old != null && BuildInfo.isNewer(old.version, r.version)) return;
+        if (old == null || !r.sha256.equals(old.sha256)) {
+            discard(c);
+            p.edit().remove(TRANSFER).remove(FAILED).remove(SKIPPED).remove(KEY_NOTIFIED)
+                    .putString("version", r.version).putString("hash", r.sha256).putLong("size", r.size)
+                    .putString("apk", r.apk).putString("notes", r.notes).apply();
+        }
+        if (Toggles.on(Toggles.UPDATE_AUTO_DOWNLOAD)) {
+            if (!ready(c, r) && !pending(c) && !p.getBoolean(SKIPPED, false) && !p.getBoolean(FAILED, false)) queue(c, r, true);
+        } else if (!manual && !ready(c, r) && !pending(c) && !p.getBoolean(SKIPPED, false)) {
+            notify(c, r, false);
+        }
     }
 
-    private static File apkFile(Context context) {
-        return new File(context.getExternalFilesDir("updates"), FILE_NAME);
+    private static void notify(Context c, Release r, boolean ready) {
+        String key = r.sha256 + (ready ? ":ready" : ":available");
+        if (key.equals(prefs(c).getString(KEY_NOTIFIED, null))) return;
+        try {
+            NotificationManager manager = c.getSystemService(NotificationManager.class);
+            manager.createNotificationChannel(new NotificationChannel(CHANNEL, title(), NotificationManager.IMPORTANCE_DEFAULT));
+            if (!manager.areNotificationsEnabled() || manager.getNotificationChannel(CHANNEL).getImportance() == NotificationManager.IMPORTANCE_NONE) return;
+            PendingIntent tap = PendingIntent.getActivity(c, NOTIFICATION_ID, new Intent(c, UpdateActivity.class),
+                    PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
+            manager.notify(NOTIFICATION_ID, new Notification.Builder(c, CHANNEL)
+                    .setSmallIcon(AppContext.notificationIcon(c, android.R.drawable.stat_sys_download_done))
+                    .setContentTitle(Strings.updateTitle(r.version)).setContentText(ready ? readyText()
+                            : Strings.pick("Доступна новая версия", "A new version is available"))
+                    .setContentIntent(tap).setAutoCancel(true).build());
+            prefs(c).edit().putString(KEY_NOTIFIED, key).apply();
+        } catch (RuntimeException e) {
+            Log.w(TAG, "notification failed", e);
+            CrashReporter.report(TAG, "notification failed", e);
+        }
     }
 
-    private static String sourceLabel(UpdateApk.Source source) {
+    private static void queue(Context c, Release r, boolean unmetered) {
+        if (r == null || ready(c, r)) return;
+        String id = java.util.UUID.randomUUID().toString();
+        SharedPreferences p = prefs(c);
+        p.edit().putString(TRANSFER, id).remove("retries").putBoolean("unmetered", unmetered).remove(FAILED).remove(SKIPPED).apply();
+        try {
+            UpdateDownloadJob.enqueue(c, id, unmetered);
+            c.getSystemService(NotificationManager.class).cancel(NOTIFICATION_ID);
+        } catch (RuntimeException e) {
+            Log.w(TAG, "queue failed", e);
+            CrashReporter.report(TAG, "queue failed", e);
+            p.edit().remove(TRANSFER).putBoolean(FAILED, true).apply();
+        }
+        refresh();
+    }
+
+    /** A short background outage should not need a tap. Keep the partial file between bounded system retries. */
+    static boolean retryAutomatically(Context c, String id) {
+        if (requested(c, id) == null || !prefs(c).getBoolean("unmetered", false)) return false;
+        int tries = prefs(c).getInt("retries", 0);
+        if (tries >= 2) return false;
+        prefs(c).edit().putInt("retries", tries + 1).apply();
+        refresh();
+        return true;
+    }
+
+    static void finished(Context c, String id, boolean verified) {
+        Release r = requested(c, id);
+        if (r == null) return;
+        boolean ok = ready(c, r) || verified && file(c, r, true).renameTo(file(c, r, false));
+        prefs(c).edit().remove(TRANSFER).putBoolean(FAILED, !ok).apply();
+        if (ok) notify(c, r, true);
+        refresh();
+    }
+
+    private static void cancel(Context c, Release r) {
+        prefs(c).edit().remove(TRANSFER).putBoolean(SKIPPED, true).remove(FAILED).apply();
+        UpdateDownloadJob.cancel(c);
+        file(c, r, true).delete();
+        refresh();
+    }
+
+    static void autoChanged(Context c) {
+        schedule(c);
+        Release r = stored(c);
+        if (Toggles.on(Toggles.UPDATE_AUTO_DOWNLOAD)) {
+            if (r != null && !pending(c)) queue(c, r, true);
+            if (r == null) checkNow(c, false);
+        } else if (r != null && pending(c) && prefs(c).getBoolean("unmetered", false)) {
+            cancel(c, r);
+        }
+    }
+
+    static HttpURLConnection mirror(Release r, UpdateApk.Source source, long offset) throws IOException {
+        return source == UpdateApk.Source.GITHUB ? connect(GITHUB_RELEASES + r.version + "/" + r.apk, offset)
+                : open(BASE_URL + r.apk, offset);
+    }
+
+    static UpdateApk.Source preferred(Context c) {
+        return c.getSharedPreferences(SETTINGS, Context.MODE_PRIVATE).getBoolean(KEY_GITHUB_FIRST, false)
+                ? UpdateApk.Source.GITHUB : UpdateApk.Source.YANDEX;
+    }
+
+    static String sourceLabel(UpdateApk.Source source) {
         return source == UpdateApk.Source.GITHUB ? "GitHub" : Strings.pick("Яндекс", "Yandex");
     }
 
-    private static void download(Activity activity, Release release, UpdateApk.Source preferred) {
-        if (downloading) return;
-        ProgressBar bar = new ProgressBar(activity, null, android.R.attr.progressBarStyleHorizontal);
-        bar.setMax(100);
-        TextView percent = new TextView(activity);
-        int pad = Math.round(20 * activity.getResources().getDisplayMetrics().density);
-        LinearLayout box = new LinearLayout(activity);
-        box.setOrientation(LinearLayout.VERTICAL);
-        box.setPadding(pad, pad, pad, 0);
-        TextView sourceName = new TextView(activity);
-        sourceName.setText(sourceLabel(preferred));
-        box.addView(sourceName);
-        box.addView(bar);
-        box.addView(percent);
-        AtomicBoolean cancelled = new AtomicBoolean();
-        AlertDialog dialog = new AlertDialog.Builder(activity)
-                .setTitle(Strings.updateDownloading(release.version))
-                .setView(box)
-                .setCancelable(false)
-                .setNegativeButton(Strings.cancel(), (d, which) -> cancelled.set(true))
-                .show();
-        final Context app = activity.getApplicationContext();
-        final File file = apkFile(app);
-        ready = null;
-        downloading = true;
-        new Thread(() -> {
-            boolean ok = false;
-            try {
-                final long started = SystemClock.elapsedRealtime();
-                ok = UpdateApk.fetch(file, release.size, release.sha256, preferred, cancelled,
-                        (source, offset) -> source == UpdateApk.Source.GITHUB
-                                ? connect(GITHUB_RELEASES + release.version + "/" + release.apk, offset)
-                                : open(BASE_URL + release.apk, offset),
-                        (source, done) -> {
-                    long elapsed = SystemClock.elapsedRealtime() - started;
-                    // Time left once two seconds of data give a speed.
-                    long left = elapsed > 2000 && done > 0 ? (release.size - done) * elapsed / done / 1000 : -1;
-                    MAIN.post(() -> {
-                        sourceName.setText(sourceLabel(source));
-                        bar.setProgress((int) (done * 100 / release.size));
-                        percent.setText(Strings.updateProgress(done, release.size, left));
-                    });
-                });
-            } catch (IOException | java.security.NoSuchAlgorithmException | RuntimeException e) {
-                Log.w(TAG, "download failed", e);
-                if (!cancelled.get()) {
-                    CrashReporter.report(TAG, "download failed", e);
-                }
-            }
-            final boolean done = ok;
-            MAIN.post(() -> {
-                try {
-                    dialog.dismiss();
-                } catch (RuntimeException e) {
-                    Log.w(TAG, "dismiss failed", e); // the activity went away
-                }
-                downloading = false;
-                if (done && !cancelled.get()) {
-                    finish(app, file);
-                } else {
-                    file.delete();
-                    if (!cancelled.get()) {
-                        Toast.makeText(app, Strings.updateFailed(), Toast.LENGTH_LONG).show();
-                    }
-                }
-            });
-        }, "RTUpdateDownload").start();
+    static String title() { return Strings.pick("Обновления мода", "Mod updates"); }
+    private static String readyText() { return Strings.pick("Готово к установке", "Ready to install"); }
+
+    static String homeSubtitle(Context c, String fallback) {
+        return stored(c) == null ? fallback : summary(c);
     }
 
-    private static void finish(Context app, File file) {
-        Activity activity = top.get();
-        if (activity == null) {
-            return;
+    static String summary(Context c) {
+        Release r = stored(c);
+        if (r == null) return Strings.pickf("Установлена версия %s", "Installed version %s", BuildInfo.VERSION_NAME);
+        return Strings.updateTitle(r.version) + " · " + (ready(c, r) ? readyText() : pending(c)
+                ? Strings.pick("Загрузка", "Downloading") : Strings.pick("Доступно", "Available"));
+    }
+
+    static void refresh() {
+        SettingsScreen s = screen.get();
+        if (s != null) s.refreshIfVisible();
+    }
+
+    static void page(SettingsScreen s) {
+        Context c = s.context;
+        if (!s.searching()) screen = new WeakReference<>(s);
+        Release r = stored(c);
+        s.section(summary(c));
+        if (r != null) {
+            if (ready(c, r)) {
+                s.action(Strings.pick("Установить обновление", "Install update"), readyText(), () -> installReady(c, r));
+            } else if (pending(c)) {
+                boolean unmetered = prefs(c).getBoolean("unmetered", false);
+                s.progress(Strings.updateTitle(r.version), () -> UpdateDownloadJob.status(unmetered),
+                        () -> (int) (100 * file(c, r, true).length() / r.size), () -> "", null, () -> cancel(c, r));
+                if (unmetered && !UpdateDownloadJob.active()) {
+                    s.action(Strings.pick("Скачать через любую сеть", "Download on any network"), null, () -> queue(c, r, false));
+                }
+            } else {
+                s.action(prefs(c).getBoolean(FAILED, false) ? Strings.pick("Повторить загрузку", "Retry download")
+                                : Strings.pick("Скачать обновление", "Download update"),
+                        android.text.format.Formatter.formatFileSize(c, r.size), () -> queue(c, r, false));
+            }
+            if (!r.notes.isEmpty()) s.action(Strings.changelogTitle(), r.version, () -> new AlertDialog.Builder(c)
+                    .setTitle(Strings.updateTitle(r.version)).setMessage(Html.fromHtml(r.notes, Html.FROM_HTML_MODE_LEGACY))
+                    .setPositiveButton(android.R.string.ok, null).show());
         }
-        if (activity.getPackageManager().canRequestPackageInstalls()) {
-            openInstaller(activity, file);
-            return;
+        s.action(checking ? Strings.pick("Проверяем обновления...", "Checking for updates...")
+                : Strings.pick("Проверить обновления сейчас", "Check for updates now"), null, () -> checkNow(c, true));
+        s.section(Strings.pick("Автоматические обновления", "Automatic updates"));
+        s.toggle(Toggles.UPDATE_CHECK);
+        s.toggle(Toggles.UPDATE_NOTIFY);
+        s.toggle(Toggles.UPDATE_AUTO_DOWNLOAD);
+        NotificationManager notifications = c.getSystemService(NotificationManager.class);
+        NotificationChannel channel = notifications.getNotificationChannel(CHANNEL);
+        boolean appNotifications = notifications.areNotificationsEnabled();
+        if (!appNotifications || channel != null && channel.getImportance() == NotificationManager.IMPORTANCE_NONE) {
+            s.action(Strings.pick("Разрешить уведомления Android", "Allow Android notifications"),
+                    Strings.pick("Сейчас уведомления выключены. Готовое обновление можно установить здесь.",
+                            "Notifications are off. You can install a downloaded update here."), () -> {
+                        Intent intent = new Intent(appNotifications ? Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS : Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                                .putExtra(Settings.EXTRA_APP_PACKAGE, c.getPackageName());
+                        if (appNotifications) intent.putExtra(Settings.EXTRA_CHANNEL_ID, CHANNEL);
+                        c.startActivity(intent);
+                    });
         }
-        ready = file; // resumed() goes on once the permission screen closes
-        Toast.makeText(app, Strings.updateAllowInstall(), Toast.LENGTH_LONG).show();
-        activity.startActivity(new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
-                Uri.parse("package:" + activity.getPackageName())));
+        if (backgroundChecks() || s.searching()) {
+            s.markNew("0.5.32-beta").choice(Strings.pick("Как часто проверять", "How often to check"),
+                    new String[]{Strings.pick("Раз в 30 минут", "Every 30 minutes"), Strings.pick("Раз в час", "Every hour"),
+                            Strings.pick("Раз в 3 часа", "Every 3 hours"), Strings.pick("Раз в 6 часов", "Every 6 hours"),
+                            Strings.pick("Дважды в день", "Twice a day"), Strings.pick("Раз в день", "Once a day")},
+                    intervalIndex(c), false, i -> setIntervalIndex(c, i));
+        }
+        s.choice(Strings.pick("Сначала скачивать с", "Download first from"),
+                new String[]{sourceLabel(UpdateApk.Source.YANDEX), "GitHub"}, preferred(c) == UpdateApk.Source.GITHUB ? 1 : 0, false,
+                i -> c.getSharedPreferences(SETTINGS, Context.MODE_PRIVATE).edit().putBoolean(KEY_GITHUB_FIRST, i == 1).apply());
+    }
+
+    private static void installReady(Context c, Release r) {
+        Activity a = SettingsBackup.activity(c);
+        if (a == null || !ready(c, r)) { refresh(); return; }
+        if (a.getPackageManager().canRequestPackageInstalls()) openInstaller(a, file(c, r, false));
+        else {
+            permissionHost = new WeakReference<>(a);
+            permissionFor = r.sha256;
+            Toast.makeText(a, Strings.updateAllowInstall(), Toast.LENGTH_LONG).show();
+            a.startActivity(new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:" + a.getPackageName())));
+        }
     }
 
     /** Twitch's FileProvider exports external storage as "shared"; its class is obfuscated, so the URI is built here. */
@@ -527,9 +622,10 @@ final class ModUpdate {
     private static void openInstaller(Activity activity, File file) {
         try {
             activity.startActivity(new Intent(Intent.ACTION_VIEW)
-                    .setDataAndType(sharedUri(activity, file), APK_MIME)
+                    .setDataAndType(new Uri.Builder().scheme("content").authority(activity.getPackageName() + ".provider")
+                            .appendPath("debug").appendPath("retwitch-updates").appendPath(file.getName()).build(), APK_MIME)
                     .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION));
-        } catch (IOException | RuntimeException e) {
+        } catch (RuntimeException e) {
             Log.w(TAG, "installer failed", e);
             CrashReporter.report(TAG, "installer failed", e);
             Toast.makeText(activity, Strings.updateFailed(), Toast.LENGTH_LONG).show();

@@ -20,6 +20,17 @@ val retwitchInstallPermissionPatch = resourcePatch(
             val permission = document.createElement("uses-permission")
             permission.setAttribute("android:name", "android.permission.REQUEST_INSTALL_PACKAGES")
             manifest.appendChild(permission)
+            val app = manifest.getElementsByTagName("application").item(0) as Element
+            app.appendChild(document.createElement("service").apply {
+                setAttribute("android:name", "tv.retwitch.mod.UpdateDownloadJob")
+                setAttribute("android:permission", "android.permission.BIND_JOB_SERVICE")
+                setAttribute("android:exported", "true")
+            })
+            app.appendChild(document.createElement("activity").apply {
+                setAttribute("android:name", "tv.retwitch.mod.UpdateActivity")
+                setAttribute("android:exported", "false")
+                setAttribute("android:theme", "@android:style/Theme.Translucent.NoTitleBar")
+            })
         }
     }
 }
