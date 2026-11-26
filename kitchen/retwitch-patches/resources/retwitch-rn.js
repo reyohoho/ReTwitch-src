@@ -785,7 +785,8 @@
             var user = r.props.edge.node, login = (user.login || '').toLowerCase();
             return {row: r, index: i, name: user.displayName || login, time: ranks[login] || 0};
         }).sort(function (a, b) {
-            var cmp = mode === 1 ? b.time - a.time : a.name.localeCompare(b.name, undefined, {sensitivity: 'base'});
+            var cmp = mode === 1 || mode === 3 ? b.time - a.time : a.name.localeCompare(b.name, undefined, {sensitivity: 'base'});
+            if (mode === 3 || mode === 4) cmp = -cmp;
             return cmp || a.index - b.index;
         }).map(function (item, i) {
             return i === item.index ? item.row : React.cloneElement(item.row, {itemPosition: i, gatesAppLoad: i < gated});
@@ -804,7 +805,7 @@
             if (save) saving.current = true;
             fetch(offlineSort.url + (save ? '?mode=' + mode : ''), {method: save ? 'POST' : 'GET'})
                 .then(function (r) { return r.ok ? r.json() : null; }).then(function (next) {
-                    if (request === latest.current && next && next.ranks && next.mode >= 0 && next.mode <= 2) {
+                    if (request === latest.current && next && next.ranks && next.mode >= 0 && next.mode <= 4) {
                         setData(next);
                     }
                 }).catch(function () {}).finally(function () { if (save) saving.current = false; });
@@ -823,8 +824,10 @@
         function open() { if (!expanded) refresh(); setExpanded(!expanded); }
         function close() { setExpanded(false); }
         var h = React.createElement;
-        var items = [offlineSort.stock, offlineSort.frequency, offlineSort.alpha].map(function (name, i) {
-            return {id: 'offline-' + i, children: name, selected: data.mode === i, testID: 'retwitch-offline-mode-' + i,
+        if (!offlineSort.showMenu) return React.cloneElement(section, null, kids[0], React.cloneElement(list, {children: sorted}));
+        var names = [offlineSort.stock, offlineSort.frequency, offlineSort.alpha, offlineSort.least, offlineSort.reverseAlpha];
+        var items = [0, 1, 3, 2, 4].map(function (i) {
+            return {id: 'offline-' + i, children: names[i], selected: data.mode === i, testID: 'retwitch-offline-mode-' + i,
                 onPress: function () { close(); refresh(i); }};
         });
         var button = offlineFilter && offlineControls ? h(offlineControls.IconButton, {icon: h(OfflineSortIcon), variant: 'overlay',

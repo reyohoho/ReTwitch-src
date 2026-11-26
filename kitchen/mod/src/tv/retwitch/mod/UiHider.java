@@ -103,7 +103,7 @@ public final class UiHider {
             // PlayerHook.attachLatencyLabels, called from the pass.
             "play_pause_container", "play_pause_fast_seek_view", "message_input",
             "fullscreen_button", "chat_mode_button", "emote_picker", "chat_header_container", "emoticon_picker",
-            "chomments_header_container", "mod_dashboard_button", "chat_restrictions_container", "minimized_overlay",
+            "chomments_header_container", "mod_dashboard_button", "edit_profile_button", "chat_restrictions_container", "minimized_overlay",
             "pinch_to_zoom_layout", "options_scrollview",
             "theatre_root_container",
             "seek_forward_button", "seek_rewind_button",
@@ -134,7 +134,7 @@ public final class UiHider {
     private static boolean unfollowTouched;
     private static boolean pointsTouched;
     private static boolean replayHeaderTouched;
-    private static boolean streamManagerTouched;
+    private static boolean profileButtonsTouched;
     private static boolean miniTouched;
     private static boolean restrictionsTouched;
     private static boolean overlayCalloutMarked;
@@ -403,9 +403,11 @@ public final class UiHider {
         }
         applyUnfollow(activity, decor);
         boolean streamManager = Toggles.on(Toggles.HIDE_PROFILE_STREAM_MANAGER);
-        if (streamManager || streamManagerTouched) {
-            streamManagerTouched = streamManager;
+        boolean editProfile = Toggles.on(Toggles.HIDE_PROFILE_EDIT);
+        if (streamManager || editProfile || profileButtonsTouched) {
+            profileButtonsTouched = streamManager || editProfile;
             hideWhileAll(activity, decor, streamManager, "mod_dashboard_button");
+            hideWhileAll(activity, decor, editProfile, "edit_profile_button");
         }
         boolean restrictions = Toggles.on(Toggles.HIDE_CHAT_RESTRICTIONS);
         if (restrictions || restrictionsTouched) {

@@ -584,7 +584,7 @@ final class ModUpdate {
                         c.startActivity(intent);
                     });
         }
-        if (backgroundChecks() || s.searching()) {
+        if (backgroundChecks()) {
             s.markNew("0.5.32-beta").choice(Strings.pick("Как часто проверять", "How often to check"),
                     new String[]{Strings.pick("Раз в 30 минут", "Every 30 minutes"), Strings.pick("Раз в час", "Every hour"),
                             Strings.pick("Раз в 3 часа", "Every 3 hours"), Strings.pick("Раз в 6 часов", "Every 6 hours"),

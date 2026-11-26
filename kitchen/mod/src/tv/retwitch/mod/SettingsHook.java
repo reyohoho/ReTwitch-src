@@ -400,10 +400,21 @@ public final class SettingsHook {
         s.look(SettingsPreview.PLAYER, SettingsPreview.P_DIVIDER).toggle(t("Перетаскиваемая граница", "Draggable divider"),
                 t("Тяните границу между плеером и чатом", "Drag the line between the player and chat"),
                 TheatreSettings.isSideChatDividerEnabled(), false, on -> TheatreSettings.setSideChatDividerEnabled(c, on));
-        s.action(t("Вернуть ширину чата", "Reset chat width"), t("Ширина Twitch по умолчанию", "Twitch's default width"), () -> {
-            TheatreSettings.resetSideChatWidth(c);
-            Toast.makeText(c, Strings.dividerWidthResetToast(), Toast.LENGTH_SHORT).show();
-        });
+        int base = TheatreDividerHook.chatWidthPx(100);
+        String widthTitle = Strings.pick("Ширина чата", "Chat width");
+        int width = Math.round(base * TheatreSettings.getSideChatWidthPercent() / 100f);
+        s.markNew("0.5.48-beta").action(widthTitle,
+                Strings.pickf("%d пкс · Ширина бокового чата в альбомном режиме", "%d px · Side chat width in landscape",
+                        width),
+                () -> SettingsScreen.editRange(c, Strings.pick("Ширина чата, пкс", "Chat width, px"), width,
+                        TheatreDividerHook.chatWidthPx(TheatreSettings.MIN_WIDTH_PERCENT),
+                        TheatreDividerHook.chatWidthPx(TheatreSettings.MAX_WIDTH_PERCENT), null, px -> {
+                            if (px != width || !TheatreSettings.hasSideChatWidth()) TheatreSettings.setSideChatWidthPercent(c, px * 100f / base);
+                            s.render(true);
+                        }, () -> {
+                            TheatreSettings.resetSideChatWidth(c);
+                            s.render(true);
+                        }));
         s.toggle(Toggles.WIDE_CHAT_PANELS);
         s.toggle(Toggles.CHAT_OVER_VIDEO);
         s.numericSlider(t("Фон чата поверх видео", "Chat background over the video"), TheatreSettings.CHAT_BG_STEPS, "%",
@@ -418,18 +429,16 @@ public final class SettingsHook {
         }
         s.toggle(Toggles.COMPRESSOR_BUTTON);
         s.section(t("Фильтры", "Filters"));
-        int[] db = {-12, -9, -6, -3, 0, 3, 6, 9, 12};
-        int[] percent = {0, 25, 50, 75, 100};
         s.markNew("0.4.6-alpha").group(Toggles.AUDIO_FILTERS.label(), Toggles.AUDIO_FILTERS.about(),
                 Toggles.on(Toggles.AUDIO_FILTERS), false, on -> {
                     Toggles.set(c, Toggles.AUDIO_FILTERS, on);
                     AudioCompressor.refresh();
                 }, () -> {
-                    audioFilter(s, Strings.audioBoostLabel(), AudioCompressor.BOOST, new int[]{0, 2, 4, 6, 8, 10, 12}, false);
-                    audioFilter(s, Strings.audioBassLabel(), AudioCompressor.BASS, db, false);
-                    audioFilter(s, Strings.audioTrebleLabel(), AudioCompressor.TREBLE, db, false);
-                    audioFilter(s, Strings.audioVoiceLabel(), AudioCompressor.VOICE, percent, true);
-                    audioFilter(s, Strings.audioLimitLabel(), AudioCompressor.LIMIT, percent, true);
+                    audioFilter(s, Strings.audioBoostLabel(), AudioCompressor.BOOST, false);
+                    audioFilter(s, Strings.audioBassLabel(), AudioCompressor.BASS, false);
+                    audioFilter(s, Strings.audioTrebleLabel(), AudioCompressor.TREBLE, false);
+                    audioFilter(s, Strings.audioVoiceLabel(), AudioCompressor.VOICE, true);
+                    audioFilter(s, Strings.audioLimitLabel(), AudioCompressor.LIMIT, true);
                 });
         s.hint(t("Работают и вместе с компрессором, и без него. Лимитер срезает крики и алерты: чем больше, тем ниже потолок.",
                 "They work with or without the compressor. The limiter tames screams and alerts: the higher, the lower the ceiling."));
@@ -498,11 +507,15 @@ public final class SettingsHook {
         s.toggle(Toggles.VOD_CHAT_SYNC);
     }
 
-    private static void audioFilter(SettingsScreen s, String rowTitle, String key, int[] values, boolean percent) {
-        final Context c = s.context;
-        s.slider(rowTitle, Strings.audioLevelLabels(values, percent),
-                Math.max(0, indexOf(values, AudioCompressor.filter(key))), false,
-                i -> AudioCompressor.setFilter(c, key, values[i]));
+    private static void audioFilter(SettingsScreen s, String title, String key, boolean percent) {
+        int min = AudioCompressor.min(key), max = AudioCompressor.max(key);
+        SettingsScreen.IntSetter save = value -> AudioCompressor.setFilter(s.context, key, value);
+        s.slider(title, max - min + 1, i -> Strings.audioLevelLabel(min + i, percent),
+                AudioCompressor.filter(key) - min, false, i -> save.set(min + i),
+                () -> SettingsScreen.editLevel(s.context, title, AudioCompressor.filter(key), min, max, v -> {
+                    save.set(v);
+                    s.render(true);
+                }), true);
     }
 
     private static int indexOf(int[] values, int value) {
@@ -840,6 +853,7 @@ public final class SettingsHook {
         s.toggle(Toggles.HIDE_PROFILE_SUBSCRIBE);
         s.toggle(Toggles.HIDE_PROFILE_GIFT);
         s.toggle(Toggles.HIDE_PROFILE_STREAM_MANAGER);
+        s.toggle(Toggles.HIDE_PROFILE_EDIT);
         s.toggle(Toggles.HIDE_VIDEO_CARD_MENU);
         s.section(t("Скрыть разделы канала", "Hide channel sections"));
         s.toggle(Toggles.HIDE_PROFILE_RECAPS);

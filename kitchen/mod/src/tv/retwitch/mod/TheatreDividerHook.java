@@ -9,6 +9,7 @@ import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
+import android.text.InputType;
 import android.util.Log;
 import android.util.TypedValue;
 import android.view.Gravity;
@@ -19,8 +20,10 @@ import android.view.ViewParent;
 import android.view.ViewTreeObserver;
 import android.view.Window;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.SeekBar;
 import android.widget.Switch;
 import android.widget.TextView;
@@ -987,94 +990,89 @@ public final class TheatreDividerHook {
         return handle;
     }
 
-    /** A tap on the divider: the chat-over-video switch and the background opacity, applied live. */
+    /** The VOD divider is relative to the parent, live chat to the long display edge. */
     private static void openQuickPanel(View handle) {
-        final Context ctx = handle.getContext();
-        final View root = handle.getRootView();
+        DragState drag = (DragState) handle.getTag(DRAG_TAG_KEY);
+        int base = drag != null && drag.split != null && drag.split.guideline == null
+                ? drag.split.parent.getWidth() : chatWidthPx(100);
+        widthDialog(handle.getContext(), base, () -> update(handle.getRootView()));
+    }
+
+    private static void widthDialog(Context ctx, int base, Runnable saved) {
+        if (base <= 0) return;
         int pad = dp(ctx, 20);
         LinearLayout box = new LinearLayout(ctx);
         box.setOrientation(LinearLayout.VERTICAL);
         box.setPadding(pad, pad / 2, pad, 0);
-
-        DragState drag = (DragState) handle.getTag(DRAG_TAG_KEY);
-        if (drag != null && drag.split != null) {
-            Split split = drag.split;
-            int base = split.guideline != null ? chatWidthPx(100) : split.parent.getWidth();
-            if (base > 0) {
-                LinearLayout widthRow = new LinearLayout(ctx);
-                widthRow.setGravity(Gravity.CENTER_VERTICAL);
-                TextView width = new TextView(ctx);
-                Runnable showWidth = () -> width.setText(Strings.pickf("Ширина чата: %d пкс", "Chat width: %d px",
-                        Math.round(base * TheatreSettings.getSideChatWidthPercent() / 100f)));
-                showWidth.run();
-                widthRow.addView(width, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
-                for (int step : new int[]{-1, 1}) {
-                    Button button = new Button(ctx);
-                    button.setText(step < 0 ? "−1" : "+1");
-                    button.setOnClickListener(v -> {
-                        int px = Math.round(base * TheatreSettings.getSideChatWidthPercent() / 100f) + step;
-                        TheatreSettings.setSideChatWidthPercent(ctx, px * 100f / base);
-                        update(root);
-                        showWidth.run();
-                    });
-                    widthRow.addView(button);
-                }
-                box.addView(widthRow);
-            }
+        box.setFocusableInTouchMode(true);
+        TextView caption = new TextView(ctx);
+        caption.setText(Strings.pick("Ширина чата, пкс", "Chat width, px"));
+        box.addView(caption);
+        LinearLayout row = new LinearLayout(ctx);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        EditText width = new EditText(ctx);
+        width.setContentDescription(caption.getText());
+        width.setSingleLine(true);
+        width.setInputType(InputType.TYPE_CLASS_NUMBER);
+        width.setSelectAllOnFocus(true);
+        int current = Math.round(base * TheatreSettings.getSideChatWidthPercent() / 100f);
+        int min = Math.round(base * TheatreSettings.MIN_WIDTH_PERCENT / 100f);
+        int max = Math.round(base * TheatreSettings.MAX_WIDTH_PERCENT / 100f);
+        int defaultWidth = Math.round(base * TheatreSettings.DEFAULT_WIDTH_PERCENT / 100f);
+        width.setText(String.valueOf(current));
+        row.addView(width, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+        for (int step : new int[]{-1, 1}) {
+            Button button = new Button(ctx);
+            button.setText(step < 0 ? "-1" : "+1");
+            button.setOnClickListener(v -> {
+                Integer value = SettingsScreen.inRange(width, min, max);
+                if (value != null) width.setText(String.valueOf(Math.max(min, Math.min(max, value + step))));
+            });
+            row.addView(button);
         }
+        box.addView(row);
 
         Switch over = new Switch(ctx);
         over.setText(Toggles.CHAT_OVER_VIDEO.label());
         over.setChecked(Toggles.on(Toggles.CHAT_OVER_VIDEO));
-        over.setOnCheckedChangeListener((button, on) -> {
-            Toggles.set(ctx, Toggles.CHAT_OVER_VIDEO, on);
-            update(root);
-        });
         box.addView(over, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(ctx, 48)));
-
-        final int[] steps = TheatreSettings.CHAT_BG_STEPS;
-        final TextView label = new TextView(ctx);
-        final SeekBar bar = new SeekBar(ctx);
-        bar.setMax(steps.length - 1);
-        bar.setProgress(stepIndex(TheatreSettings.getChatBgOpacity()));
-        label.setText(Strings.pickf("Фон чата: %s", "Chat background: %s", TheatreSettings.getChatBgOpacity() + "%"));
+        TextView label = new TextView(ctx);
+        SeekBar bar = new SeekBar(ctx);
+        int opacity = TheatreSettings.getChatBgOpacity();
+        bar.setMax(100);
+        bar.setProgress(opacity);
+        Runnable showOpacity = () -> label.setText(Strings.pickf("Фон чата: %s", "Chat background: %s", bar.getProgress() + "%"));
+        showOpacity.run();
         bar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                if (fromUser) {
-                    TheatreSettings.setChatBgOpacity(ctx, steps[progress]);
-                    label.setText(Strings.pickf("Фон чата: %s", "Chat background: %s", steps[progress] + "%"));
-                    update(root);
-                }
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-            }
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-            }
+            @Override public void onProgressChanged(SeekBar view, int value, boolean fromUser) { showOpacity.run(); }
+            @Override public void onStartTrackingTouch(SeekBar view) {}
+            @Override public void onStopTrackingTouch(SeekBar view) {}
         });
         box.addView(label);
         box.addView(bar);
-
-        new AlertDialog.Builder(ctx)
-                .setView(box)
-                .setPositiveButton(Strings.pick("Готово", "Done"), null)
-                .show();
-    }
-
-    /** The step of {@link TheatreSettings#CHAT_BG_STEPS} nearest to {@code percent}. */
-    static int stepIndex(int percent) {
-        int[] steps = TheatreSettings.CHAT_BG_STEPS;
-        int best = 0;
-        for (int i = 1; i < steps.length; i++) {
-            if (Math.abs(steps[i] - percent) < Math.abs(steps[best] - percent)) {
-                best = i;
-            }
-        }
-        return best;
+        ScrollView scroll = new ScrollView(ctx);
+        scroll.addView(box);
+        boolean[] reset = {false};
+        AlertDialog dialog = new AlertDialog.Builder(ctx).setView(scroll)
+                .setNegativeButton(Strings.cancel(), null).setNeutralButton(Strings.reset(), null)
+                .setPositiveButton(Strings.save(), null).show();
+        dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener(v -> {
+            reset[0] = true;
+            width.setText(String.valueOf(defaultWidth));
+            over.setChecked(Toggles.CHAT_OVER_VIDEO.defaultOn);
+            bar.setProgress(TheatreSettings.DEFAULT_CHAT_BG);
+        });
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+            Integer px = SettingsScreen.inRange(width, min, max);
+            if (px == null) return;
+            if (reset[0] && px == defaultWidth) TheatreSettings.resetSideChatWidth(ctx);
+            else if (px != current) TheatreSettings.setSideChatWidthPercent(ctx, px * 100f / base);
+            if (reset[0] && bar.getProgress() == TheatreSettings.DEFAULT_CHAT_BG) TheatreSettings.resetChatBgOpacity(ctx);
+            else if (bar.getProgress() != opacity) TheatreSettings.setChatBgOpacity(ctx, bar.getProgress());
+            if (over.isChecked() != Toggles.on(Toggles.CHAT_OVER_VIDEO)) Toggles.set(ctx, Toggles.CHAT_OVER_VIDEO, over.isChecked());
+            dialog.dismiss();
+            saved.run();
+        });
     }
 
     /**

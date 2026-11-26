@@ -563,6 +563,11 @@ public final class Toggles {
             .note("Модератору на чужом канале на этом месте кнопка «Режим модератора», она тоже скрывается",
                     "A moderator sees Mod View there on other channels, it's hidden as well")
             .asNew("0.5.31-beta");
+    public static final Toggle HIDE_PROFILE_EDIT = new Toggle("hide_profile_edit", "Редактировать профиль", "Edit Profile", false)
+            .about("Скрывает кнопку в верхней части вашего профиля", "Hides the button at the top of your profile")
+            .compare("Над баннером кнопки настроек и редактирования", "Над баннером только настройки",
+                    "Settings and Edit Profile above the banner", "Only Settings above the banner")
+            .asNew("0.5.48-beta");
     /** Shelves of the channel page's Home tab (React Native, RnScript). */
     public static final Toggle HIDE_PROFILE_RECAPS = new Toggle("hide_profile_recaps", "Записи эфиров", "Stream recaps", true)
             .about("Полка последних записей трансляций на главной вкладке канала", "The latest stream recaps shelf on the channel's Home tab")
@@ -739,8 +744,8 @@ public final class Toggles {
     public static final Toggle OFFLINE_SORT = new Toggle("offline_channel_sort_menu", "Сортировка неактивных каналов", "Sort offline channels", true)
             .about("Кнопка сортировки появится рядом с заголовком неактивных каналов в «Отслеживаемом»",
                     "Adds a sort button beside Your Offline Channels in Following")
-            .note("Сортируются загруженные каналы. Время просмотра эфиров на этом устройстве считается с выбора «Чаще смотрю». В приватном режиме время не записывается.",
-                    "Sorts loaded channels. Local live watch time starts accumulating when you choose Most watched. Private viewing is excluded.")
+            .note("Выбранный порядок сохраняется, даже если скрыть кнопку. Время просмотра для сортировки считается только при включённой кнопке и вне приватного режима.",
+                    "Hiding the button keeps the selected order. Watch-time sorting records local viewing time only while the button is enabled and private viewing is off.")
             .compare("Порядок Twitch", "Порядок на выбор", "Twitch order", "Choose the order").asNew("0.5.45-beta");
 
     public static final Toggle SORT_FOLLOWED_CATEGORIES = new Toggle("sort_followed_categories", "Категории по алфавиту", "Categories A to Z", true)

@@ -31,7 +31,7 @@ public final class TheatreSettings {
 
     /** Chat background opacity steps, %: the settings slider and the quick panel on the divider. */
     public static final int[] CHAT_BG_STEPS = {0, 20, 40, 60, 80, 100};
-    private static final int DEFAULT_CHAT_BG = 60;
+    static final int DEFAULT_CHAT_BG = 60;
 
     /**
      * Twitch's own default side-chat width (30% of the largest screen edge --
@@ -90,6 +90,10 @@ public final class TheatreSettings {
 
     public static void setChatBgOpacity(Context context, int percent) {
         setInt(context, KEY_CHAT_BG, Math.max(0, Math.min(100, percent)));
+    }
+
+    static void resetChatBgOpacity(Context context) {
+        prefs(context).edit().remove(KEY_CHAT_BG).apply();
     }
 
     /** Whether the opacity was chosen: only then does the overlay chat bubble (Twitch's own look otherwise) follow it. */

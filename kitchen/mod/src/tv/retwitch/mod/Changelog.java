@@ -13,6 +13,19 @@ import android.text.TextUtils;
 public final class Changelog {
 
     private static final String[][] ENTRIES = {
+            {"0.5.48-beta",
+                    "Ширину бокового чата в пикселях можно ввести в настройках полного экрана или по нажатию на границу чата. В окне доступны «Сохранить», «Отмена» и «Сбросить»\n"
+                            + "Сортировка неактивных каналов сохраняется при скрытой кнопке. Добавлены сортировка от Я до А и по наименьшему времени просмотра\n"
+                            + "В разделе «Скрыть элементы» можно скрыть кнопку редактирования своего профиля\n"
+                            + "Для всех пяти аудиофильтров можно ввести точное значение нажатием на название или изменить его ползунком\n"
+                            + "Поиск учитывает включённые настройки. Удерживайте результат, в том числе сам ползунок, чтобы перейти к нему\n"
+                            + "Ручки ползунков видны целиком у обоих краёв в настройках и в поиске",
+                    "Enter the side chat width in pixels in fullscreen settings or by tapping the divider. The dialog has Save, Cancel and Reset buttons\n"
+                            + "Offline channels keep their sort order when the button is hidden. You can now sort from Z to A or by least watched on this device\n"
+                            + "Hide elements can hide the Edit Profile button on your profile\n"
+                            + "Tap any of the five audio filter labels to enter an exact level, or drag its slider\n"
+                            + "Settings search shows available options. Long-press a result, including a slider, to open it on its settings page\n"
+                            + "Slider thumbs stay fully visible at both ends in settings and search"},
             {"0.5.47-beta",
                     "В разделе «Скрыть элементы» кнопки, вкладки и баннеры сгруппированы по экранам. В поиске настроек можно набрать, например, «скрыть Cast»\n"
                             + "Мастер быстрой настройки сразу показывает флажки. При повторном запуске он учитывает ваш выбор. Размер превью в «Отслеживаемом» теперь меняется только в разделе «Главная»\n"

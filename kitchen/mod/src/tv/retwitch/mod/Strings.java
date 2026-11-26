@@ -528,10 +528,6 @@ public final class Strings {
     // Player/chat divider (landscape side-by-side)
     // ------------------------------------------------------------------
 
-    public static String dividerWidthResetToast() {
-        return pick("Ширина чата сброшена", "Chat width reset");
-    }
-
     public static String dividerHandleDesc() {
         return pick("Перетащите, чтобы изменить размер чата и плеера",
                 "Drag to resize the chat and the player");
@@ -914,14 +910,9 @@ public final class Strings {
     }
 
     /** Choice labels for an audio filter: "0" = off, else "+3 dB" / "50%". */
-    public static String[] audioLevelLabels(int[] values, boolean percent) {
-        String[] labels = new String[values.length];
-        for (int i = 0; i < values.length; i++) {
-            int v = values[i];
-            labels[i] = v == 0 ? pick("Выкл.", "Off")
-                    : percent ? v + "%" : (v > 0 ? "+" : "") + v + pick(" дБ", " dB");
-        }
-        return labels;
+    static String audioLevelLabel(int value, boolean percent) {
+        return value == 0 ? pick("Выкл.", "Off")
+                : percent ? value + "%" : (value > 0 ? "+" : "") + value + pick(" дБ", " dB");
     }
 
     /** Order of ChatSettings.NAME_*. */

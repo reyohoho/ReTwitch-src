@@ -37,8 +37,12 @@ public final class OfflineChannelSort {
         return c == null ? 0 : c.getSharedPreferences(WATCH_TIME, Context.MODE_PRIVATE).getInt("mode", 0);
     }
 
+    private static boolean byWatchTime(int mode) {
+        return mode == 1 || mode == 3;
+    }
+
     private static boolean recording() {
-        return !PrivateViewing.ENABLED && Toggles.on(Toggles.OFFLINE_SORT) && mode() == 1;
+        return !PrivateViewing.ENABLED && Toggles.on(Toggles.OFFLINE_SORT) && byWatchTime(mode());
     }
 
     /** StreamSwitch identifies the live (not seekable) theatre including proxied streams. Main thread. */
@@ -127,7 +131,9 @@ public final class OfflineChannelSort {
     };
 
     static JSONObject config() throws Exception {
-        if (!Toggles.on(Toggles.OFFLINE_SORT)) return null;
+        boolean showMenu = Toggles.on(Toggles.OFFLINE_SORT);
+        int mode = mode();
+        if (!showMenu && mode == 0) return null;
         String url;
         try {
             url = VaftServer.offlineSortEndpoint();
@@ -136,28 +142,31 @@ public final class OfflineChannelSort {
             return null;
         }
         return new JSONObject().put("url", url)
-                .put("mode", mode())
+                .put("mode", mode).put("showMenu", showMenu)
                 .put("title", Strings.pick("Сортировка неактивных каналов", "Sort offline channels"))
                 .put("stock", Strings.pick("Как в Twitch", "As in Twitch"))
                 .put("frequency", Strings.pick("Чаще смотрю на этом устройстве", "Most watched on this device"))
-                .put("alpha", Strings.pick("По алфавиту", "A to Z"));
+                .put("least", Strings.pick("Реже смотрю на этом устройстве", "Least watched on this device"))
+                .put("alpha", Strings.pick("По алфавиту", "A to Z"))
+                .put("reverseAlpha", Strings.pick("В обратном алфавитном порядке", "Z to A"));
     }
 
     /** Called only inside the secret loopback route, GET reads, POST chooses a mode. */
     public static String response(Uri uri, boolean change) throws JSONException {
         Context c = AppContext.get();
-        if (c == null || !Toggles.on(Toggles.OFFLINE_SORT)) return "{}";
-        if (change) {
+        if (c == null) return "{}";
+        if (change && Toggles.on(Toggles.OFFLINE_SORT)) {
             String mode = uri.getQueryParameter("mode");
-            if ("0".equals(mode) || "1".equals(mode) || "2".equals(mode)) {
-                c.getSharedPreferences(WATCH_TIME, Context.MODE_PRIVATE).edit().putInt("mode", Integer.parseInt(mode)).apply();
-                if (!"1".equals(mode)) MAIN.post(OfflineChannelSort::stop);
+            if (mode != null && mode.length() == 1 && mode.charAt(0) >= '0' && mode.charAt(0) <= '4') {
+                int next = Integer.parseInt(mode);
+                c.getSharedPreferences(WATCH_TIME, Context.MODE_PRIVATE).edit().putInt("mode", next).apply();
+                if (!byWatchTime(next)) MAIN.post(OfflineChannelSort::stop);
             }
         }
         int mode = mode();
         JSONObject ranks = new JSONObject();
         String user = TwitchAuth.getUserId();
-        if (mode == 1 && !user.isEmpty()) {
+        if (byWatchTime(mode) && !user.isEmpty()) {
             String prefix = user + "/";
             for (Map.Entry<String, ?> e : c.getSharedPreferences(WATCH_TIME, Context.MODE_PRIVATE).getAll().entrySet()) {
                 if (e.getKey().startsWith(prefix) && e.getValue() instanceof Long) {

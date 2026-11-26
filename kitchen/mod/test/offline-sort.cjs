@@ -6,7 +6,7 @@ const vm = require('node:vm');
 const source = readFileSync(path.join(__dirname, '../../retwitch-patches/resources/retwitch-rn.js'), 'utf8');
 const make = (type, props, ...kids) => ({type, props: {...props, ...(kids.length ? {children: kids.length === 1 ? kids[0] : kids} : {})}});
 const clone = (e, props, ...kids) => make(e.type, {...e.props, ...props}, ...kids);
-const url = 'http://localhost/test', config = {mode: 0, url, title: 'Sort', stock: 'Stock', frequency: 'Most watched', alpha: 'A to Z'};
+const url = 'http://localhost/test', config = {mode: 0, showMenu: true, url, title: 'Sort', stock: 'Stock', frequency: 'Most watched', alpha: 'A to Z', least: 'Least watched', reverseAlpha: 'Z to A'};
 let serverMode = 0, ranks = {}, calls = 0, state = [], index, effects = [], textBase = '#efeff1';
 function IconFilter() {}
 const listeners = new Map();
@@ -53,6 +53,7 @@ function render(enabled = true) {
     const section = shelf.type(shelf.props);
     for (const fn of effects.splice(0)) fn();
     const [header, list] = section.props.children;
+    if (header.type === 'Title') return {rows: list.props.children, header};
     const [button, menu] = header.props.children[0].props.children[1].props.children;
     return {rows: list.props.children, list, button, menu, header, section};
 }
@@ -74,15 +75,21 @@ const logins = out => Array.from(out.rows, r => r.props.edge.node.login).join(',
         assert.equal(filter.props.fillColor, textBase);
     }
     out.button.props.onPress(); out = render(); assert.equal(out.menu.props.show, true);
-    out.menu.props.items[2].onPress(); await settle(); out = render();
+    out.menu.props.items[3].onPress(); await settle(); out = render();
     assert.equal(logins(out), 'a,b,c');
     assert.equal(out.rows[0].props.itemPosition, 0); assert.ok(out.rows[0].props.gatesAppLoad);
     assert.equal(out.rows[0].props.newVideoCount, 4); assert.equal(out.rows[0].props.onOpenProfile, visit);
     assert.equal(out.list.props.onLayout, visit);
     ranks = {c: 100, a: 20}; out.menu.props.items[1].onPress(); await settle(); out = render(); assert.equal(logins(out), 'c,a,b');
+    assert.deepEqual(Array.from(out.menu.props.items, i => i.children), ['Stock', 'Most watched', 'Least watched', 'A to Z', 'Z to A']);
+    out.menu.props.items[2].onPress(); await settle(); out = render(); assert.equal(logins(out), 'b,a,c');
+    out.menu.props.items[1].onPress(); await settle(); out = render();
     ranks = {b: 400}; listeners.get('TwitchRNFeedVisibility:state')({visible: true}); await settle(); out = render(); assert.equal(logins(out), 'b,a,c');
     rows = [...rows, row('d', 'Aardvark', 3)]; out = render();
-    out.menu.props.items[2].onPress(); await settle(); out = render(); assert.equal(logins(out), 'd,a,b,c');
+    out.menu.props.items[3].onPress(); await settle(); out = render(); assert.equal(logins(out), 'd,a,b,c');
     out.menu.props.items[0].onPress(); await settle(); out = render(); assert.equal(logins(out), 'b,a,c,d');
+    out.menu.props.items[4].onPress(); await settle(); out = render(); assert.equal(logins(out), 'c,b,a,d');
+    config.showMenu = false; config.mode = serverMode; state = [];
+    out = render(); await settle(); out = render(); assert.equal(out.header.type, 'Title'); assert.equal(logins(out), 'c,b,a,d');
     console.log('Offline shelf: stock, duration, A–Z, pagination, returning, hidden state and row actions OK');
 })().catch(e => {console.error(e); process.exitCode = 1;});

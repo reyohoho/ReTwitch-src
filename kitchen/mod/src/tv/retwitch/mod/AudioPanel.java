@@ -51,13 +51,11 @@ final class AudioPanel {
         box.addView(filters, row(context));
 
         List<View> sliders = new ArrayList<>();
-        int[] db = {-12, -9, -6, -3, 0, 3, 6, 9, 12};
-        int[] percent = {0, 25, 50, 75, 100};
-        slider(context, box, sliders, Strings.audioBoostLabel(), AudioCompressor.BOOST, new int[]{0, 2, 4, 6, 8, 10, 12}, false);
-        slider(context, box, sliders, Strings.audioBassLabel(), AudioCompressor.BASS, db, false);
-        slider(context, box, sliders, Strings.audioTrebleLabel(), AudioCompressor.TREBLE, db, false);
-        slider(context, box, sliders, Strings.audioVoiceLabel(), AudioCompressor.VOICE, percent, true);
-        slider(context, box, sliders, Strings.audioLimitLabel(), AudioCompressor.LIMIT, percent, true);
+        slider(context, box, sliders, Strings.audioBoostLabel(), AudioCompressor.BOOST, false);
+        slider(context, box, sliders, Strings.audioBassLabel(), AudioCompressor.BASS, false);
+        slider(context, box, sliders, Strings.audioTrebleLabel(), AudioCompressor.TREBLE, false);
+        slider(context, box, sliders, Strings.audioVoiceLabel(), AudioCompressor.VOICE, true);
+        slider(context, box, sliders, Strings.audioLimitLabel(), AudioCompressor.LIMIT, true);
         CompoundButton.OnCheckedChangeListener filtersChanged = (b, on) -> {
             Toggles.set(context, Toggles.AUDIO_FILTERS, on);
             AudioCompressor.refresh();
@@ -82,10 +80,10 @@ final class AudioPanel {
         }
     }
 
-    /** A filter: its name with the current value, and a stepped slider over {@code values}. */
+    /** Drag the slider or tap its label to enter a level. */
     private static void slider(Context context, LinearLayout box, List<View> sliders, String name, String key,
-            int[] values, boolean percent) {
-        String[] labels = Strings.audioLevelLabels(values, percent);
+            boolean percent) {
+        int min = AudioCompressor.min(key), max = AudioCompressor.max(key);
         TextView label = new TextView(context);
         label.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
@@ -93,32 +91,17 @@ final class AudioPanel {
         lp.topMargin = dp(context, 10);
         box.addView(label, lp);
         SeekBar bar = new SeekBar(context);
-        bar.setMax(values.length - 1);
-        int index = 0;
-        for (int i = 0; i < values.length; i++) {
-            if (values[i] == AudioCompressor.filter(key)) {
-                index = i;
-            }
-        }
-        bar.setProgress(index);
-        label.setText(name + ": " + labels[index]);
-        bar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                label.setText(name + ": " + labels[progress]);
-                if (fromUser) {
-                    AudioCompressor.setFilter(context, key, values[progress]);
-                }
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-            }
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-            }
-        });
+        int level = AudioCompressor.filter(key);
+        bar.setMax(max - min);
+        bar.setProgress(level - min);
+        label.setText(name + ": " + Strings.audioLevelLabel(level, percent));
+        label.setOnClickListener(v -> SettingsScreen.editLevel(context, name, AudioCompressor.filter(key), min, max, value -> {
+            AudioCompressor.setFilter(context, key, value);
+            bar.setProgress(value - min);
+        }));
+        bar.setOnSeekBarChangeListener(SettingsScreen.sliderChanges(true,
+                i -> label.setText(name + ": " + Strings.audioLevelLabel(min + i, percent)),
+                i -> AudioCompressor.setFilter(context, key, min + i)));
         box.addView(bar, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(context, 36)));
         sliders.add(label);
         sliders.add(bar);

@@ -107,8 +107,9 @@ public final class PlayerSelfCheck {
         assert VodSeek.stepMillis(-10000) == -10000;
         assert VodSeek.stepMillis(30000) == 30000;
 
-        // Chat offset range is PurpleTV's -30..+90 s; no offset without a VOD.
-        assert VodChatSync.clamp(-100) == VodChatSync.MIN && VodChatSync.clamp(500) == VodChatSync.MAX;
+        // Typed offsets can exceed the slider range, up to ten hours in either direction.
+        assert VodChatSync.clamp(-100) == -100 && VodChatSync.clamp(500) == 500;
+        assert VodChatSync.clamp(-36001) == -36000 && VodChatSync.clamp(36001) == 36000;
         assert VodChatSync.clamp(15) == 15;
         assert VodChatSync.shift(new Object(), 42) == 42;
 

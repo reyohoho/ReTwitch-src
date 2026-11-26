@@ -27,7 +27,9 @@ import android.transition.AutoTransition;
 import android.transition.TransitionManager;
 import android.util.Log;
 import android.util.TypedValue;
+import android.view.GestureDetector;
 import android.view.Gravity;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
@@ -1132,7 +1134,7 @@ final class SettingsScreen {
             Runnable children) {
         if (probing || query != null) {
             switchRow(rowTitle, summary, value, restart, setter, extra, null);
-            children.run();
+            if (value || probing) children.run();
             return;
         }
         LinearLayout box = new LinearLayout(context);
@@ -1169,6 +1171,7 @@ final class SettingsScreen {
             }
             apply(() -> setter.set(on));
             track(rowTitle, restart, !on, on);
+            if (query != null) render(true);
         };
         control.setContentDescription(rowTitle);
         Detail detail = extra.scene == 0 && extra.before == null && extra.note == null && !restart ? null
@@ -1497,22 +1500,23 @@ final class SettingsScreen {
         int selected = closest;
         String original = labels[selected];
         labels[selected] = current + unit;
-        slider(title, labels, selected, false, i -> {
+        slider(title, labels.length, i -> labels[i], selected, false, i -> {
             labels[selected] = original;
             write.set(steps[i]);
-        }, () -> editNumber(title, read.getAsInt(), def, write));
+        }, () -> editNumber(title, read.getAsInt(), def, write), false);
     }
 
     void slider(final String rowTitle, final String[] labels, int index, final boolean restart, final IntSetter setter) {
-        slider(rowTitle, labels, index, restart, setter, null);
+        slider(rowTitle, labels.length, i -> labels[i], index, restart, setter, null, false);
     }
 
-    private void slider(String rowTitle, String[] labels, int index, boolean restart, IntSetter setter, Runnable edit) {
+    void slider(String rowTitle, int count, java.util.function.IntFunction<String> label, int index, boolean restart,
+                IntSetter setter, Runnable edit, boolean saveOnRelease) {
         Extra extra = take();
         if (skip(rowTitle, null, extra)) {
             return;
         }
-        final int[] current = {Math.max(0, Math.min(index, labels.length - 1))};
+        final int[] current = {Math.max(0, Math.min(index, count - 1))};
         LinearLayout row = new LinearLayout(context);
         row.setOrientation(LinearLayout.VERTICAL);
         row.setPadding(dp(16), dp(12), dp(16), dp(8));
@@ -1520,7 +1524,7 @@ final class SettingsScreen {
         head.setGravity(Gravity.CENTER_VERTICAL);
         head.addView(rowTexts(rowTitle, null, extra, restart),
                 new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
-        TextView value = text(labels[current[0]], 14, accentText);
+        TextView value = text(label.apply(current[0]), 14, accentText);
         value.setTypeface(medium);
         if (edit != null) {
             head.setOnClickListener(v -> edit.run());
@@ -1529,35 +1533,48 @@ final class SettingsScreen {
         head.addView(value);
         row.addView(head);
         SeekBar bar = new SeekBar(context);
-        bar.setMax(labels.length - 1);
+        bar.setMax(count - 1);
         bar.setProgress(current[0]);
         bar.setProgressTintList(ColorStateList.valueOf(accent));
         bar.setThumbTintList(ColorStateList.valueOf(accent));
         bar.setProgressBackgroundTintList(ColorStateList.valueOf(fgDim));
-        bar.setPadding(0, dp(10), 0, dp(10));
+        int inset = bar.getThumbOffset();
+        bar.setPadding(Math.max(bar.getPaddingLeft(), inset), dp(10), Math.max(bar.getPaddingRight(), inset), dp(10));
         bar.setContentDescription(rowTitle);
-        bar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                if (fromUser && progress != current[0]) {
-                    int was = current[0];
-                    current[0] = progress;
-                    value.setText(labels[progress]);
-                    apply(() -> setter.set(progress));
-                    track(rowTitle, restart, was, progress);
-                }
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-            }
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-            }
-        });
+        bar.setOnSeekBarChangeListener(sliderChanges(saveOnRelease, i -> value.setText(label.apply(i)), progress -> {
+            int was = current[0];
+            if (progress == was) return;
+            current[0] = progress;
+            apply(() -> setter.set(progress));
+            track(rowTitle, restart, was, progress);
+        }));
         row.addView(bar);
         addToCard(row);
+    }
+
+    /** Preview every step. Expensive audio effects are rebuilt once per drag; keyboard changes take effect immediately. */
+    static SeekBar.OnSeekBarChangeListener sliderChanges(boolean saveOnRelease, IntSetter show, IntSetter save) {
+        return new SeekBar.OnSeekBarChangeListener() {
+            private boolean dragging;
+            private int pending = -1;
+
+            @Override public void onProgressChanged(SeekBar bar, int progress, boolean fromUser) {
+                show.set(progress);
+                if (!fromUser) return;
+                if (dragging) pending = progress;
+                else save.set(progress);
+            }
+
+            @Override public void onStartTrackingTouch(SeekBar bar) {
+                dragging = saveOnRelease;
+            }
+
+            @Override public void onStopTrackingTouch(SeekBar bar) {
+                dragging = false;
+                if (pending >= 0) save.set(pending);
+                pending = -1;
+            }
+        };
     }
 
     void number(final String rowTitle, final int value, final IntSetter setter) {
@@ -1609,6 +1626,38 @@ final class SettingsScreen {
         if (def != null) {
             resetWhileChanged(dialog, input, def);
         }
+    }
+
+    /** Exact audio level from either the settings row or the player panel. */
+    static void editLevel(Context context, String title, int current, int min, int max, IntSetter save) {
+        editRange(context, title, current, min, max, 0, save, () -> save.set(0));
+    }
+
+    /** A null default keeps Reset available for a stored override even if it equals the displayed default. */
+    static void editRange(Context context, String title, int current, int min, int max, Integer def,
+                          IntSetter save, Runnable reset) {
+        EditText input = new EditText(context);
+        input.setSingleLine(true);
+        input.setInputType(InputType.TYPE_CLASS_NUMBER | (min < 0 ? InputType.TYPE_NUMBER_FLAG_SIGNED : 0));
+        input.setText(String.valueOf(current));
+        input.setSelectAllOnFocus(true);
+        AlertDialog dialog = new AlertDialog.Builder(context).setTitle(title).setView(input)
+                .setPositiveButton(Strings.save(), null).setNegativeButton(Strings.cancel(), null)
+                .setNeutralButton(Strings.reset(), (d, w) -> reset.run()).show();
+        if (def != null) resetWhileChanged(dialog, input, def);
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+            Integer number = inRange(input, min, max);
+            if (number == null) return;
+            save.set(number);
+            dialog.dismiss();
+        });
+    }
+
+    static Integer inRange(EditText input, int min, int max) {
+        Integer number = parseInt(input);
+        if (number != null && number >= min && number <= max) return number;
+        input.setError(Strings.pickf("Введите число от %d до %d", "Enter a number from %d to %d", min, max));
+        return null;
     }
 
     /** The typed whole number, or null. */
@@ -1900,7 +1949,7 @@ final class SettingsScreen {
         }
         target.addView(row);
         if (query != null) {
-            goToOnLongPress(row, new ArrayList<>(searchTrail), firstText(row));
+            goToOnLongPress(row, new ArrayList<>(searchTrail), firstText(row), true);
         }
     }
 
@@ -1914,11 +1963,11 @@ final class SettingsScreen {
 
     /**
      * A search result's clickable parts open the page it lives on with a long press (reyohoho/ReTwitch-src#37), and
-     * scroll to it there. Only views that already take taps: a long-clickable one would swallow its parent's tap. The
+     * scroll to it there. The row handles empty space; only clickable descendants get listeners to preserve taps. The
      * title is the row's: a switch's own zone holds no text.
      */
-    private void goToOnLongPress(View view, final ArrayList<Object[]> trail, final TextView title) {
-        if (view.isClickable()) {
+    private void goToOnLongPress(View view, final ArrayList<Object[]> trail, final TextView title, boolean wholeRow) {
+        if (wholeRow || view.isClickable() || view instanceof SeekBar) {
             view.setOnLongClickListener(v -> {
                 hideSearchKeyboard();
                 clearSearch();
@@ -1943,10 +1992,20 @@ final class SettingsScreen {
                 return true;
             });
         }
+        if (view instanceof SeekBar) {
+            // AbsSeekBar handles the touch itself and never dispatches View's long press.
+            GestureDetector hold = new GestureDetector(context, new GestureDetector.SimpleOnGestureListener() {
+                @Override public void onLongPress(MotionEvent e) { view.performLongClick(); }
+            });
+            view.setOnTouchListener((v, event) -> {
+                hold.onTouchEvent(event);
+                return false;
+            });
+        }
         if (view instanceof ViewGroup) {
             ViewGroup group = (ViewGroup) view;
             for (int i = 0; i < group.getChildCount(); i++) {
-                goToOnLongPress(group.getChildAt(i), trail, title);
+                goToOnLongPress(group.getChildAt(i), trail, title, false);
             }
         }
     }
