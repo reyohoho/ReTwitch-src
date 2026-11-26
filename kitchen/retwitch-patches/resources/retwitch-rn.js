@@ -10,7 +10,7 @@
         resolveLiveUrl: !!config.privateViewEvents, resolveLiveUrlSync: !!config.privateViewEvents, signClipRenditionUrl: !!config.privateViewEvents,
         FeedStreamItem: config.compactLive, FeedAdItem: config.compactLive, RecapsShelfHeader: config.hideFollowedShelf,
         FeedShelfContainer: config.hideClipsShelf, FollowingTab: !!config.friends || fav, FollowingCategories: !!config.friends,
-        useFollowingTabData: fav || config.hideLiveEmpty, FollowingLiveHeader: fav, TrackedFollowingChannelRow: fav, FollowingChannelMenu: fav,
+        useFollowingTabData: fav || config.hideLiveEmpty, FollowingLiveHeader: fav, FollowingLiveSortMenu: config.hideLiveSort, TrackedFollowingChannelRow: fav, FollowingChannelMenu: fav,
         ChannelProfileOverflowMenu: fav, FollowingRowTags: config.hideTags,
         StoriesEmptyState: config.hideStoriesEmpty, useStoriesShelf: config.hideStoriesEmpty || config.hideStories,
         FollowingChannelRow: config.previewSize > 0 || config.categoryTap || config.hideCategory,
@@ -955,6 +955,7 @@
         },
         // With live favorites, their rows come first and Twitch's header ("Live channels", sort) moves below them:
         // TrackedFollowingChannelRow draws it after the last favorite. Without, the section stands above the header.
+        FollowingLiveSortMenu: function () { return function () { return null; }; },
         FollowingLiveHeader: function (original) {
             LiveHeader = original;
             return function (props) {
@@ -1341,7 +1342,7 @@
         else Object.keys(targets).forEach(function (name) {
             if (targets[name] && name in exports) {
                 // A barrel can expose these buttons via a read-only getter. Patch the component's defining module.
-                if ((name === 'FollowingOfflineChannels' || name === 'IconButton' || name === 'FeedFollowButton' || name === 'ClipsFeedPage' || name === 'FeedClipItem' || name === 'createSpadeReporter' ||
+                if ((name === 'FollowingOfflineChannels' || name === 'FollowingLiveSortMenu' || name === 'IconButton' || name === 'FeedFollowButton' || name === 'ClipsFeedPage' || name === 'FeedClipItem' || name === 'createSpadeReporter' ||
                         name === 'resolveLiveUrl' || name === 'resolveLiveUrlSync' || name === 'signClipRenditionUrl') &&
                         !(Object.getOwnPropertyDescriptor(exports, name) || {}).writable) return;
                 targets[name] = false;

@@ -105,7 +105,7 @@ public final class TimerSettings {
         return prefs(context).getInt(key, fallback);
     }
 
-    private static SharedPreferences prefs(Context context) {
+    static SharedPreferences prefs(Context context) {
         return context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
     }
 }

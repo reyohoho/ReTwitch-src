@@ -13,6 +13,17 @@ import android.text.TextUtils;
 public final class Changelog {
 
     private static final String[][] ENTRIES = {
+            {"0.5.49-beta",
+                    "В разделе «Скрыть элементы» можно отдельно скрыть сортировку активных каналов на главной, категорий и трансляций в «Просмотре». Выбранный порядок сохраняется\n"
+                            + "При переходе из поиска мигает только найденная настройка\n"
+                            + "В настройках бокового чата «Сбросить» появляется, только если значения отличаются от исходных\n"
+                            + "Таймер сна сразу появляется вместе с кнопками плеера и доступен даже при скрытой шестерёнке\n"
+                            + "Видео подстраивается под ширину бокового чата после «Копировать и отправить» и при вводе с физической клавиатуры",
+                    "Hide elements lets you hide the Live Now, Browse Categories and Browse Live Channels sort buttons separately. Each list keeps its sort order\n"
+                            + "Jumping from search highlights only the matching setting\n"
+                            + "Side chat settings show Reset only when a value differs from its default\n"
+                            + "The sleep timer appears with the player controls and stays available when the settings gear is hidden\n"
+                            + "The video fits beside chat after Copy and send and when typing with a physical keyboard"},
             {"0.5.48-beta",
                     "Ширину бокового чата в пикселях можно ввести в настройках полного экрана или по нажатию на границу чата. В окне доступны «Сохранить», «Отмена» и «Сбросить»\n"
                             + "Сортировка неактивных каналов сохраняется при скрытой кнопке. Добавлены сортировка от Я до А и по наименьшему времени просмотра\n"

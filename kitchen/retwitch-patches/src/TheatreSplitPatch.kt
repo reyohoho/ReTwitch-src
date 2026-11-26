@@ -4,12 +4,14 @@ import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.extensions.InstructionExtensions.instructions
 import app.morphe.patcher.extensions.InstructionExtensions.replaceInstruction
 import app.morphe.patcher.util.proxy.mutableTypes.MutableMethod.Companion.toMutable
+import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.builder.MutableMethodImplementation
 import com.android.tools.smali.dexlib2.immutable.ImmutableMethod
 import com.android.tools.smali.dexlib2.immutable.ImmutableMethodParameter
 import app.morphe.patcher.fingerprint
 import app.morphe.patcher.patch.bytecodePatch
+import com.android.tools.smali.dexlib2.iface.instruction.TwoRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.FiveRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.WideLiteralInstruction
@@ -210,6 +212,34 @@ val retwitchTheatreSplitPatch = bytecodePatch(
         } catch (e: Exception) {
             println("[ReTwitch] theatre split: ConstraintSet renderer skipped: $e")
         }
+
+        try {
+            val fit = videoSizeFingerprint.method
+            val code = fit.instructions
+            val registers = fit.implementation!!.registerCount
+            val inputs = code.take(2).map { it as TwoRegisterInstruction }
+            require(inputs.map { it.registerA } == listOf(registers - 2, registers - 1) &&
+                    inputs.all { it.registerB == registers - 3 } && registers <= 16)
+            val (width, height) = code.take(2).map { (it as ReferenceInstruction).reference as FieldReference }
+            val at = code.indexOfFirst { (it as? ReferenceInstruction)?.reference.toString() == "Landroid/view/View;->getWidth()I" }
+            val root = (code[at] as FiveRegisterInstruction).registerC
+            val owner = mutableClassDefBy(fit.definingClass)
+            val sizer = "Ltv/retwitch/mod/TheatreDividerHook\$VideoSizer;"
+            val refit = ImmutableMethod(owner.type, "retwitchRefitVideo", emptyList(), "V",
+                AccessFlags.PUBLIC.value or AccessFlags.SYNTHETIC.value, null, null, MutableMethodImplementation(3)).toMutable()
+            refit.addInstructions(0, """
+                iget v0, p0, $width
+                iget v1, p0, $height
+                invoke-virtual {p0, v0, v1}, ${owner.type}->${fit.name}(II)V
+                return-void
+            """.trimIndent())
+            fit.addInstructions(at, "invoke-static {v$root, p0}, $HOOK->watchVideoSize(Landroid/view/View;$sizer)V")
+            owner.interfaces.add(sizer)
+            owner.methods.add(refit)
+            println("[ReTwitch] side chat video resize: ${owner.type}->${fit.name}(II)V")
+        } catch (e: Exception) {
+            println("[ReTwitch] side chat video resize skipped: $e")
+        }
     }
 }
 
@@ -221,4 +251,22 @@ private fun percentSetter(instruction: com.android.tools.smali.dexlib2.iface.ins
     val ref = (instruction as? ReferenceInstruction)?.reference as? MethodReference ?: return false
     return ref.definingClass == setType && ref.returnType == "V" &&
         ref.parameterTypes.map { it.toString() } == listOf("F", "I")
+}
+
+// The live delegate caches source width/height, then fits the playback view into its current root.
+// Reuse that exact calculation when the side chat changes the root's width.
+private val videoSizeFingerprint = fingerprint {
+    parameters("I", "I")
+    returns("V")
+    custom { method, _ ->
+        val code = method.implementation?.instructions?.toList() ?: return@custom false
+        if (code.size < 3 || code.take(2).any { it.opcode != Opcode.IPUT }) return@custom false
+        val refs = code.mapNotNull { (it as? ReferenceInstruction)?.reference?.toString() }
+        refs.any { it.startsWith("Ltv/twitch/android/core/mvp/viewdelegate/BaseViewDelegate;->") && it.endsWith(":Landroid/view/View;") } &&
+                "Landroid/view/View;->getWidth()I" in refs && "Landroid/view/View;->getHeight()I" in refs &&
+                "Landroid/view/ViewGroup\$LayoutParams;->width:I" in refs &&
+                "Landroid/view/ViewGroup\$LayoutParams;->height:I" in refs &&
+                "Landroid/view/View;->requestLayout()V" in refs &&
+                code.take(2).all { ((it as ReferenceInstruction).reference as? FieldReference)?.definingClass == method.definingClass }
+    }
 }

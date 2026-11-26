@@ -408,7 +408,8 @@ public final class SettingsHook {
                         width),
                 () -> SettingsScreen.editRange(c, Strings.pick("Ширина чата, пкс", "Chat width, px"), width,
                         TheatreDividerHook.chatWidthPx(TheatreSettings.MIN_WIDTH_PERCENT),
-                        TheatreDividerHook.chatWidthPx(TheatreSettings.MAX_WIDTH_PERCENT), null, px -> {
+                        TheatreDividerHook.chatWidthPx(TheatreSettings.MAX_WIDTH_PERCENT),
+                        TheatreDividerHook.chatWidthPx(TheatreSettings.DEFAULT_WIDTH_PERCENT), px -> {
                             if (px != width || !TheatreSettings.hasSideChatWidth()) TheatreSettings.setSideChatWidthPercent(c, px * 100f / base);
                             s.render(true);
                         }, () -> {
@@ -958,6 +959,7 @@ public final class SettingsHook {
         s.toggle(Toggles.HIDE_FOLLOWING_CONTINUE);
         s.toggle(Toggles.HIDE_FINISHED_CONTINUE);
         s.toggle(Toggles.HIDE_FOLLOWING_OFFLINE);
+        s.toggle(Toggles.HIDE_FOLLOWING_LIVE_SORT);
         s.toggle(Toggles.HIDE_LIVE_EMPTY);
         s.toggle(Toggles.HIDE_STREAM_TAGS);
         s.toggle(Toggles.HIDE_FOLLOWING_CATEGORY);
@@ -967,6 +969,9 @@ public final class SettingsHook {
         s.toggle(Toggles.HIDE_LIVE_MUTE);
         s.toggle(Toggles.HIDE_LIVE_MORE);
         s.toggle(Toggles.HIDE_LIVE_FOLLOW);
+        s.section(t("Скрыть в «Просмотре»", "Hide in Browse"));
+        s.toggle(Toggles.HIDE_BROWSE_CATEGORY_SORT);
+        s.toggle(Toggles.HIDE_BROWSE_STREAM_SORT);
     }
 
     /** The home screen is React Native: these act on its data, so most take a restart. */

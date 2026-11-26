@@ -268,6 +268,40 @@ public final class TheatreDividerHook {
         return typingPercent > 0 ? typingPercent : TheatreSettings.getSideChatWidthPercent();
     }
 
+    /** Implemented by the patched Twitch delegate using its own current source dimensions and zoom mode. */
+    public interface VideoSizer {
+        void retwitchRefitVideo();
+    }
+
+    private static final int VIDEO_SIZER = 0x7e700efd;
+
+    public static void watchVideoSize(View root, VideoSizer sizer) {
+        try {
+            if (root.getTag(VIDEO_SIZER) == sizer || root.getId() != UiHider.id(root.getContext(), "player_view_delegate")) return;
+            if (root.getTag(VIDEO_SIZER) == null) {
+                root.addOnLayoutChangeListener((v, l, t, r, b, oldL, oldT, oldR, oldB) -> {
+                    try {
+                        boolean resized = r - l != oldR - oldL || b - t != oldB - oldT;
+                        if (oldR > oldL && oldB > oldT && resized && landscape() && PlayerHook.theatreOpen()) {
+                            v.post(() -> {
+                                try {
+                                    if (v.isShown()) ((VideoSizer) v.getTag(VIDEO_SIZER)).retwitchRefitVideo();
+                                } catch (Throwable failure) {
+                                    onFailure(v.getContext(), "refit video", failure);
+                                }
+                            });
+                        }
+                    } catch (Throwable failure) {
+                        onFailure(v.getContext(), "video layout", failure);
+                    }
+                });
+            }
+            root.setTag(VIDEO_SIZER, sizer);
+        } catch (Throwable failure) {
+            onFailure(root.getContext(), "watch video size", failure);
+        }
+    }
+
     /** From {@link UiHider}: half-screen chat while the keyboard is up or a poll/prediction is open, the usual width after. */
     static void setTyping(View root, boolean typing) {
         int percent = typing ? TYPING_PERCENT : 0;
@@ -346,6 +380,7 @@ public final class TheatreDividerHook {
      * side-by-side chat column (stream theatre <i>or</i> VOD) is on screen.
      */
     private static void update(View root) {
+        if (UiHider.layingOut(root)) return;
         if (dragging) {
             // The drag handler owns the split + handle position while a drag is
             // in flight; stay out of its way.
@@ -1043,11 +1078,6 @@ public final class TheatreDividerHook {
         bar.setProgress(opacity);
         Runnable showOpacity = () -> label.setText(Strings.pickf("Фон чата: %s", "Chat background: %s", bar.getProgress() + "%"));
         showOpacity.run();
-        bar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override public void onProgressChanged(SeekBar view, int value, boolean fromUser) { showOpacity.run(); }
-            @Override public void onStartTrackingTouch(SeekBar view) {}
-            @Override public void onStopTrackingTouch(SeekBar view) {}
-        });
         box.addView(label);
         box.addView(bar);
         ScrollView scroll = new ScrollView(ctx);
@@ -1056,6 +1086,15 @@ public final class TheatreDividerHook {
         AlertDialog dialog = new AlertDialog.Builder(ctx).setView(scroll)
                 .setNegativeButton(Strings.cancel(), null).setNeutralButton(Strings.reset(), null)
                 .setPositiveButton(Strings.save(), null).show();
+        Runnable syncReset = SettingsScreen.resetWhileChanged(dialog, width,
+                text -> Integer.valueOf(defaultWidth).equals(SettingsScreen.parseInt(width))
+                        && over.isChecked() == Toggles.CHAT_OVER_VIDEO.defaultOn
+                        && bar.getProgress() == TheatreSettings.DEFAULT_CHAT_BG);
+        over.setOnCheckedChangeListener((button, checked) -> syncReset.run());
+        bar.setOnSeekBarChangeListener(SettingsScreen.sliderChanges(false, value -> {
+            showOpacity.run();
+            syncReset.run();
+        }, value -> {}));
         dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener(v -> {
             reset[0] = true;
             width.setText(String.valueOf(defaultWidth));

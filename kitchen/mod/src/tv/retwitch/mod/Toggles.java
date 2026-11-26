@@ -741,6 +741,20 @@ public final class Toggles {
                     "On channels where the streak isn't extended yet")
             .look(SettingsPreview.HOME, SettingsPreview.H_STREAK).asNew("0.4.11-alpha");
     /** RnFollowingHook.strip: the server sends them oldest follow first. */
+    public static final Toggle HIDE_FOLLOWING_LIVE_SORT = new Toggle("hide_following_live_sort", "Сортировка активных каналов", "Live Now sort button", true)
+            .about("Скрывает кнопку в «Отслеживаемом». Выбранный порядок каналов сохраняется.",
+                    "Hides the button in Following. Channels keep their selected order.")
+            .compare("Рядом с заголовком эфиров есть кнопка сортировки", "Только заголовок эфиров",
+                    "Live Now with a sort button", "Only the Live Now heading").asNew("0.5.49-beta");
+    public static final Toggle HIDE_BROWSE_CATEGORY_SORT = new Toggle("hide_browse_category_sort", "Сортировка категорий", "Categories sort button", false)
+            .about("Скрывает сортировку во вкладке «Категории» раздела «Просмотр»", "Hides the sort button on Browse > Categories")
+            .compare("У вкладок кнопка сортировки", "Только вкладки, порядок категорий прежний",
+                    "Sort button beside the tabs", "Only the tabs, categories keep their order").asNew("0.5.49-beta");
+    public static final Toggle HIDE_BROWSE_STREAM_SORT = new Toggle("hide_browse_stream_sort", "Сортировка трансляций", "Live Channels sort button", false)
+            .about("Скрывает сортировку во вкладке «Активные каналы» раздела «Просмотр»", "Hides the sort button on Browse > Live Channels")
+            .compare("У вкладок кнопка сортировки", "Только вкладки, порядок трансляций прежний",
+                    "Sort button beside the tabs", "Only the tabs, streams keep their order").asNew("0.5.49-beta");
+
     public static final Toggle OFFLINE_SORT = new Toggle("offline_channel_sort_menu", "Сортировка неактивных каналов", "Sort offline channels", true)
             .about("Кнопка сортировки появится рядом с заголовком неактивных каналов в «Отслеживаемом»",
                     "Adds a sort button beside Your Offline Channels in Following")

@@ -5,8 +5,8 @@ const path = require('node:path');
 const vm = require('node:vm');
 const source = readFileSync(path.join(__dirname, '../../retwitch-patches/resources/retwitch-rn.js'), 'utf8');
 
-for (let mask = 0; mask < 8; mask++) {
-    const config = {hideLiveMute: !!(mask & 1), hideLiveMore: !!(mask & 2), hideLiveFollow: !!(mask & 4)};
+for (let mask = 0; mask < 16; mask++) {
+    const config = {hideLiveSort: !!(mask & 8), hideLiveMute: !!(mask & 1), hideLiveMore: !!(mask & 2), hideLiveFollow: !!(mask & 4)};
     const context = {__retwitchRn: config};
     vm.runInNewContext(source, context);
     context.__d = (factory, exports) => factory(null, null, null, null, {exports});
@@ -18,6 +18,10 @@ for (let mask = 0; mask < 8; mask++) {
     load(barrel);
     load(icons);
     load(follow);
+    const sort = {FollowingLiveSortMenu: original}, sortBarrel = {get FollowingLiveSortMenu() { return sort.FollowingLiveSortMenu; }};
+    load(sortBarrel); load(sort);
+    const props = {sortMethod: 'VIEWER_COUNT', onSelect() { throw Error('changed the order'); }};
+    assert.equal(sortBarrel.FollowingLiveSortMenu(props), config.hideLiveSort ? null : props);
     function check(component, testID, hidden) {
         const props = {testID, onPress() {}, ref: {}};
         assert.equal(component(props), hidden ? null : props);

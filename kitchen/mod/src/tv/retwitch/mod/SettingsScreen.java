@@ -1707,12 +1707,10 @@ final class SettingsScreen {
         }, null, null);
     }
 
-    private static void resetWhileChanged(AlertDialog dialog, final TextView input,
+    static Runnable resetWhileChanged(AlertDialog dialog, final TextView input,
                                           final java.util.function.Predicate<String> isDefault) {
         final View reset = dialog.getButton(AlertDialog.BUTTON_NEUTRAL);
-        if (reset == null) {
-            return;
-        }
+        if (reset == null) return () -> {};
         final Runnable sync = () -> reset.setVisibility(
                 isDefault.test(input.getText().toString()) ? View.INVISIBLE : View.VISIBLE);
         input.addTextChangedListener(new TextWatcher() {
@@ -1730,6 +1728,7 @@ final class SettingsScreen {
             }
         });
         sync.run();
+        return sync;
     }
 
     // ---- navigation and actions ----
@@ -1942,7 +1941,10 @@ final class SettingsScreen {
         return card;
     }
 
+    private static final int SETTINGS_ROW = 0x7e700efc;
+
     private void addToCard(View row) {
+        row.setTag(SETTINGS_ROW, Boolean.TRUE);
         LinearLayout target = card();
         if (target.getChildCount() > 0 || target != list && target.getPaddingLeft() > 0) {
             addDivider(target, 16, 0);
@@ -2019,7 +2021,7 @@ final class SettingsScreen {
     /** The row a search jump landed on blinks twice once the scroll settles (reyohoho/ReTwitch-src#43). */
     private void flash(View found) {
         View row = found;
-        while (row.getParent() instanceof View && row.getParent() != list && ((View) row.getParent()).getParent() != list) {
+        while (row.getTag(SETTINGS_ROW) == null && row.getParent() instanceof View && row.getParent() != list) {
             row = (View) row.getParent();
         }
         final View target = row;

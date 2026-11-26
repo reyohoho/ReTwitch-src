@@ -105,7 +105,7 @@ public final class UiHider {
             "fullscreen_button", "chat_mode_button", "emote_picker", "chat_header_container", "emoticon_picker",
             "chomments_header_container", "mod_dashboard_button", "edit_profile_button", "chat_restrictions_container", "minimized_overlay",
             "pinch_to_zoom_layout", "options_scrollview",
-            "theatre_root_container",
+            "theatre_root_container", "following_tab_sort_and_filter_button", "sort_and_filter_button_container",
             "seek_forward_button", "seek_rewind_button",
             "community_points_button_container", "right_side_community_points_button_container",
             // An id missing here costs a whole extra tree walk per pass (findAll falls back to collect).
@@ -127,6 +127,7 @@ public final class UiHider {
     private static final Set<View> HIDDEN = Collections.newSetFromMap(new WeakHashMap<View, Boolean>());
     private static final Map<Class<?>, Method> MENU_GETTERS = new HashMap<>();
     private static boolean installed;
+    private static boolean forcingLayout;
     private static boolean sideChatTouched;
     private static boolean chatModeTouched;
     private static boolean typingTouched;
@@ -135,6 +136,7 @@ public final class UiHider {
     private static boolean pointsTouched;
     private static boolean replayHeaderTouched;
     private static boolean profileButtonsTouched;
+    private static boolean sortButtonsTouched;
     private static boolean miniTouched;
     private static boolean restrictionsTouched;
     private static boolean overlayCalloutMarked;
@@ -234,6 +236,7 @@ public final class UiHider {
             @Override
             public void onGlobalLayout() {
                 long t0 = UiStallLog.start();
+                if (layingOut(decor)) return;
                 LandingTabHook.checkPipFeed(activity, decor);
                 int hiddenBefore = hiddenCount;
                 safeApply(activity, decor);
@@ -241,12 +244,15 @@ public final class UiHider {
                     // A delayed transition (the player metadata's) takes its end bounds in pre-draw and suppresses
                     // layout until it ends: lay out now, or the room of the view just hidden stays empty (issue #5).
                     try {
+                        forcingLayout = true;
                         decor.measure(View.MeasureSpec.makeMeasureSpec(decor.getWidth(), View.MeasureSpec.EXACTLY),
                                 View.MeasureSpec.makeMeasureSpec(decor.getHeight(), View.MeasureSpec.EXACTLY));
                         decor.layout(decor.getLeft(), decor.getTop(), decor.getRight(), decor.getBottom());
                     } catch (Throwable t) {
                         Log.w(TAG, "relayout failed", t);
                         CrashReporter.report(TAG, "relayout failed", t);
+                    } finally {
+                        forcingLayout = false;
                     }
                 }
                 UiStallLog.end("UiHider", t0);
@@ -314,7 +320,13 @@ public final class UiHider {
         return found;
     }
 
+    /** Compose can dispatch global layout, and hiding a field can change focus, inside a parent layout pass. */
+    static boolean layingOut(View root) {
+        return forcingLayout || root.isInLayout();
+    }
+
     private static void safeApply(Activity activity, View decor) {
+        if (layingOut(decor)) return;
         try {
             apply(activity, decor);
         } catch (Throwable t) {
@@ -402,6 +414,22 @@ public final class UiHider {
             }
         }
         applyUnfollow(activity, decor);
+        boolean liveSort = Toggles.on(Toggles.HIDE_FOLLOWING_LIVE_SORT);
+        boolean categoriesSort = Toggles.on(Toggles.HIDE_BROWSE_CATEGORY_SORT);
+        boolean streamsSort = Toggles.on(Toggles.HIDE_BROWSE_STREAM_SORT);
+        if (liveSort || categoriesSort || streamsSort || sortButtonsTouched) {
+            sortButtonsTouched = liveSort || categoriesSort || streamsSort;
+            hideWhileAll(activity, decor, liveSort, "following_tab_sort_and_filter_button");
+            for (View button : findAll(activity, decor, "sort_and_filter_button_container")) {
+                View tabs = find(activity, (View) button.getParent(), "browse_tab_layout");
+                if (!(tabs instanceof ViewGroup)) continue;
+                View strip = ((ViewGroup) tabs).getChildAt(0);
+                if (!(strip instanceof ViewGroup)) continue;
+                ViewGroup items = (ViewGroup) strip;
+                if (items.getChildCount() == 2) hideWhile(categoriesSort && items.getChildAt(0).isSelected()
+                        || streamsSort && items.getChildAt(1).isSelected(), button);
+            }
+        }
         boolean streamManager = Toggles.on(Toggles.HIDE_PROFILE_STREAM_MANAGER);
         boolean editProfile = Toggles.on(Toggles.HIDE_PROFILE_EDIT);
         if (streamManager || editProfile || profileButtonsTouched) {
@@ -1629,6 +1657,10 @@ public final class UiHider {
         }
     }
 
+    static boolean hiddenByMod(View view) {
+        return view.getTag(HIDDEN_TAG_KEY) != null;
+    }
+
     /** Hides {@code view} while {@code hidden}; shows it again afterwards only if we hid it. */
     private static void hideWhile(boolean hidden, View view) {
         hideWhile(hidden, view, View.GONE);
@@ -1645,7 +1677,7 @@ public final class UiHider {
                 hiddenCount++;
             }
             HIDDEN.add(view);
-        } else if (view.getTag(HIDDEN_TAG_KEY) != null) {
+        } else if (hiddenByMod(view)) {
             view.setTag(HIDDEN_TAG_KEY, null);
             HIDDEN.remove(view);
             if (view.getVisibility() == visibility) {

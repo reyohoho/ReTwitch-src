@@ -51,6 +51,7 @@ public final class RnScript {
             boolean hideFollowedShelf = Toggles.on(Toggles.HIDE_LIVE_FOLLOWED_SHELF);
             boolean hideClipsShelf = Toggles.on(Toggles.HIDE_LIVE_CLIPS_SHELF);
             boolean hideLiveMute = Toggles.on(Toggles.HIDE_LIVE_MUTE);
+            boolean hideLiveSort = Toggles.on(Toggles.HIDE_FOLLOWING_LIVE_SORT);
             boolean hideLiveMore = Toggles.on(Toggles.HIDE_LIVE_MORE);
             boolean hideLiveFollow = Toggles.on(Toggles.HIDE_LIVE_FOLLOW);
             JSONObject clipButtons = new JSONObject();
@@ -79,7 +80,7 @@ public final class RnScript {
             boolean profileCategories = Toggles.on(Toggles.HIDE_PROFILE_CATEGORIES);
             boolean profileStreamers = Toggles.on(Toggles.HIDE_PROFILE_STREAMERS);
             if (offlineSort == null && !PrivateViewing.ENABLED && wallpaper == null && !compactLive && !hideFollowedShelf && !hideClipsShelf && !hideStoriesEmpty && !hideLiveEmpty && !hideTags && !friends
-                    && !hideCategory && !categoryTap && !noHomeSwipe && !hideLiveMute && !hideLiveMore && !hideLiveFollow && clipButtons.length() == 0
+                    && !hideCategory && !categoryTap && !noHomeSwipe && !hideLiveSort && !hideLiveMute && !hideLiveMore && !hideLiveFollow && clipButtons.length() == 0
                     && previewSize == 0
                     && !tabIndicator && !hideStories && !hideTabs && !liveToTop && !favorites && !uptime
                     && !profileRecaps && !profileClips && !profileUserClips && !profileCategories && !profileStreamers) {
@@ -93,6 +94,7 @@ public final class RnScript {
                     .put("compactLive", compactLive)
                     .put("hideFollowedShelf", hideFollowedShelf)
                     .put("hideClipsShelf", hideClipsShelf)
+                    .put("hideLiveSort", hideLiveSort)
                     .put("hideLiveMute", hideLiveMute)
                     .put("hideLiveMore", hideLiveMore)
                     .put("hideLiveFollow", hideLiveFollow)
