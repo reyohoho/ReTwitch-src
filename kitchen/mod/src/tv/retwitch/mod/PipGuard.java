@@ -2,6 +2,10 @@ package tv.retwitch.mod;
 
 import android.app.Activity;
 import android.app.PictureInPictureParams;
+import android.content.Context;
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.util.Log;
 
 /**
@@ -38,6 +42,35 @@ public final class PipGuard {
     private static volatile boolean reported;
 
     private PipGuard() {
+    }
+
+    /** The browser can cover Twitch before Android's automatic PiP transition starts. */
+    public static void beforeBrowserLaunch(Context context, Intent intent) {
+        try {
+            if (!PlayerHook.theatreOpen() || !Toggles.on(Toggles.CHAT_LINK_PIP)) return;
+            Activity activity = SettingsBackup.activity(context);
+            if (activity == null || !activity.getClass().getName().equals("tv.twitch.android.feature.viewer.landing.ViewerLandingActivity")
+                    || activity.isFinishing() || activity.isInPictureInPictureMode()) return;
+            Uri uri = intent.getData();
+            String scheme = uri == null ? null : uri.getScheme();
+            if (!"https".equalsIgnoreCase(scheme) && !"http".equalsIgnoreCase(scheme)) return;
+            if (intent.getPackage() == null) {
+                android.content.ComponentName target = intent.resolveActivity(context.getPackageManager());
+                if (target == null || context.getPackageName().equals(target.getPackageName())) return;
+            }
+            if (!activity.getPackageManager().hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE)
+                    || !activity.getSharedPreferences("twitch_app_prefs", Context.MODE_PRIVATE).getBoolean("auto_popout_m", true)) return;
+            Object state = PlayerStats.call(PlayerHook.currentPlayer(), "getState");
+            if (!PlayerStats.isRunning(state)) return;
+
+            // Empty params reuse Twitch's configured aspect ratio, source bounds and media controls.
+            if (activity.enterPictureInPictureMode(new PictureInPictureParams.Builder().build())) {
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            }
+        } catch (Throwable t) {
+            Log.w(TAG, "browser link PiP failed", t);
+            CrashReporter.report(TAG, "browser link PiP failed", t);
+        }
     }
 
     /**

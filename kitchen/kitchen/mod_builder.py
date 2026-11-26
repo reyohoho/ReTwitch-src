@@ -71,6 +71,7 @@ MOD_BUILD_DIR = WORK_DIR / "mod_build"
 # NoSuchMethodError this fixes). Kotlin stdlib is intentionally NOT relocated.
 RELOCATED_PACKAGE = "tv.retwitch.vendor"
 RELOCATION_RULES = (
+    f"rule com.google.android.material.color.utilities.** {RELOCATED_PACKAGE}.material.@1\n"
     f"rule okhttp3.** {RELOCATED_PACKAGE}.okhttp3.@1\n"
     f"rule okio.** {RELOCATED_PACKAGE}.okio.@1\n"
 )
@@ -285,7 +286,8 @@ def build_mod_dex(env: Env) -> Path:
     # Compile-only jars (androidx.annotation for AppMetrica's annotated
     # signatures) are on the javac classpath but must NOT be dexed -- see
     # COMPILE_ONLY_JAR_NAMES.
-    compile_cp = jars + compile_only_jars()
+    material_jar = LIBS_DIR / "material-1.12.0.jar"
+    compile_cp = jars + compile_only_jars() + [material_jar]
 
     # Compile our sources against the *original* okhttp3.*/okio.* -- mod/src
     # imports the real package names; the relocation below rewrites those
@@ -323,6 +325,10 @@ def build_mod_dex(env: Env) -> Path:
     rules_file.write_text(RELOCATION_RULES, encoding="UTF-8")
 
     mod_classes_jar = MOD_BUILD_DIR / "mod-classes.jar"
+    # Only the HCT solver and tonal palettes; never bundle the Android widgets or replace Twitch's Material classes.
+    with zipfile.ZipFile(material_jar) as material:
+        for cls in ("CorePalette", "TonalPalette", "Hct", "HctSolver", "Cam16", "ViewingConditions", "ColorUtils", "MathUtils"):
+            material.extract("com/google/android/material/color/utilities/" + cls + ".class", classes_dir)
     _jar_from_dir(classes_dir, mod_classes_jar)
 
     reloc_inputs = [mod_classes_jar] + [LIBS_DIR / name for name in RELOCATED_JAR_NAMES]

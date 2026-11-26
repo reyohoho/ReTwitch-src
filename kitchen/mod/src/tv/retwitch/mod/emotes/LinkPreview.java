@@ -262,6 +262,7 @@ final class LinkPreview {
     private static void openLink(Context context, String link) {
         Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(link));
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        tv.retwitch.mod.PipGuard.beforeBrowserLaunch(context, intent);
         context.startActivity(intent);
     }
 

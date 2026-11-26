@@ -489,6 +489,7 @@ public final class ReloadHook {
                     new ViewTreeObserver.OnGlobalLayoutListener() {
                         @Override
                         public void onGlobalLayout() {
+                            if (UiHider.layingOut(root)) return;
                             long t0 = UiStallLog.start();
                             try {
                                 scanPass(root);
@@ -706,18 +707,49 @@ public final class ReloadHook {
             return;
         }
         View button = createButton(parent.getContext());
-        button.setId(View.generateViewId());
         ViewGroup.LayoutParams lp = cloneSiblingParams(anchor);
-        if (lp == null) {
-            lp = new LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        }
+        if (lp == null) lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT);
         lp.width = ViewGroup.LayoutParams.WRAP_CONTENT;
+        // The VOD widget has a weighted spacer. Give that space to the scrollable mod buttons
+        // so native controls are always measured at their full width, including Rotate.
+        for (int i = 0; i < index; i++) {
+            View spacer = parent.getChildAt(i);
+            LinearLayout.LayoutParams space = (LinearLayout.LayoutParams) spacer.getLayoutParams();
+            if (space.width == 0 && space.weight > 0 && spacer.getId() == View.NO_ID
+                    && underId(parent, idOf(parent.getContext(), SEEKABLE_BAR))) {
+                button = new VodStrip(spacer, (LinearLayout) button);
+                lp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, space.weight);
+                break;
+            }
+        }
+        button.setId(View.generateViewId());
         button.setLayoutParams(lp);
         button.setTag(ANCHOR_ID_TAG_KEY, Integer.valueOf(anchor.getId()));
         button.setVisibility(anchor.getVisibility());
         parent.addView(button, index);
         parent.requestLayout();
+    }
+
+    private static final class VodStrip extends android.widget.HorizontalScrollView {
+        final View spacer;
+        final int originalVisibility;
+
+        VodStrip(View spacer, LinearLayout buttons) {
+            super(buttons.getContext());
+            this.spacer = spacer;
+            originalVisibility = spacer.getVisibility();
+            setFillViewport(true);
+            setHorizontalScrollBarEnabled(false);
+            setTag(BUTTON_TAG);
+            setTag(BUTTON_TAG_KEY, Boolean.TRUE);
+            setTag(BUTTONS_TAG_KEY, buttons.getTag(BUTTONS_TAG_KEY));
+            buttons.setTag(null);
+            buttons.setTag(BUTTON_TAG_KEY, null);
+            buttons.setGravity(android.view.Gravity.END | android.view.Gravity.CENTER_VERTICAL);
+            addView(buttons);
+            spacer.setVisibility(View.GONE);
+        }
     }
 
     /**
@@ -739,6 +771,10 @@ public final class ReloadHook {
                     ? (ViewGroup) button.getParent() : null;
             if (parent != null) {
                 parent.removeView(button);
+                if (button instanceof VodStrip) {
+                    VodStrip strip = (VodStrip) button;
+                    strip.spacer.setVisibility(strip.originalVisibility);
+                }
                 parent.requestLayout();
                 lowerStats(parent);
             }

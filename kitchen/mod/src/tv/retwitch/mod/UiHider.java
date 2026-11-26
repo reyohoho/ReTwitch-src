@@ -92,7 +92,7 @@ public final class UiHider {
 
     /** Single ids looked up under the decor in a pass (with the arrays above); one walk finds them all. */
     private static final String[] SCANNED = {
-            PLAYER_OVERLAY, "metadata_widget", "unfollow_button", "follow_button", "mature_disclosure",
+            PLAYER_OVERLAY, "accent_frame_layout", "metadata_widget", "unfollow_button", "follow_button", "mature_disclosure",
             "stop_sign_button_affirmative", "stop_sign_button_affirmative_horizontal",
             "one_chat_message_input_view_container", "split_button", "bit_picker", "bits_button",
             "leaderboards_container", "leaderboards_icon", "paid_pinned_chat_container",
@@ -106,6 +106,7 @@ public final class UiHider {
             "chomments_header_container", "mod_dashboard_button", "edit_profile_button", "chat_restrictions_container", "minimized_overlay",
             "pinch_to_zoom_layout", "options_scrollview",
             "theatre_root_container", "following_tab_sort_and_filter_button", "sort_and_filter_button_container",
+            "explore_category_root", "more_options",
             "seek_forward_button", "seek_rewind_button",
             "community_points_button_container", "right_side_community_points_button_container",
             // An id missing here costs a whole extra tree walk per pass (findAll falls back to collect).
@@ -188,7 +189,7 @@ public final class UiHider {
     }
 
     private static void applySystemPalette(Activity activity) {
-        if (android.os.Build.VERSION.SDK_INT < 31 || !Toggles.on(Toggles.SYSTEM_PALETTE)
+        if (!SystemPalette.enabled()
                 || !activity.getClass().getName().startsWith("tv.twitch.android.")) {
             return;
         }
@@ -417,6 +418,13 @@ public final class UiHider {
         boolean liveSort = Toggles.on(Toggles.HIDE_FOLLOWING_LIVE_SORT);
         boolean categoriesSort = Toggles.on(Toggles.HIDE_BROWSE_CATEGORY_SORT);
         boolean streamsSort = Toggles.on(Toggles.HIDE_BROWSE_STREAM_SORT);
+        boolean insideSort = Toggles.on(Toggles.HIDE_CATEGORY_SORT), heart = Toggles.on(Toggles.HIDE_CATEGORY_HEART);
+        for (View category : findAll(activity, decor, "explore_category_root")) {
+            if (!insideSort && !heart && category.getTag(CATEGORY_TOUCHED) == null) continue;
+            category.setTag(CATEGORY_TOUCHED, insideSort || heart ? Boolean.TRUE : null);
+            hideWhile(heart, find(activity, category, "category_follow_button"));
+            hideWhile(insideSort, find(activity, category, "sort_and_filter_button_container"));
+        }
         if (liveSort || categoriesSort || streamsSort || sortButtonsTouched) {
             sortButtonsTouched = liveSort || categoriesSort || streamsSort;
             hideWhileAll(activity, decor, liveSort, "following_tab_sort_and_filter_button");
@@ -494,6 +502,7 @@ public final class UiHider {
         if (Toggles.on(Toggles.HIDE_ONE_CHAT_INPUT)) {
             hideOneChatInput(activity, decor);
         }
+        if (Toggles.on(Toggles.HIDE_NOTICE_STRIPE)) hideAll(activity, decor, "accent_frame_layout");
         if (Toggles.on(Toggles.HIDE_BITS_BUTTON)) {
             // bit_picker: the theatre chat input (party-popper icon); bits_button: the "one chat" overlay.
             hideAll(activity, decor, "bit_picker");
@@ -916,7 +925,8 @@ public final class UiHider {
      * {@code emote_picker} and {@code message_input} exist elsewhere too (the expanded chat
      * inside One Chat), hence only the pill's children and siblings.
      */
-    private static boolean optionsTouched;
+    private static final int CATEGORY_TOUCHED = 0x7e700efa;
+    private static final int OPTIONS_TOUCHED = 0x7e700efb;
 
     private static boolean allOn(Toggles.Toggle[] toggles) {
         for (Toggles.Toggle toggle : toggles) {
@@ -936,11 +946,9 @@ public final class UiHider {
                 speed = Toggles.on(Toggles.HIDE_OPTIONS_SPEED), external = Toggles.on(Toggles.HIDE_OPTIONS_EXTERNAL),
                 broadcaster = Toggles.on(Toggles.HIDE_OPTIONS_BROADCASTER);
         boolean any = quality || viewing || speed || external || broadcaster;
-        if (!any && !optionsTouched) {
-            return;
-        }
-        optionsTouched = any;
         for (View sheet : findAll(activity, decor, "options_scrollview")) {
+            if (!any && sheet.getTag(OPTIONS_TOUCHED) == null) continue;
+            sheet.setTag(OPTIONS_TOUCHED, any ? Boolean.TRUE : null);
             hideWhile(quality, find(activity, sheet, "quality_options_header"));
             hideWhile(quality, find(activity, sheet, "quality_options"));
             hideWhile(quality, find(activity, sheet, "unavailable_qualities_footnote"));
@@ -1450,7 +1458,9 @@ public final class UiHider {
     private static final Set<View> hiddenVideoMenus = Collections.newSetFromMap(new WeakHashMap<>());
 
     private static void syncVideoCardMenus(Activity activity, View decor) {
-        if (!Toggles.on(Toggles.HIDE_VIDEO_CARD_MENU)) {
+        boolean vodMenu = Toggles.on(Toggles.HIDE_VIDEO_CARD_MENU);
+        boolean categoryMenu = Toggles.on(Toggles.HIDE_CATEGORY_MORE);
+        if (!vodMenu && !categoryMenu) {
             if (!hiddenVideoMenus.isEmpty()) {
                 for (View button : hiddenVideoMenus) {
                     hideWhile(false, button);
@@ -1461,16 +1471,26 @@ public final class UiHider {
         }
         // video_card_recycler_item and collection_recycler_item share metadata_widget. Only VODs have vod_length.
         int duration = id(activity, "vod_length");
-        int more = id(activity, "more_options");
-        for (View metadata : findAll(activity, decor, "metadata_widget")) {
-            if (metadata.getParent() instanceof View && ((View) metadata.getParent()).findViewById(duration) != null) {
-                View button = metadata.findViewById(more);
-                if (button != null && button.getVisibility() == View.VISIBLE) {
-                    hideWhile(true, button);
-                    hiddenVideoMenus.add(button);
-                }
+        int metadataId = id(activity, "metadata_widget"), categoryId = id(activity, "explore_category_root");
+        for (View button : findAll(activity, decor, "more_options")) {
+            View metadata = vodMenu ? ancestorWithId(button, metadataId) : null;
+            boolean hide = categoryMenu && ancestorWithId(button, categoryId) != null
+                    || metadata != null && metadata.getParent() instanceof View
+                            && ((View) metadata.getParent()).findViewById(duration) != null;
+            if (hide && button.getVisibility() == View.VISIBLE) {
+                hideWhile(true, button);
+                hiddenVideoMenus.add(button);
+            } else if (!hide && hiddenVideoMenus.remove(button)) {
+                hideWhile(false, button);
             }
         }
+    }
+
+    private static View ancestorWithId(View view, int id) {
+        for (android.view.ViewParent p = view.getParent(); p instanceof View; p = p.getParent()) {
+            if (((View) p).getId() == id) return (View) p;
+        }
+        return null;
     }
 
     /** The tab settings take effect together on a fresh process (#80). */

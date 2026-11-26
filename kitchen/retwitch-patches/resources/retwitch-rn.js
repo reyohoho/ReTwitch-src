@@ -1266,7 +1266,7 @@
     }
 
     // Both themes are exported by @twitch-rn/tokens before any RN surface mounts.
-    // Leave overlayTheme (controls over video), status colours and per-channel colours alone.
+    // The overlay keeps its video scrim and neutral foregrounds.
     var wallpaper = config.wallpaper;
     function tintTheme(theme, dark) {
         var colors = theme.colors;
@@ -1284,8 +1284,8 @@
         paint('textAlt textAlt2', 'neutral2', dark ? 200 : 700);
         paint('borderBase borderRegion', 'neutral2', dark ? 600 : 300);
         paint('borderInput borderToggle', 'neutral2', dark ? 400 : 600);
-        paint('fillBrand backgroundBrand backgroundInputCheckboxChecked', 'accent1', 600);
-        paint('fillBrandHover', 'accent1', 700);
+        paint('fillBrand backgroundBrand backgroundInputCheckboxChecked backgroundButtonIconPrimary', 'accent1', 600);
+        paint('fillBrandHover backgroundButtonIconPrimaryPressed', 'accent1', 700);
         paint('buttonPrimaryTextColor', 'neutral1', 0);
         paint('textLink textInteractableSelected borderBrand borderSpinnerFill backgroundToggleHandleChecked backgroundProgressStatus', 'accent1', dark ? 200 : 700);
         paint('backgroundInteractableSelected backgroundTagActive', 'accent1', dark ? 800 : 100);
@@ -1298,6 +1298,10 @@
             try {
                 tintTheme(exports.darkTheme, true);
                 tintTheme(exports.lightTheme, false);
+                var overlay = exports.overlayTheme && exports.overlayTheme.colors;
+                if (overlay && wallpaper.accent1_200) ['fillBrand', 'textLink'].forEach(function (key) {
+                    if (/^#(?:772ce8|9147ff|a970ff|bf94ff)$/i.test(overlay[key])) overlay[key] = wallpaper.accent1_200;
+                });
                 if (global.console) console.log('[ReTwitch] rn: wallpaper colours');
             } catch (e) {
                 if (global.console) console.warn('[ReTwitch] rn: wallpaper colours unavailable', String(e));

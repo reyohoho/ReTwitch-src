@@ -28,7 +28,7 @@ public final class RnScript {
 
     /** The RN bundle exports separate light and dark themes. Supply both, including when Twitch overrides Android's mode. */
     private static JSONObject wallpaperColours() throws org.json.JSONException {
-        if (android.os.Build.VERSION.SDK_INT < 31 || !Toggles.on(Toggles.SYSTEM_PALETTE)) return null;
+        if (!SystemPalette.enabled()) return null;
         Context context = AppContext.get();
         if (context == null) return null;
         JSONObject colours = new JSONObject();
@@ -37,7 +37,7 @@ public final class RnScript {
                 String name = family + "_" + tone;
                 int id = context.getResources().getIdentifier("system_" + name, "color", "android");
                 if (id == 0) return null;
-                colours.put(name, String.format(Locale.ROOT, "#%06x", context.getColor(id) & 0xffffff));
+                colours.put(name, String.format(Locale.ROOT, "#%06x", SystemPalette.tone(context, id) & 0xffffff));
             }
         }
         return colours;

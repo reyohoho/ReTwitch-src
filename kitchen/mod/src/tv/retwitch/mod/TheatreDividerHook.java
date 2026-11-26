@@ -317,9 +317,40 @@ public final class TheatreDividerHook {
      * fixed size like Twitch's own 279dp, so it doesn't follow the theatre's
      * width when the system bars show and hide with the player controls.
      */
+    private static int windowLongEdge;
+
     static int chatWidthPx(float percent) {
-        android.util.DisplayMetrics dm = AppContext.get().getResources().getDisplayMetrics();
-        return Math.round(Math.max(dm.widthPixels, dm.heightPixels) * percent / 100f);
+        int base = windowLongEdge;
+        if (base <= 0) {
+            android.util.DisplayMetrics dm = AppContext.get().getResources().getDisplayMetrics();
+            base = Math.max(dm.widthPixels, dm.heightPixels);
+        }
+        return Math.round(base * percent / 100f);
+    }
+
+    /** App display metrics can exclude different system bars in portrait and landscape. */
+    private static void rememberWindow(Activity activity) {
+        try {
+            if (activity.isInPictureInPictureMode()) return;
+            if (android.os.Build.VERSION.SDK_INT >= 30) {
+                android.view.WindowManager wm = activity.getWindowManager();
+                android.graphics.Rect bounds = (activity.isInMultiWindowMode()
+                        ? wm.getCurrentWindowMetrics() : wm.getMaximumWindowMetrics()).getBounds();
+                windowLongEdge = Math.max(bounds.width(), bounds.height());
+            } else {
+                View decor = activity.getWindow().getDecorView();
+                if (activity.isInMultiWindowMode() && decor.getWidth() > 0 && decor.getHeight() > 0) {
+                    windowLongEdge = Math.max(decor.getWidth(), decor.getHeight());
+                } else {
+                    android.graphics.Point size = new android.graphics.Point();
+                    activity.getWindowManager().getDefaultDisplay().getRealSize(size);
+                    windowLongEdge = Math.max(size.x, size.y);
+                }
+            }
+        } catch (Throwable t) {
+            windowLongEdge = 0;
+            onFailure(activity, "measure chat width", t);
+        }
     }
 
     private static void attachWatcher(Activity activity) {
@@ -336,9 +367,13 @@ public final class TheatreDividerHook {
             // Guard on the decor: AppCompat hands android.R.id.content to its own frame
             // after onActivityCreated, so a tag on the content view let onResume add a second listener.
             View decor = window.getDecorView();
+            rememberWindow(activity);
             if (root == null || decor.getTag(LISTENER_TAG_KEY) != null) {
                 return;
             }
+            decor.addOnLayoutChangeListener((v, l, t, r, b, ol, ot, or, ob) -> {
+                if (r - l != or - ol || b - t != ob - ot) rememberWindow(activity);
+            });
             final View rootRef = root;
             // A layout-pass watcher only: it reflows the split (VOD) and keeps
             // the drag handle placed/visible in sync with the theatre.
@@ -673,20 +708,27 @@ public final class TheatreDividerHook {
 
         /**
          * Chat width % for a finger at window x {@code rawX}: of the largest
-         * display edge in the theatre ({@link #chatWidthPx}), of the parent in VODs.
+         * window edge in the theatre and VODs ({@link #chatWidthPx}).
          */
         float chatPercentAt(float rawX, int parentLeft) {
             int pw = parent.getWidth();
             float chatPx = chatOnRight ? parentLeft + pw - rawX : rawX - parentLeft;
-            float base = guideline != null ? chatWidthPx(100) : pw;
+            float base = chatWidthPx(100);
             return TheatreSettings.clamp(chatPx * 100f / base);
         }
 
         /** Window x of the seam for a chat width of {@code percent} (see {@link #chatPercentAt}). */
         int boundaryXFor(float percent, int parentLeft) {
             int pw = parent.getWidth();
-            int chatPx = guideline != null ? chatWidthPx(percent) : Math.round(pw * percent / 100f);
+            int chatPx = widthAt(percent);
             return chatOnRight ? parentLeft + pw - chatPx : parentLeft + chatPx;
+        }
+
+        private int widthAt(float percent) {
+            int width = chatWidthPx(percent);
+            // A VOD in a smaller pane must still leave space for the video.
+            return guideline != null ? width : Math.min(width,
+                    Math.round(parent.getWidth() * TheatreSettings.MAX_WIDTH_PERCENT / 100f));
         }
 
         /**
@@ -703,7 +745,8 @@ public final class TheatreDividerHook {
                 guideline.setTag(GUIDE_TAG_KEY, Boolean.TRUE);
                 return false;
             }
-            float chatFrac = percent / 100f;
+            if (parent.getWidth() <= 0) return false;
+            float chatFrac = widthAt(percent) / (float) parent.getWidth();
             return apply(chatOnRight ? 1f - chatFrac : chatFrac, threshold);
         }
 
@@ -1025,12 +1068,8 @@ public final class TheatreDividerHook {
         return handle;
     }
 
-    /** The VOD divider is relative to the parent, live chat to the long display edge. */
     private static void openQuickPanel(View handle) {
-        DragState drag = (DragState) handle.getTag(DRAG_TAG_KEY);
-        int base = drag != null && drag.split != null && drag.split.guideline == null
-                ? drag.split.parent.getWidth() : chatWidthPx(100);
-        widthDialog(handle.getContext(), base, () -> update(handle.getRootView()));
+        widthDialog(handle.getContext(), chatWidthPx(100), () -> update(handle.getRootView()));
     }
 
     private static void widthDialog(Context ctx, int base, Runnable saved) {
@@ -1078,6 +1117,9 @@ public final class TheatreDividerHook {
         bar.setProgress(opacity);
         Runnable showOpacity = () -> label.setText(Strings.pickf("Фон чата: %s", "Chat background: %s", bar.getProgress() + "%"));
         showOpacity.run();
+        label.setOnClickListener(v -> SettingsScreen.editRange(ctx,
+                Strings.pick("Фон чата, %", "Chat background, %"), bar.getProgress(), 0, 100,
+                TheatreSettings.DEFAULT_CHAT_BG, bar::setProgress, () -> bar.setProgress(TheatreSettings.DEFAULT_CHAT_BG)));
         box.addView(label);
         box.addView(bar);
         ScrollView scroll = new ScrollView(ctx);

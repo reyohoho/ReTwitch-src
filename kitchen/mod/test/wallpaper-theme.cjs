@@ -9,12 +9,12 @@ function loadThemes(wallpaper) {
     const context = {__retwitchRn: {wallpaper}};
     vm.runInNewContext(source, context);
     context.__d = (factory, exports) => factory(null, null, null, null, {exports});
-    const stock = () => ({colors: {backgroundBase: '#18181b', textBase: '#efeff1', textLive: '#eb0400'}});
+    const stock = () => ({colors: {backgroundBase: '#18181b', textBase: '#efeff1', textLive: '#eb0400', fillBrand: '#9147ff', textLink: '#ffffff'}});
     const themes = {darkTheme: stock(), lightTheme: stock(), overlayTheme: stock(), commonColors: {}};
     context.__d(() => {}, themes);
     return themes;
 }
-const palette = {neutral1_900: '#211a21', neutral1_50: '#f2eef2'};
+const palette = {neutral1_900: '#211a21', neutral1_50: '#f2eef2', accent1_200: '#b8e3cc'};
 const patched = loadThemes(palette);
 assert.equal(patched.darkTheme.colors.backgroundBase, palette.neutral1_900);
 assert.equal(patched.lightTheme.colors.backgroundBase, palette.neutral1_50);
@@ -22,5 +22,8 @@ assert.equal(patched.darkTheme.colors.textBase, palette.neutral1_50);
 assert.equal(patched.lightTheme.colors.textBase, palette.neutral1_900);
 assert.equal(patched.darkTheme.colors.textLive, '#eb0400');
 assert.equal(patched.overlayTheme.colors.backgroundBase, '#18181b');
+assert.equal(patched.overlayTheme.colors.fillBrand, palette.accent1_200);
+assert.equal(patched.overlayTheme.colors.textLink, '#ffffff');
+assert.equal(loadThemes(null).overlayTheme.colors.fillBrand, '#9147ff');
 assert.equal(loadThemes(null).darkTheme.colors.backgroundBase, '#18181b');
 console.log('Wallpaper colours: both themes, stock overlay, status colours and opt-out OK');

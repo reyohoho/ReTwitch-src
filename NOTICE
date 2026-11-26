@@ -77,6 +77,7 @@ Libraries in the app
 --------------------
 
 - OkHttp, Okio, Kotlin standard library: Apache-2.0.
+- Material Color Utilities from Material Components for Android: Apache-2.0, Copyright Google LLC.
 - AppMetrica SDK: MIT, Copyright (c) 2023 YANDEX LLC.
 
 The full licence texts are in the app under "About" and in

@@ -13,6 +13,25 @@ import android.text.TextUtils;
 public final class Changelog {
 
     private static final String[][] ENTRIES = {
+            {"0.5.50-beta",
+                    "При включённом логе блокировки рекламы записываются разрешения видео из плейлиста и доступные и недоступные разрешения в плеере\n"
+                            + "При открытии ссылки из чата видео продолжает играть в режиме «Картинка в картинке» поверх браузера\n"
+                            + "Внутри категории можно отдельно скрыть сердце, сортировку и меню карточек\n"
+                            + "В плеере записей длинную полоску дополнительных кнопок можно прокрутить. Кнопка поворота остаётся на экране\n"
+                            + "Настройки и граница бокового чата показывают одинаковую ширину в пикселях. В окне границы можно нажать на «Фон чата» и ввести точный процент\n"
+                            + "После выключения скрытия качества его список возвращается в шторку плеера\n"
+                            + "В теме Material You можно выбрать цвета обоев, готовую палитру или свой цвет. Палитра применяется и в редакторе клипов и настройках модерации\n"
+                            + "В фильтрах чата можно скрыть боковую полоску у наград и серий просмотров, сохранив сообщения\n"
+                            + "Фильтр «Подписки и подарки» теперь скрывает и сообщения со счётчиком цели подписок канала",
+                    "The ad blocking log now lists video resolutions in the master playlist and which resolutions the player reports as available or unavailable\n"
+                            + "Opening a chat link keeps the video playing in picture-in-picture over the browser\n"
+                            + "Inside a category, you can separately hide the heart, the sort button and card menus\n"
+                            + "Scroll extra VOD player buttons when space is tight. The rotate button stays on screen\n"
+                            + "Settings and the side chat divider show the same width in pixels. Tap Chat background in the divider dialog to enter an exact percentage\n"
+                            + "Turning off Hide quality restores the list in the player options sheet\n"
+                            + "Material You now offers wallpaper colours, presets and a custom colour. The palette also applies to the clip editor and moderation settings\n"
+                            + "Chat filters can hide the stripe beside rewards and watch streaks while keeping the messages\n"
+                            + "Subs and gifts now also hides notices that show progress towards the channel's subscription goal"},
             {"0.5.49-beta",
                     "В разделе «Скрыть элементы» можно отдельно скрыть сортировку активных каналов на главной, категорий и трансляций в «Просмотре». Выбранный порядок сохраняется\n"
                             + "При переходе из поиска мигает только найденная настройка\n"

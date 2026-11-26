@@ -34,7 +34,7 @@ public final class TheatreSettings {
     static final int DEFAULT_CHAT_BG = 60;
 
     /**
-     * Twitch's own default side-chat width (30% of the largest screen edge --
+     * The mod's default side-chat width (30% of the largest screen edge --
      * confirmed on-device: a 720px chat column on a 2400px-wide display). Used
      * as the fallback until the user drags the divider.
      */

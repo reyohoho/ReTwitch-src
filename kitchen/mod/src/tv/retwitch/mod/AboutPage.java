@@ -46,6 +46,7 @@ final class AboutPage {
             {"OkHttp", "Сеть", "Networking", "Apache-2.0", "square/okhttp"},
             {"Okio", "Ввод-вывод", "I/O", "Apache-2.0", "square/okio"},
             {"Kotlin", "Стандартная библиотека", "Standard library", "Apache-2.0", "JetBrains/kotlin"},
+            {"Material Color Utilities", "Оттенки Material You", "Material You tones", "Apache-2.0", "material-components/material-components-android"},
             {"AppMetrica", "Отчёты о падениях", "Crash reports", "MIT", "appmetrica/appmetrica-sdk-android"},
     };
     private static final String[][] TOOLS = {
@@ -100,7 +101,7 @@ final class AboutPage {
         s.external(t("Исходный код", "Source code"), "github.com/reyohoho/ReTwitch-src",
                 () -> SettingsHook.openLink(c, SettingsHook.LINK_GITHUB));
         s.nav("GNU GPL 3.0", t("Лицензия мода и Morphe", "The mod's and Morphe's license"), screen -> screen.document(LicenseTexts.GPL_3));
-        s.nav("Apache 2.0", "PurpleTV, ReVive, TwitchNoSub, OkHttp, Okio, Kotlin", screen -> screen.document(
+        s.nav("Apache 2.0", "PurpleTV, ReVive, TwitchNoSub, OkHttp, Okio, Kotlin, Material Color Utilities", screen -> screen.document(
                 "Copyright 2022 TwitchMod (PurpleTV, PurpleTV ReVive)\n\n" + LicenseTexts.APACHE_2));
         s.nav("MIT", "TwitchAdSolutions, AppMetrica", screen -> screen.document(
                 "Copyright (c) 2020-present TwitchAdSolutions Contributors\nCopyright (c) 2023 YANDEX LLC\n\n" + LicenseTexts.MIT));

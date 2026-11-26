@@ -506,7 +506,7 @@ public final class SsaiSwapEngine {
         return line.substring(start, end < 0 ? line.length() : end).trim();
     }
 
-    private static int height(String resolution) {
+    static int height(String resolution) {
         if (resolution == null) {
             return -1;
         }

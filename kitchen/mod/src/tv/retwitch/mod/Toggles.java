@@ -123,6 +123,11 @@ public final class Toggles {
             .about("Сообщения «смотрю N стримов подряд»",
                     "\"Watched N streams in a row\" notices")
             .look(SettingsPreview.CHAT, SettingsPreview.C_STREAK);
+    public static final Toggle HIDE_NOTICE_STRIPE = new Toggle("hide_notice_stripe", "Полоска у уведомлений чата", "Chat notice stripe", true)
+            .about("Скрыть полоску слева у наград за баллы, серий просмотров и других уведомлений",
+                    "Hide the stripe beside point rewards, watch streaks and other chat notices")
+            .compare("Полоска рядом с сообщением", "Только сообщение", "Stripe beside the message", "Message only")
+            .asNew("0.5.50-beta");
     public static final Toggle HIDE_SERVICE_MESSAGES = new Toggle("hide_service_messages", "Служебные сообщения", "Service messages", false)
             .about("Подключение, приветствие, смена режима чата",
                     "Connecting, welcome, chat mode changes")
@@ -595,10 +600,10 @@ public final class Toggles {
             .about("Убрать троеточие под обложками записей", "Hide the three dots below video thumbnails")
             .compare("Меню рядом с названием", "Название без меню", "Menu beside the title", "Title without the menu")
             .asNew("0.5.42-beta");
-    public static final Toggle SYSTEM_PALETTE = new Toggle("settings_system_palette", "Цвета обоев", "Wallpaper colours", true)
-            .about("Цвета обоев для фона, текста и кнопок Twitch и ReTwitch", "Use wallpaper colours for backgrounds, text and controls in Twitch and ReTwitch")
-            .compare("Фиолетовые переключатели", "Переключатели в цвет обоев", "Purple switches", "Switches match the wallpaper")
-            .note("Для Android 12 и новее. Цвета статуса эфира, изображений и элементов поверх видео остаются исходными", "Android 12 or later. Live indicators, images and video overlays keep their original colours")
+    public static final Toggle SYSTEM_PALETTE = new Toggle("settings_system_palette", "Тема Material You", "Material You theme", true)
+            .about("Цвета обоев или выбранная палитра для Twitch и ReTwitch", "Choose wallpaper colours or a palette for Twitch and ReTwitch")
+            .compare("Фиолетовые переключатели", "Переключатели в цвет палитры", "Purple switches", "Switches match your palette")
+            .note("Для Android 12 и новее. Выбранные цвета применятся после перезапуска", "Android 12 or later. Your selected colours apply after restart")
             .asNew("0.5.43-beta");
     public static final Toggle SEARCH_HISTORY = new Toggle("settings_search_history", "Запоминать поиск в настройках", "Save settings searches", false)
             .about("Показывать недавние запросы при нажатии на пустую строку поиска", "Show recent searches when you tap the empty search field")
@@ -1404,7 +1409,7 @@ public final class Toggles {
     // The chat header switches became ChatHeaderSetting (keys migrated there).
 
     static final Toggle[] CHAT_FILTERS = {
-            HIDE_BOTS, HIDE_NATIVE_GIFS, HIDE_ANNOUNCEMENTS, HIDE_SUB_NOTICES, HIDE_REDEMPTIONS, HIDE_MILESTONES,
+            HIDE_BOTS, HIDE_NATIVE_GIFS, HIDE_ANNOUNCEMENTS, HIDE_SUB_NOTICES, HIDE_REDEMPTIONS, HIDE_MILESTONES, HIDE_NOTICE_STRIPE,
     };
 
     /** Other clients' chat badges; order = ThirdPartyBadges.URLS. */
@@ -1438,9 +1443,32 @@ public final class Toggles {
             POINTS_BALANCE_LANDSCAPE, POINTS_BALANCE_UNDER_ICON, LATENCY_HINT,
     };
 
+    public static final Toggle CHAT_LINK_PIP = new Toggle("fix_chat_link_pip", "Картинка в картинке при открытии ссылки из чата", "Picture in picture for chat links", false, true)
+            .about("Продолжайте смотреть трансляцию в маленьком окне, пока читаете страницу в браузере.",
+                    "Keep watching in a small window while you read the page in your browser.")
+            .compare("Браузер открывается, воспроизведение останавливается", "Видео играет поверх браузера",
+                    "Opening the browser stops playback", "The video keeps playing over the browser")
+            .note("Для этого нужен автоматический переход в PiP в Twitch и разрешение Android на картинку в картинке.",
+                    "Requires automatic picture in picture in Twitch and the Android picture-in-picture permission.")
+            .asNew("0.5.50-beta");
+
+    public static final Toggle HIDE_CATEGORY_HEART = new Toggle("hide_category_heart", "Сердце категории", "Category heart", false)
+            .about("Скрывает кнопку отслеживания в шапке открытой категории.", "Hides the follow button in the category header.")
+            .compare("Рядом с названием категории есть сердце", "Остаётся название категории",
+                    "A heart beside the category name", "Only the category name").asNew("0.5.50-beta");
+    public static final Toggle HIDE_CATEGORY_SORT = new Toggle("hide_category_sort", "Сортировка внутри категории", "Sort inside a category", false)
+            .about("Скрывает кнопку фильтров и сортировки рядом с вкладками открытой категории.",
+                    "Hides the sort and filter button beside the tabs inside a category.")
+            .compare("У вкладок категории есть кнопка сортировки", "Только вкладки категории",
+                    "Category tabs with a sort button", "Only the category tabs").asNew("0.5.50-beta");
+    public static final Toggle HIDE_CATEGORY_MORE = new Toggle("hide_category_more", "Меню карточек категории", "Category card menus", false)
+            .about("Скрывает три точки на карточках в открытой категории.", "Hides the three dots on cards inside a category.")
+            .compare("На карточке есть меню с тремя точками", "Карточка без меню",
+                    "A three-dot menu on the card", "The card without its menu").asNew("0.5.50-beta");
+
     /** Bug fixes (on by default), on their own page so they aren't switched off by accident. */
     static final Toggle[] FIXES = {NO_MANIFEST_CACHE, FRESH_RN_PREVIEWS, FEED_TAB_INDICATOR, ALL_FOLLOWED_CATEGORIES, LANDSCAPE_INPUT_VISIBLE, IDLE_INPUT_CURSOR,
-            GLOBAL_BADGES_NOW, BADGES_ON_BASELINE, LAYOUT_PICKER_ICONS, AUDIO_ONLY_UNMUTE, FOLLOWING_CATEGORY_TAP, NOTIFICATION_SEEK, SCREEN_OFF_PAUSED, NO_COPY_TOAST, PIP_CLEAN_VIDEO, VOD_CHAT_EMOTES, VAFT_LOW_LATENCY, PICKER_OUTSIDE_TAP, FIX_LOGIN};
+            GLOBAL_BADGES_NOW, BADGES_ON_BASELINE, LAYOUT_PICKER_ICONS, AUDIO_ONLY_UNMUTE, FOLLOWING_CATEGORY_TAP, NOTIFICATION_SEEK, SCREEN_OFF_PAUSED, NO_COPY_TOAST, PIP_CLEAN_VIDEO, CHAT_LINK_PIP, VOD_CHAT_EMOTES, VAFT_LOW_LATENCY, PICKER_OUTSIDE_TAP, FIX_LOGIN};
 
     private Toggles() {
     }

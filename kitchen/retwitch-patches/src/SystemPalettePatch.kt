@@ -1,6 +1,9 @@
 package tv.retwitch.patches
 
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
+import app.morphe.patcher.extensions.InstructionExtensions.replaceInstruction
+import com.android.tools.smali.dexlib2.iface.instruction.FiveRegisterInstruction
+import com.android.tools.smali.dexlib2.iface.reference.StringReference
 import app.morphe.patcher.extensions.InstructionExtensions.instructions
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patches.all.misc.resources.ResourceType
@@ -25,6 +28,8 @@ val retwitchSystemPalettePatch = bytecodePatch(
     execute {
         val sale = getResourceId(ResourceType.ID, "terms_of_sale_text")
         val terms = getResourceId(ResourceType.ID, "terms_of_service")
+        val legal = getResourceId(ResourceType.ID, "legal_text")
+        val termsIds = setOf(sale, terms, legal)
         val loading = getResourceId(ResourceType.ID, "loading_indicator")
         val grey = getResourceId(ResourceType.COLOR, "hinted_grey_1")
         val black = getResourceId(ResourceType.COLOR, "black")
@@ -32,17 +37,17 @@ val retwitchSystemPalettePatch = bytecodePatch(
         classDefForEach { cls ->
             if (cls.methods.any { m -> m.name == "<init>" && m.implementation?.instructions?.any {
                     val literal = (it as? WideLiteralInstruction)?.wideLiteral
-                    literal == sale || literal == terms
+                    literal in termsIds
                 } == true }) legalOwners += cls.type
         }
         var controls = 0
         for (owner in legalOwners) {
-            for (method in mutableClassDefBy(owner).methods.filter { it.name == "<init>" }) {
+            for (method in mutableClassDefBy(owner).methods.filter { it.implementation != null }) {
                 val code = method.instructions.toList()
-                if (code.none { (it as? WideLiteralInstruction)?.wideLiteral in setOf(sale, terms) }) continue
+                if (code.none { (it as? WideLiteralInstruction)?.wideLiteral in termsIds }) continue
                 for (i in (0 until code.size - 2).reversed()) {
                     val literal = (code[i] as? WideLiteralInstruction)?.wideLiteral
-                    if (literal != sale && literal != terms && literal != loading) continue
+                    if (literal !in termsIds && literal != loading) continue
                     val call = (code[i + 1] as? ReferenceInstruction)?.reference as? MethodReference ?: continue
                     // Generated view binding's findChildViewById(int, View) and Android's View.findViewById(int).
                     if (call.returnType != "Landroid/view/View;" || !(call.name == "findViewById" ||
@@ -54,6 +59,37 @@ val retwitchSystemPalettePatch = bytecodePatch(
                 }
             }
         }
+        val webViews = mutableListOf<String>()
+        val bitmapLoaders = mutableListOf<MethodReference>()
+        classDefForEach { cls ->
+            if (cls.methods.any { it.name == "onPageFinished" } &&
+                (cls.type == "Lcom/reactnativecommunity/webview/RNCWebViewClient;" || cls.methods.any { method ->
+                    method.name == "shouldInterceptRequest" && method.implementation?.instructions?.any {
+                        ((it as? ReferenceInstruction)?.reference as? StringReference)?.string == "/portals.html"
+                    } == true
+                })) webViews += cls.type
+            for (method in cls.methods) {
+                if (method.parameterTypes.map(CharSequence::toString) != listOf("Landroid/content/res/Resources;", "I")) continue
+                val calls = method.implementation?.instructions?.mapNotNull { (it as? ReferenceInstruction)?.reference as? MethodReference } ?: continue
+                if (calls.any { it.definingClass == "Landroid/graphics/drawable/BitmapDrawable;" && it.name == "getBitmap" } &&
+                    calls.any { it.definingClass == "Landroid/content/res/Resources;" && it.name == "getDrawable" && it.parameterTypes.size == 2 })
+                    bitmapLoaders += method
+            }
+        }
+        for (type in webViews) {
+            val callback = mutableClassDefBy(type).methods.single { it.name == "onPageFinished" &&
+                it.parameterTypes.map(CharSequence::toString) == listOf("Landroid/webkit/WebView;", "Ljava/lang/String;") }
+            callback.addInstructions(0, "invoke-static/range {p1 .. p2}, Ltv/retwitch/mod/PortalPalette;->apply(Landroid/webkit/WebView;Ljava/lang/String;)V")
+        }
+        for (ref in bitmapLoaders) {
+            val method = mutableClassDefBy(ref.definingClass).methods.single { it.name == ref.name && it.parameterTypes == ref.parameterTypes }
+            val i = method.instructions.indexOfFirst { ((it as? ReferenceInstruction)?.reference as? MethodReference)?.let { call ->
+                call.definingClass == "Landroid/content/res/Resources;" && call.name == "getDrawable" && call.parameterTypes.size == 2
+            } == true }
+            val call = method.instructions.elementAt(i) as FiveRegisterInstruction
+            method.replaceInstruction(i, "invoke-static {v${call.registerC}, v${call.registerD}, v${call.registerE}}, $SYSTEM_PALETTE->clipArt(Landroid/content/res/Resources;ILandroid/content/res/Resources\$Theme;)Landroid/graphics/drawable/Drawable;")
+        }
+        println("[ReTwitch] system palette: ${webViews.size} portal clients, ${bitmapLoaders.size} raster loaders")
         var bars = 0
         val landing = mutableClassDefBy("Ltv/twitch/android/feature/viewer/landing/ViewerLandingActivity;")
         for (method in landing.methods) {

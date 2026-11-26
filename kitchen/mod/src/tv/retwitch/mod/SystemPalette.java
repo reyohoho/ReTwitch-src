@@ -6,6 +6,10 @@ import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.content.res.loader.ResourcesLoader;
 import android.content.res.loader.ResourcesProvider;
+import android.graphics.Bitmap;
+import android.graphics.Color;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.ParcelFileDescriptor;
 import android.system.Os;
@@ -15,11 +19,13 @@ import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import java.io.DataInputStream;
 import java.io.FileDescriptor;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.util.Collections;
 import java.util.Set;
+import java.util.Locale;
 import java.util.WeakHashMap;
 
 /** The system's wallpaper tones for the ordinary light/dark Twitch interface on Android 12+. */
@@ -28,12 +34,47 @@ public final class SystemPalette {
 
     private SystemPalette() { }
 
+    static final String SEED = "settings_palette_seed";
+    private static volatile boolean initialized;
+    private static boolean active;
+    private static PaletteTones fixed;
+
+    static String savedSeed(Context context) {
+        try {
+            String seed = Toggles.prefs(context).getString(SEED, "");
+            return PaletteTones.parse(seed) == 0 ? "" : seed.toUpperCase(Locale.ROOT);
+        } catch (ClassCastException invalidBackup) {
+            return "";
+        }
+    }
+
     static boolean enabled() {
-        return Build.VERSION.SDK_INT >= 31 && Toggles.on(Toggles.SYSTEM_PALETTE);
+        if (Build.VERSION.SDK_INT < 31) return false;
+        if (!initialized) {
+            synchronized (SystemPalette.class) {
+                Context context = AppContext.get();
+                if (context == null) return false;
+                if (!initialized) {
+                    active = Toggles.on(Toggles.SYSTEM_PALETTE);
+                    try {
+                        int seed = active ? PaletteTones.parse(savedSeed(context)) : 0;
+                        if (seed != 0) fixed = new PaletteTones(seed);
+                    } catch (Throwable t) {
+                        CrashReporter.report(TAG, "custom palette unavailable", t);
+                    }
+                    initialized = true;
+                }
+            }
+        }
+        return active;
+    }
+
+    static int tone(Context context, int id) {
+        return fixed == null ? context.getColor(id) : fixed.framework(id);
     }
 
     /** Android ARGB in the low 32 bits. Used by Compose's light and dark theme constructors. */
-    public static long color(long argb) {
+    private static long color(long argb, boolean ordinaryTheme) {
         if (!enabled()) return argb;
         int id;
         switch ((int) argb) {
@@ -44,7 +85,7 @@ public final class SystemPalette {
             case 0xff9147ff: id = android.R.color.system_accent1_600; break;
             case 0xffa970ff: id = android.R.color.system_accent1_400; break;
             case 0xffbf94ff: case 0xffc0adff: id = android.R.color.system_accent1_300; break;
-            case 0xffd1b3ff: id = android.R.color.system_accent1_200; break;
+            case 0xffff75e6: case 0xffd1b3ff: id = android.R.color.system_accent1_200; break;
             case 0xffe3d1ff: id = android.R.color.system_accent1_100; break;
             case 0xffede0ff: case 0xfff3ebff: id = android.R.color.system_accent1_50; break;
 
@@ -60,11 +101,14 @@ public final class SystemPalette {
             case 0xfff7f7f8: id = android.R.color.system_neutral1_10; break;
             default: return argb;
         }
+        // Video overlays keep their translucent surfaces and neutral controls; only brand accents follow the palette.
+        if (!ordinaryTheme && id < android.R.color.system_accent1_0) return argb;
         try {
             Context context = AppContext.get();
-            return context == null ? argb : Integer.toUnsignedLong(context.getColor(id));
-        } catch (RuntimeException e) {
+            return context == null ? argb : Integer.toUnsignedLong(tone(context, id));
+        } catch (Throwable e) {
             Log.w(TAG, "system colour unavailable", e);
+            CrashReporter.report(TAG, "system colour unavailable", e);
             return argb;
         }
     }
@@ -75,8 +119,8 @@ public final class SystemPalette {
         return enabled() && (argb == 0xff772ce8 || argb == 0xffa970ff || argb == 0xfff7f7f8 || argb == 0xff0e0e10);
     }
 
-    public static long composeColor(boolean enabled, long packed) {
-        return enabled && (int) packed == 0 ? color(packed >>> 32) << 32 : packed;
+    public static long composeColor(boolean ordinaryTheme, long packed) {
+        return (int) packed == 0 ? color(packed >>> 32, ordinaryTheme) << 32 : packed;
     }
 
     /** The landing window sets light system-bar icons in both modes, including the edge-to-edge path. */
@@ -84,9 +128,10 @@ public final class SystemPalette {
         if (!enabled()) return original;
         try {
             Context context = AppContext.get();
-            return context == null ? original : context.getColor(android.R.color.system_neutral1_900);
-        } catch (RuntimeException e) {
+            return context == null ? original : tone(context, android.R.color.system_neutral1_900);
+        } catch (Throwable e) {
             Log.w(TAG, "landing bar colour unavailable", e);
+            CrashReporter.report(TAG, "landing bar colour unavailable", e);
             return original;
         }
     }
@@ -98,12 +143,40 @@ public final class SystemPalette {
             Context context = view.getContext();
             boolean dark = (context.getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK)
                     == Configuration.UI_MODE_NIGHT_YES;
-            int accent = context.getColor(dark ? android.R.color.system_accent1_300 : android.R.color.system_accent1_700);
+            int accent = tone(context, dark ? android.R.color.system_accent1_300 : android.R.color.system_accent1_700);
             if (view instanceof TextView) ((TextView) view).setLinkTextColor(accent);
             else if (view instanceof ProgressBar) ((ProgressBar) view).setIndeterminateTintList(ColorStateList.valueOf(accent));
-        } catch (RuntimeException e) {
+        } catch (Throwable e) {
             Log.w(TAG, "subscription control colour unavailable", e);
             CrashReporter.report(TAG, "subscription control colour unavailable", e);
+        }
+    }
+
+    private static int clipArtId;
+
+    public static Drawable clipArt(Resources resources, int id, Resources.Theme theme) {
+        Drawable original = resources.getDrawable(id, theme);
+        if (!enabled() || !(original instanceof BitmapDrawable)) return original;
+        try {
+            Context c = AppContext.get();
+            if (clipArtId == 0) clipArtId = UiHider.res(c, "uv_glow_hero_clip_medium", "drawable");
+            if (id != clipArtId) return original;
+            Bitmap bitmap = ((BitmapDrawable) original).getBitmap().copy(Bitmap.Config.ARGB_8888, true);
+            int w = bitmap.getWidth(), h = bitmap.getHeight();
+            int[] pixels = new int[w * h];
+            bitmap.getPixels(pixels, 0, w, 0, 0, w, h);
+            int accent = tone(c, android.R.color.system_accent1_600);
+            for (int i = 0; i < pixels.length; i++) {
+                int pixel = pixels[i];
+                // Only the purple silhouette. The clapper, its yellow outline and transparency are part of the drawing.
+                if (Color.blue(pixel) - Color.red(pixel) > 25 && Color.red(pixel) - Color.green(pixel) > 15)
+                    pixels[i] = (pixel & 0xff000000) | (accent & 0xffffff);
+            }
+            bitmap.setPixels(pixels, 0, w, 0, 0, w, h);
+            return new BitmapDrawable(resources, bitmap);
+        } catch (Throwable e) {
+            CrashReporter.report(TAG, "clip artwork colour unavailable", e);
+            return original;
         }
     }
 
@@ -122,10 +195,14 @@ public final class SystemPalette {
                 if (loader == null) {
                     // loadFromTable needs a standalone file descriptor; the bundled asset may be deflated.
                     FileDescriptor fd = Os.memfd_create("retwitch-palette", 0);
-                    try (InputStream in = context.getAssets().open("retwitch-palette.arsc");
+                    try (InputStream in = context.getAssets().open(fixed == null ? "retwitch-palette.arsc" : "retwitch-palette-fixed.bin");
                          FileOutputStream out = new FileOutputStream(fd)) {
-                        byte[] block = new byte[4096];
-                        for (int n; (n = in.read(block)) != -1; ) out.write(block, 0, n);
+                        if (fixed == null) {
+                            byte[] block = new byte[4096];
+                            for (int n; (n = in.read(block)) != -1; ) out.write(block, 0, n);
+                        } else {
+                            out.write(fixed.readTable(new DataInputStream(in)));
+                        }
                         Os.lseek(fd, 0, OsConstants.SEEK_SET);
                         try (ParcelFileDescriptor pfd = ParcelFileDescriptor.dup(fd)) {
                             ResourcesLoader fresh = new ResourcesLoader();

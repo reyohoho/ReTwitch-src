@@ -250,6 +250,7 @@ public final class PlayerStats {
         if (!VaftLog.isOn()) {
             return;
         }
+        if ("READY".equals(state)) log(qualityOptions(player));
         log(bufferingLine(player, state, SystemClock.elapsedRealtime()));
         log(qualityLine(player));
         if (isRunning(state) && !qualityCheck) {
@@ -311,6 +312,7 @@ public final class PlayerStats {
             log("player dropped " + droppedNow + " frames in 1 s (decoded " + decodedNow + ")");
         }
         if (++ticks % 10 == 0) {
+            log(qualityOptions(player));
             log("player stats: " + snapshot(player) + ", fps " + (stats != null ? number(call(stats, "getFrameRate")) : 0)
                     + ", frames " + statsDecoded + " decoded / " + statsDropped + " dropped in 10 s, net "
                     + IvsNetLog.network() + ", " + IvsNetLog.pending());
@@ -319,8 +321,9 @@ public final class PlayerStats {
         }
     }
 
-    private static boolean isRunning(String state) {
-        return "PLAYING".equals(state) || "BUFFERING".equals(state);
+    static boolean isRunning(Object state) {
+        String name = String.valueOf(state);
+        return "PLAYING".equals(name) || "BUFFERING".equals(name);
     }
 
     private static void log(String line) {
@@ -351,6 +354,21 @@ public final class PlayerStats {
         String line = "player quality " + loggedQuality + " -> " + snapshot(player);
         loggedQuality = name.toString();
         return line;
+    }
+
+    static String qualityOptions(Object player) {
+        return "IVS video heights " + videoHeights(call(player, "getQualities"))
+                + ", unavailable " + videoHeights(call(player, "getUnavailableQualities"));
+    }
+
+    private static String videoHeights(Object qualities) {
+        if (!(qualities instanceof Iterable<?>)) return "?";
+        java.util.Set<Long> heights = new java.util.TreeSet<>();
+        for (Object quality : (Iterable<?>) qualities) {
+            long height = number(call(quality, "getHeight"));
+            if (height > 0) heights.add(height);
+        }
+        return heights.toString();
     }
 
     static String snapshot(Object player) {

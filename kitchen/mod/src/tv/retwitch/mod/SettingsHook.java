@@ -872,7 +872,7 @@ public final class SettingsHook {
                 LandingSettings.getChannelPageMode(), true, i -> LandingSettings.setChannelPageMode(c, i));
         if (android.os.Build.VERSION.SDK_INT >= 31) {
             s.section(t("Цвета", "Colours"));
-            s.toggle(Toggles.SYSTEM_PALETTE);
+            s.group(Toggles.SYSTEM_PALETTE, () -> PalettePicker.row(s));
         }
         s.section(Strings.sectionAppIcon());
         s.markNew("0.4.17-alpha").icons(Strings.appIconLabel(), Strings.appIconModes(), AppIcon.DRAWABLES, AppIcon.current(c),
@@ -972,6 +972,10 @@ public final class SettingsHook {
         s.section(t("Скрыть в «Просмотре»", "Hide in Browse"));
         s.toggle(Toggles.HIDE_BROWSE_CATEGORY_SORT);
         s.toggle(Toggles.HIDE_BROWSE_STREAM_SORT);
+        s.section(t("Скрыть внутри категории", "Hide inside a category"));
+        s.toggle(Toggles.HIDE_CATEGORY_HEART);
+        s.toggle(Toggles.HIDE_CATEGORY_SORT);
+        s.toggle(Toggles.HIDE_CATEGORY_MORE);
     }
 
     /** The home screen is React Native: these act on its data, so most take a restart. */

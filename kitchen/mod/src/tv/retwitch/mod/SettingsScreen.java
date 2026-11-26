@@ -196,14 +196,14 @@ final class SettingsScreen {
         this.context = context;
         int background = themeColor(context, android.R.attr.colorBackground, 0xFF0E0E10);
         boolean dark = Color.luminance(background) < 0.5f;
-        boolean dynamicColours = android.os.Build.VERSION.SDK_INT >= 31 && Toggles.on(Toggles.SYSTEM_PALETTE);
+        boolean dynamicColours = SystemPalette.enabled();
         if (dynamicColours) {
-            bg = context.getColor(dark ? android.R.color.system_neutral1_900 : android.R.color.system_neutral1_50);
-            surface = context.getColor(dark ? android.R.color.system_neutral2_800 : android.R.color.system_neutral1_0);
-            fg = context.getColor(dark ? android.R.color.system_neutral1_50 : android.R.color.system_neutral1_900);
-            fgDim = context.getColor(dark ? android.R.color.system_neutral2_200 : android.R.color.system_neutral2_700);
-            accent = context.getColor(android.R.color.system_accent1_600);
-            accentText = context.getColor(dark ? android.R.color.system_accent1_200 : android.R.color.system_accent1_700);
+            bg = SystemPalette.tone(context, dark ? android.R.color.system_neutral1_900 : android.R.color.system_neutral1_50);
+            surface = SystemPalette.tone(context, dark ? android.R.color.system_neutral2_800 : android.R.color.system_neutral1_0);
+            fg = SystemPalette.tone(context, dark ? android.R.color.system_neutral1_50 : android.R.color.system_neutral1_900);
+            fgDim = SystemPalette.tone(context, dark ? android.R.color.system_neutral2_200 : android.R.color.system_neutral2_700);
+            accent = SystemPalette.tone(context, android.R.color.system_accent1_600);
+            accentText = SystemPalette.tone(context, dark ? android.R.color.system_accent1_200 : android.R.color.system_accent1_700);
         } else {
             bg = background;
             surface = dark ? 0xFF1C1C21 : 0xFFFFFFFF;
@@ -2233,7 +2233,7 @@ final class SettingsScreen {
         render(true);
     }
 
-    private void track(String key, boolean restart, Object was, Object now) {
+    void track(String key, boolean restart, Object was, Object now) {
         if (restart) {
             if (!restartBase.containsKey(key)) {
                 restartBase.put(key, was);
@@ -2311,8 +2311,13 @@ final class SettingsScreen {
 
     /** The purple of the mod's own surfaces: this screen's hero and its entry in Twitch's settings. */
     static GradientDrawable brandBackground(int radius) {
-        GradientDrawable shape = new GradientDrawable(GradientDrawable.Orientation.TL_BR,
-                new int[]{0xFF772CE8, 0xFF9147FF, 0xFFBF4FE0});
+        int[] stops = {0xFF772CE8, 0xFF9147FF, 0xFFBF4FE0};
+        if (SystemPalette.enabled()) {
+            Context c = AppContext.get();
+            stops = new int[]{SystemPalette.tone(c, android.R.color.system_accent1_800),
+                    SystemPalette.tone(c, android.R.color.system_accent1_600)};
+        }
+        GradientDrawable shape = new GradientDrawable(GradientDrawable.Orientation.TL_BR, stops);
         shape.setCornerRadius(radius);
         return shape;
     }

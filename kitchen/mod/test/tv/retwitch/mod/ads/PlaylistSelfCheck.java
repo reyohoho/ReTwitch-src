@@ -9,6 +9,10 @@ package tv.retwitch.mod.ads;
 public final class PlaylistSelfCheck {
 
     public static void main(String[] args) {
+        assert "[160, 360]".equals(VaftServer.masterVideoHeights("#EXTM3U\r\n"
+                + "#EXT-X-STREAM-INF:RESOLUTION=640x360,CODECS=\"a,b\"\r\nhttps://example.invalid/360?private=1\n"
+                + "#EXT-X-STREAM-INF:RESOLUTION=284x160\n160.m3u8\n#EXT-X-STREAM-INF:RESOLUTION=640x360\n"
+                + "360.m3u8\n#EXT-X-STREAM-INF:VIDEO=\"audio_only\"\naudio.m3u8"));
         String master = "#EXTM3U\n"
                 + "#EXT-X-STREAM-INF:BANDWIDTH=8000000,RESOLUTION=1920x1080,CODECS=\"hvc1.1.2.L123,mp4a.40.2\",VIDEO=\"chunked\"\nhttps://a/hevc1080.m3u8\n"
                 + "#EXT-X-STREAM-INF:BANDWIDTH=6000000,RESOLUTION=1920x1080,CODECS=\"avc1.64002A,mp4a.40.2\",VIDEO=\"chunked\"\nhttps://a/avc1080.m3u8\n"

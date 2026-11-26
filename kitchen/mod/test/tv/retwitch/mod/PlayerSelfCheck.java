@@ -42,6 +42,14 @@ public final class PlayerSelfCheck {
             return quality;
         }
 
+        public java.util.Set<FakeQuality> getQualities() {
+            return java.util.Set.of(new FakeQuality("360p", 360, 500000), new FakeQuality("160p", 160, 200000),
+                    new FakeQuality("Audio only", 0, 96000));
+        }
+        public java.util.Set<FakeQuality> getUnavailableQualities() {
+            return java.util.Set.of(new FakeQuality("1080p", 1080, 8000000));
+        }
+
         public long getBandwidthEstimate() {
             return net;
         }
@@ -60,6 +68,8 @@ public final class PlayerSelfCheck {
     }
 
     public static void main(String[] args) throws Exception {
+        assert PlayerStats.isRunning("PLAYING") && PlayerStats.isRunning("BUFFERING");
+        assert !PlayerStats.isRunning(null) && !PlayerStats.isRunning("IDLE");
         // VOD download: every rendition with Twitch's name, absolute; source and audio named.
         String master = "#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=1,RESOLUTION=1920x1080,FRAME-RATE=60.000,VIDEO=\"chunked\"\n"
                 + "chunked/index-dvr.m3u8\n#EXT-X-STREAM-INF:BANDWIDTH=1,RESOLUTION=1280x720,VIDEO=\"720p60\"\n"
@@ -118,6 +128,7 @@ public final class PlayerSelfCheck {
 
         // VAFT_LOG player lines: quality changes only, buffering with its length, nothing from another player.
         FakePlayer player = new FakePlayer();
+        assert "IVS video heights [160, 360], unavailable [1080]".equals(PlayerStats.qualityOptions(player));
         assert PlayerStats.qualityLine(player) == null;
         player.quality = new FakeQuality("", 0, 0);
         assert PlayerStats.qualityLine(player) == null;

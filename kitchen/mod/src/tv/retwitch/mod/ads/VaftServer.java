@@ -284,7 +284,10 @@ public final class VaftServer {
             String out;
             if ("master".equals(kind)) {
                 out = route != null && !route.vaft ? body : rewriteMaster(body, "media");
-                VaftLog.log("master " + VaftLog.describe(target) + " (" + (System.currentTimeMillis() - started) + " ms)");
+                if (VaftLog.isOn()) {
+                    VaftLog.log("master " + VaftLog.describe(target) + " (" + (System.currentTimeMillis() - started)
+                            + " ms), video heights " + masterVideoHeights(body));
+                }
             } else if ("media".equals(kind)) {
                 out = processMedia(request.getQueryParameter("s"), target, body,
                         request.getQueryParameter("res"), request.getQueryParameter("c"),
@@ -452,6 +455,18 @@ public final class VaftServer {
             }
         }
         return false;
+    }
+
+    /** Only numeric heights go in the log; a playlist also contains signed URLs and session data. */
+    static String masterVideoHeights(String master) {
+        java.util.Set<Integer> heights = new java.util.TreeSet<>();
+        for (String line : master.split("\n")) {
+            line = line.trim();
+            if (!line.startsWith("#EXT-X-STREAM-INF:")) continue;
+            int height = SsaiSwapEngine.height(SsaiSwapEngine.attribute(line, "RESOLUTION"));
+            if (height > 0) heights.add(height);
+        }
+        return heights.toString();
     }
 
     /** Routes every variant of a master playlist through {@code kind} ({@code media} or {@code vod}) here. */

@@ -66,7 +66,9 @@ public final class ChatFilters {
             if (Toggles.on(Toggles.HIDE_ANNOUNCEMENTS) && kind.equals("AnnouncementNotice")) {
                 return null;
             }
-            if (Toggles.on(Toggles.HIDE_SUB_NOTICES) && kind.endsWith("SubscriptionNotice")) {
+            // Twitch wraps the subscription notice when the gift or sub advances a channel goal.
+            if (Toggles.on(Toggles.HIDE_SUB_NOTICES)
+                    && (kind.endsWith("SubscriptionNotice") || kind.equals("CreatorGoalNotice"))) {
                 return null;
             }
             if (Toggles.on(Toggles.HIDE_REDEMPTIONS) && kind.endsWith("RewardRedemptionNotice")) {

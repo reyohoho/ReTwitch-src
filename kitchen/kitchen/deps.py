@@ -52,6 +52,9 @@ _APPMETRICA = {
     "analytics-proto": "ff02253410cc9562e2734a75454105e3bda73f2771dabd741764def016bc45fd",
 }
 LIBS = {
+    "material-1.12.0.jar": (
+        f"{_GOOGLE}/com/google/android/material/material/1.12.0/material-1.12.0.aar",
+        "4a672941b626b9ab91ae893ed22598ea53ad69125c858c0a59fa9b90daa5cb08", "classes.jar"),
     "okhttp-4.12.0.jar": (
         f"{_MAVEN}/com/squareup/okhttp3/okhttp/4.12.0/okhttp-4.12.0.jar",
         "b1050081b14bb7a3a7e55a4d3ef01b5dcfabc453b4573a4fc019767191d5f4e0", None),
