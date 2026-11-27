@@ -999,7 +999,7 @@ final class RecordPlayer {
                     }
                     float value = PlayerGestures.clamp(startValue + dy / Math.max(1, v.getHeight()));
                     if (mode == BRIGHTNESS) {
-                        PlayerGestures.setBrightness(activity.getWindow(), value);
+                        PlayerGestures.setBrightness(activity, playerView, value);
                     } else {
                         PlayerGestures.setVolume(context, value);
                     }

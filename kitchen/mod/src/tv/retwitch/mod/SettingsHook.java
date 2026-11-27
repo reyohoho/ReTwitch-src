@@ -385,6 +385,7 @@ public final class SettingsHook {
         s.toggle(Toggles.PLAYER_GESTURES);
         s.toggle(Toggles.PLAYER_GESTURES_VERTICAL);
         s.toggle(Toggles.PLAYER_SWIPE_FULLSCREEN);
+        s.toggle(Toggles.FIX_PORTRAIT_ZOOM);
         s.section(t("Мини-плеер", "Mini player"));
         s.toggle(Toggles.NO_MINI_PLAYER);
         s.toggle(Toggles.MINI_PLAYER_SWIPE_CLOSE);
@@ -972,6 +973,7 @@ public final class SettingsHook {
         s.section(t("Скрыть в «Просмотре»", "Hide in Browse"));
         s.toggle(Toggles.HIDE_BROWSE_CATEGORY_SORT);
         s.toggle(Toggles.HIDE_BROWSE_STREAM_SORT);
+        s.toggle(Toggles.HIDE_BROWSE_STREAM_MORE);
         s.section(t("Скрыть внутри категории", "Hide inside a category"));
         s.toggle(Toggles.HIDE_CATEGORY_HEART);
         s.toggle(Toggles.HIDE_CATEGORY_SORT);

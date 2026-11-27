@@ -1131,6 +1131,7 @@ public final class UiHider {
         if ("ViewerLandingActivity".equals(activity.getClass().getSimpleName())) {
             List<View> theatres = findAll(activity, decor, "draggable_container");
             PlayerHook.onTheatre(!theatres.isEmpty());
+            PortraitVideoZoom.checkLayout(activity, decor);
             LiveScreenOn.apply(activity, decor);
             for (View theatre : theatres) {
                 PlayerGestures.wrapDragArea(theatre);
@@ -1460,7 +1461,8 @@ public final class UiHider {
     private static void syncVideoCardMenus(Activity activity, View decor) {
         boolean vodMenu = Toggles.on(Toggles.HIDE_VIDEO_CARD_MENU);
         boolean categoryMenu = Toggles.on(Toggles.HIDE_CATEGORY_MORE);
-        if (!vodMenu && !categoryMenu) {
+        boolean browseMenu = Toggles.on(Toggles.HIDE_BROWSE_STREAM_MORE);
+        if (!vodMenu && !categoryMenu && !browseMenu) {
             if (!hiddenVideoMenus.isEmpty()) {
                 for (View button : hiddenVideoMenus) {
                     hideWhile(false, button);
@@ -1472,9 +1474,11 @@ public final class UiHider {
         // video_card_recycler_item and collection_recycler_item share metadata_widget. Only VODs have vod_length.
         int duration = id(activity, "vod_length");
         int metadataId = id(activity, "metadata_widget"), categoryId = id(activity, "explore_category_root");
+        int browsePager = id(activity, "explore_browse_pager"), liveGrid = id(activity, "filterable_livestream_gridview");
         for (View button : findAll(activity, decor, "more_options")) {
             View metadata = vodMenu ? ancestorWithId(button, metadataId) : null;
-            boolean hide = categoryMenu && ancestorWithId(button, categoryId) != null
+            boolean hide = browseMenu && ancestorWithId(button, liveGrid) != null && ancestorWithId(button, browsePager) != null
+                    || categoryMenu && ancestorWithId(button, categoryId) != null
                     || metadata != null && metadata.getParent() instanceof View
                             && ((View) metadata.getParent()).findViewById(duration) != null;
             if (hide && button.getVisibility() == View.VISIBLE) {

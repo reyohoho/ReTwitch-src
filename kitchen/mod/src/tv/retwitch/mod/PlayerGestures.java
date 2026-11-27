@@ -3,12 +3,16 @@ package tv.retwitch.mod;
 import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.content.res.Configuration;
+import android.database.ContentObserver;
 import android.graphics.Color;
 import android.graphics.Rect;
 import android.graphics.drawable.GradientDrawable;
 import android.media.AudioManager;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.provider.Settings;
 import android.util.Log;
 import android.util.TypedValue;
@@ -19,6 +23,7 @@ import android.view.TextureView;
 import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
@@ -80,7 +85,7 @@ public final class PlayerGestures {
                 public void onActivityCreated(Activity a, Bundle b) { }
                 public void onActivityStarted(Activity a) { }
                 public void onActivityResumed(Activity a) { wrap(a); }
-                public void onActivityPaused(Activity a) { }
+                public void onActivityPaused(Activity a) { restoreBrightness(a); }
                 public void onActivityStopped(Activity a) { }
                 public void onActivitySaveInstanceState(Activity a, Bundle b) { }
                 public void onActivityDestroyed(Activity a) { }
@@ -94,9 +99,10 @@ public final class PlayerGestures {
     private static void wrap(Activity activity) {
         try {
             Window window = activity.getWindow();
-            // Only wrap when the feature is on: no proxy in the window for anyone else.
+            boolean portraitZoom = activity.getClass().getName().equals("tv.twitch.android.feature.viewer.landing.ViewerLandingActivity")
+                    && Toggles.on(Toggles.FIX_PORTRAIT_ZOOM);
             if (window == null
-                    || !(Toggles.on(Toggles.PLAYER_GESTURES) || Toggles.on(Toggles.PLAYER_GESTURES_VERTICAL)
+                    || !(portraitZoom || Toggles.on(Toggles.PLAYER_GESTURES) || Toggles.on(Toggles.PLAYER_GESTURES_VERTICAL)
                             || Toggles.on(Toggles.PLAYER_SWIPE_FULLSCREEN) || Toggles.on(Toggles.CHAT_PINCH_TEXT)
                             || Toggles.on(Toggles.MINI_PLAYER_SWIPE_CLOSE))
                     || !activity.getClass().getName().startsWith("tv.twitch")) {
@@ -120,6 +126,7 @@ public final class PlayerGestures {
         private final Window.Callback original;
         private final int slop;
         private View surface;
+        private final PortraitVideoZoom zoom = new PortraitVideoZoom();
         private boolean brightness;
         private float startX;
         private float startY;
@@ -140,7 +147,16 @@ public final class PlayerGestures {
         public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
             if ("dispatchTouchEvent".equals(method.getName()) && args != null && args.length == 1) {
                 try {
-                    swipeAwayMini((MotionEvent) args[0]);
+                    MotionEvent event = (MotionEvent) args[0];
+                    if (zoom.onTouch(activity, original, event)) {
+                        armed = false;
+                        surface = null;
+                        swipeRotate = false;
+                        ownTouch = false;
+                        dragAnywhere = false;
+                        return true;
+                    }
+                    swipeAwayMini(event);
                     if (ChatPinch.onTouch(activity, original, (MotionEvent) args[0]) || onTouch((MotionEvent) args[0])) {
                         return true;
                     }
@@ -278,7 +294,7 @@ public final class PlayerGestures {
                     }
                     float value = clamp(startValue + dy / Math.max(1, surface.getHeight()));
                     if (brightness) {
-                        setBrightness(activity.getWindow(), value);
+                        setBrightness(activity, surface, value);
                     } else {
                         setVolume(activity, value);
                     }
@@ -330,11 +346,89 @@ public final class PlayerGestures {
         }
     }
 
-    /** Window-only brightness: resets when the activity goes away, like other players. */
-    static void setBrightness(Window window, float value) {
-        WindowManager.LayoutParams lp = window.getAttributes();
-        lp.screenBrightness = Math.max(0.01f, value);
-        window.setAttributes(lp);
+    private static final int BRIGHTNESS_TAG = 0x7e700c71;
+
+    static void setBrightness(Activity activity, View video, float value) {
+        try {
+            Window window = activity.getWindow();
+            View decor = window.getDecorView();
+            WindowManager.LayoutParams lp = window.getAttributes();
+            Brightness override = (Brightness) decor.getTag(BRIGHTNESS_TAG);
+            if (override == null) {
+                override = new Brightness(activity, video, lp.screenBrightness);
+                decor.setTag(BRIGHTNESS_TAG, override);
+                decor.getViewTreeObserver().addOnGlobalLayoutListener(override);
+                Toggles.prefs(activity).registerOnSharedPreferenceChangeListener(override);
+                for (String setting : new String[]{Settings.System.SCREEN_BRIGHTNESS, Settings.System.SCREEN_BRIGHTNESS_MODE}) {
+                    activity.getContentResolver().registerContentObserver(Settings.System.getUriFor(setting), false, override);
+                }
+            }
+            override.applied = Math.max(0.01f, value);
+            lp.screenBrightness = override.applied;
+            window.setAttributes(lp);
+        } catch (Throwable t) {
+            restoreBrightness(activity);
+            CrashReporter.report(TAG, "set gesture brightness", t);
+        }
+    }
+
+    private static void restoreBrightness(Activity activity) {
+        try {
+            Window window = activity.getWindow();
+            if (window == null) return;
+            View decor = window.getDecorView();
+            Brightness override = (Brightness) decor.getTag(BRIGHTNESS_TAG);
+            if (override == null) return;
+            decor.setTag(BRIGHTNESS_TAG, null);
+            WindowManager.LayoutParams lp = window.getAttributes();
+            if (lp.screenBrightness == override.applied) {
+                lp.screenBrightness = override.previous;
+                window.setAttributes(lp);
+            }
+            decor.getViewTreeObserver().removeOnGlobalLayoutListener(override);
+            Toggles.prefs(activity).unregisterOnSharedPreferenceChangeListener(override);
+            activity.getContentResolver().unregisterContentObserver(override);
+        } catch (Throwable t) {
+            CrashReporter.report(TAG, "restore gesture brightness", t);
+        }
+    }
+
+    /** The landing window outlives the video. Only hold its brightness while this video is expanded. */
+    private static final class Brightness extends ContentObserver implements ViewTreeObserver.OnGlobalLayoutListener,
+            SharedPreferences.OnSharedPreferenceChangeListener {
+        final Activity activity;
+        final View video;
+        final float previous;
+        final int orientation;
+        final Toggles.Toggle toggle;
+        float applied;
+
+        Brightness(Activity activity, View video, float previous) {
+            super(new Handler(Looper.getMainLooper()));
+            this.activity = activity;
+            this.video = video;
+            this.previous = previous;
+            orientation = activity.getResources().getConfiguration().orientation;
+            toggle = orientation == Configuration.ORIENTATION_LANDSCAPE ? Toggles.PLAYER_GESTURES : Toggles.PLAYER_GESTURES_VERTICAL;
+        }
+
+        @Override public void onChange(boolean selfChange) {
+            if (activity.getWindow().getDecorView().getTag(BRIGHTNESS_TAG) == this) restoreBrightness(activity);
+        }
+
+        public void onGlobalLayout() {
+            try {
+                if (!video.isShown() || !video.isAttachedToWindow()
+                        || orientation != activity.getResources().getConfiguration().orientation
+                        || minimizedTheatre(activity, video)) restoreBrightness(activity);
+            } catch (Throwable t) {
+                CrashReporter.report(TAG, "check gesture brightness", t);
+            }
+        }
+
+        public void onSharedPreferenceChanged(SharedPreferences prefs, String key) {
+            if ((key == null || toggle.key.equals(key)) && !Toggles.on(toggle)) restoreBrightness(activity);
+        }
     }
 
     /** The "☀ 40%" / "🔊 60%" label in the middle of {@code host} while a side swipe runs. */
@@ -401,7 +495,7 @@ public final class PlayerGestures {
         return id == 0 ? 0 : context.getResources().getDimensionPixelSize(id);
     }
 
-    private static boolean sheetAt(Activity activity, float x, float y) {
+    static boolean sheetAt(Activity activity, float x, float y) {
         Rect r = new Rect();
         View decor = activity.getWindow().getDecorView();
         for (String name : SHEETS) {
@@ -532,7 +626,7 @@ public final class PlayerGestures {
      * ({@code draggable_layout}) shrinks into the mini-player. A width check on the surface let through a
      * mini-player enlarged to ~85% of the screen (bug #55).
      */
-    private static boolean minimizedTheatre(Activity activity, View view) {
+    static boolean minimizedTheatre(Activity activity, View view) {
         int theatre = UiHider.id(activity, "draggable_container");
         View child = null;
         for (Object v = view; theatre != 0 && v instanceof View; v = ((View) v).getParent()) {

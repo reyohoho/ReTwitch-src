@@ -67,7 +67,33 @@ public final class PlayerSelfCheck {
         }
     }
 
+    public static final class ClipPage {
+        final ClipPage parent;
+        boolean removing;
+        ClipPage(ClipPage parent) { this.parent = parent; }
+        public ClipPage getParentFragment() { return parent; }
+        public boolean isRemoving() { return removing; }
+    }
+
     public static void main(String[] args) throws Exception {
+        ClipPage pager = new ClipPage(null), clip = new ClipPage(pager);
+        assert !ClipExit.shouldPause(clip, false, false);
+        assert ClipExit.shouldPause(clip, true, false);
+        pager.removing = true;
+        assert ClipExit.shouldPause(clip, false, false);
+        assert !ClipExit.shouldPause(clip, true, true);
+        assert !ClipExit.shouldPause(new ClipPage(null), false, false);
+
+        for (int lifted = -1; lifted < 3; lifted++) {
+            int first = PortraitVideoZoom.pointerAfterLift(0, lifted), second = PortraitVideoZoom.pointerAfterLift(1, lifted);
+            assert first >= 0 && second <= 2 && first < second && first != lifted && second != lifted;
+            if (lifted < 0) assert first == 0 && second == 1;
+        }
+        assert PortraitVideoZoom.scale(1f, 90f, 480f) == 4f;
+        assert PortraitVideoZoom.scale(4f, 480f, 90f) == 1f;
+        assert PortraitVideoZoom.scale(2f, 200f, 150f) == 1.5f;
+        assert PortraitVideoZoom.offset(250f, 100, 4f) == 150f;
+        assert PortraitVideoZoom.offset(-250f, 100, 1f) == 0f;
         assert PlayerStats.isRunning("PLAYING") && PlayerStats.isRunning("BUFFERING");
         assert !PlayerStats.isRunning(null) && !PlayerStats.isRunning("IDLE");
         // VOD download: every rendition with Twitch's name, absolute; source and audio named.

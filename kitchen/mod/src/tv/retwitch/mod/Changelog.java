@@ -13,6 +13,15 @@ import android.text.TextUtils;
 public final class Changelog {
 
     private static final String[][] ENTRIES = {
+            {"0.5.51-beta",
+                    "В настройках «Скрыть на главной» можно скрыть меню карточек во вкладке «Просмотр» > «Активные каналы»\n"
+                            + "После свайпа яркость снова следует за системой, если передвинуть системный ползунок, отключить жест или выйти из плеера\n"
+                            + "В портретном плеере двумя пальцами можно приблизить трансляцию до 4× и вернуть исходный масштаб\n"
+                            + "При закрытии плеера клипов мод останавливает воспроизведение уходящего клипа",
+                    "Hide on Home can hide the card menus under Browse > Live Channels\n"
+                            + "After a brightness swipe, moving the system brightness slider, disabling the gesture or leaving the player restores system brightness\n"
+                            + "Pinch the video in the portrait player to zoom up to 4× or return to its original size\n"
+                            + "Closing the clip viewer pauses the outgoing clip"},
             {"0.5.50-beta",
                     "При включённом логе блокировки рекламы записываются разрешения видео из плейлиста и доступные и недоступные разрешения в плеере\n"
                             + "При открытии ссылки из чата видео продолжает играть в режиме «Картинка в картинке» поверх браузера\n"

@@ -248,6 +248,11 @@ public final class Toggles {
             .about("Свайп у левого и правого края в полном экране",
                     "Swipe along the left and right edges in fullscreen")
             .look(SettingsPreview.PLAYER, SettingsPreview.P_GESTURES);
+    public static final Toggle FIX_PORTRAIT_ZOOM = new Toggle("fix_portrait_zoom", "Масштаб видео в портрете", "Portrait video zoom", false, true)
+            .about("Разведите два пальца на видео, чтобы приблизить его, или сведите, чтобы уменьшить",
+                    "Spread two fingers on the video to zoom in, or pinch them together to zoom out")
+            .compare("Масштаб меняется на небольшой шаг", "Видео приближается вслед за пальцами",
+                    "Zoom changes by a small step", "The video zooms with your fingers").asNew("0.5.51-beta");
     public static final Toggle PLAYER_SWIPE_FULLSCREEN = new Toggle("player_swipe_fullscreen", "Свайп в полный экран", "Swipe to fullscreen", false)
             .about("Вверх по плееру - развернуть, вниз по центру - выйти",
                     "Up on the player to enter, down in the middle to leave")
@@ -1443,6 +1448,10 @@ public final class Toggles {
             POINTS_BALANCE_LANDSCAPE, POINTS_BALANCE_UNDER_ICON, LATENCY_HINT,
     };
 
+    public static final Toggle STOP_CLOSED_CLIP = new Toggle("fix_stop_closed_clip", "Останавливать закрытый клип", "Stop a closed clip", false, true)
+            .about("Остановить звук клипа при выходе из его плеера", "Stop clip audio when you leave its player")
+            .compare("Два клипа могут звучать одновременно", "Слышен только открытый клип",
+                    "Two clips can be audible at once", "Only the open clip is audible").asNew("0.5.51-beta");
     public static final Toggle CHAT_LINK_PIP = new Toggle("fix_chat_link_pip", "Картинка в картинке при открытии ссылки из чата", "Picture in picture for chat links", false, true)
             .about("Продолжайте смотреть трансляцию в маленьком окне, пока читаете страницу в браузере.",
                     "Keep watching in a small window while you read the page in your browser.")
@@ -1461,6 +1470,10 @@ public final class Toggles {
                     "Hides the sort and filter button beside the tabs inside a category.")
             .compare("У вкладок категории есть кнопка сортировки", "Только вкладки категории",
                     "Category tabs with a sort button", "Only the category tabs").asNew("0.5.50-beta");
+    public static final Toggle HIDE_BROWSE_STREAM_MORE = new Toggle("hide_browse_stream_more", "Меню карточек трансляций", "Live channel card menus", false)
+            .about("Скрыть три точки у трансляций во вкладке «Просмотр»", "Hide the three dots on live channel cards in Browse")
+            .compare("На карточке есть меню с тремя точками", "Карточка без меню",
+                    "A three-dot menu on the card", "The card without its menu").asNew("0.5.51-beta");
     public static final Toggle HIDE_CATEGORY_MORE = new Toggle("hide_category_more", "Меню карточек категории", "Category card menus", false)
             .about("Скрывает три точки на карточках в открытой категории.", "Hides the three dots on cards inside a category.")
             .compare("На карточке есть меню с тремя точками", "Карточка без меню",
@@ -1468,7 +1481,7 @@ public final class Toggles {
 
     /** Bug fixes (on by default), on their own page so they aren't switched off by accident. */
     static final Toggle[] FIXES = {NO_MANIFEST_CACHE, FRESH_RN_PREVIEWS, FEED_TAB_INDICATOR, ALL_FOLLOWED_CATEGORIES, LANDSCAPE_INPUT_VISIBLE, IDLE_INPUT_CURSOR,
-            GLOBAL_BADGES_NOW, BADGES_ON_BASELINE, LAYOUT_PICKER_ICONS, AUDIO_ONLY_UNMUTE, FOLLOWING_CATEGORY_TAP, NOTIFICATION_SEEK, SCREEN_OFF_PAUSED, NO_COPY_TOAST, PIP_CLEAN_VIDEO, CHAT_LINK_PIP, VOD_CHAT_EMOTES, VAFT_LOW_LATENCY, PICKER_OUTSIDE_TAP, FIX_LOGIN};
+            GLOBAL_BADGES_NOW, BADGES_ON_BASELINE, LAYOUT_PICKER_ICONS, AUDIO_ONLY_UNMUTE, FOLLOWING_CATEGORY_TAP, NOTIFICATION_SEEK, SCREEN_OFF_PAUSED, NO_COPY_TOAST, PIP_CLEAN_VIDEO, CHAT_LINK_PIP, STOP_CLOSED_CLIP, VOD_CHAT_EMOTES, VAFT_LOW_LATENCY, PICKER_OUTSIDE_TAP, FIX_LOGIN};
 
     private Toggles() {
     }
